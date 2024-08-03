@@ -5,14 +5,15 @@ INC := -I ./include
 FLAGS := -c $(INC)
 LINK := 
 CC := gcc
+MAIN := vbdist
 
 TESTS := ./tests
 TEST_TARGETS := 
 
 OBJ := player team 
 
-vbDist: $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ))) | $(BIN)
-	$(CC) $^ $(SRC)/vbDist.c -o $(BIN)/$@ $(LINK)
+$(MAIN): $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ))) | $(BIN)
+	$(CC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)
 
 $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
 	$(CC) $(FLAGS) $< -o $@
@@ -44,4 +45,4 @@ clean:
 	rm -rf $(TESTS)/bin/*
 
 run:
-	$(BIN)/vbDist
+	$(BIN)/$(MAIN) players.txt 1

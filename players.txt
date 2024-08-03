@@ -1,4 +1,4 @@
-# PelaajaNimi Puolustus Hyökkäys Syöttö Passi Pallohaku
+# PlayerName Defence Spike Serve Setting Saving
 Alice 3 8 1 7 9
 Bob 5 2 6 0 3
 Charlie 4 9 1 8 2

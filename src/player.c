@@ -3,12 +3,8 @@
 #include <string.h>
 #include <assert.h>
 
-
 player* initPlayer() {
   player* p = malloc(sizeof(player));
-  //p->ratings = malloc(sizeof(int) * DIFRATINGS);
-  //p->name = strdup(pName);
-  //p->r = malloc(sizeof(rating));
   return p;
 }
 
@@ -43,18 +39,19 @@ double ovRating(player* p) {
 int cmpPlayers(const void* a, const void* b) {
   player* ap = *(player**)a;
   player* bp = *(player**)b;
-  return ovRating(bp) - ovRating(ap);
+  double ret = ovRating(bp) - ovRating(ap);
+  return (ret < 0) ? -1 : (ret > 0) ? 1 : 0;
 }
 
-void swapPlayers(player** a, player** b) {
-  player* tmp = *a;
+void swapPlayers(player* a, player* b) {
+  player tmp = *a;
   *a = *b;
   *b = tmp;
 }
 
 void freePlayer(player* p) {
+  if (!p) return;
   free(p->name);
-  //free(p->r);
   free(p);
 }
 

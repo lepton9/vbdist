@@ -29,7 +29,7 @@ player** readPlayers(const char *fileName, int *pn) {
 void printPlayers(player** players, const int n) {
   for (int i = 0; i < n; i++) {
     player* p = players[i];
-    printf("%s %d %d %d %d %d | OV: %.1f\n", p->name, p->ratings[0], p->ratings[1], p->ratings[2], p->ratings[3], p->ratings[4], ovRating(p));
+    printf("%-10s %d %d %d %d %d | %.1f\n", p->name, p->ratings[0], p->ratings[1], p->ratings[2], p->ratings[3], p->ratings[4], ovRating(p));
   }
 }
 
@@ -41,7 +41,6 @@ double averageRating(team** teams) {
   if (teams == NULL) return 0.0;
   double sumRating = 0.0;
   for (int t = 0; t < TEAMS_N; t++) {
-    printf("Team: %d\n", t);
     sumRating += avgRating(teams[t]);
   }
   return sumRating / TEAMS_N;
@@ -52,56 +51,52 @@ int validateSwap(double a, double b, double aNew, double bNew, double avg, int o
   if (fabs(aNew - avg) < fabs(a - avg)) valid++;
   if (fabs(bNew - avg) < fabs(b - avg)) valid++;
 
-  printf("%d %d %d %d %d\n", a, b, aNew, bNew, avg);
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
-  //return (valid == 0) ? 0 : (valid == 1 && oneSideValidation) ? 1 : (valid == 2) ? 1 : 0;
 }
 
-int balancedClustering(team** teamsAll, int oneSideValidation) {
-  team* teams = *teamsAll;
-  double avgR = averageRating(teamsAll);
+int balancedClustering(team*** teamsAll, int oneSideValidation) {
+  team** teams = *teamsAll;
+  double avgR = averageRating(teams);
   int swaps = 0;
-  int max_failures = 1000;
+  int max_failures = 200;
   int failures = 0;
 
   while(failures < max_failures) {
-    // Get teams and 2 players
     int teamA = randintRange(0, TEAMS_N - 1);
     int teamB = randintRange(0, TEAMS_N - 1);
     while(teamB == teamA) teamB = randintRange(0, TEAMS_N - 1);
-    player* pA = teams[teamA].players[randintRange(0, TEAM_SIZE - 1)];
-    player* pB = teams[teamB].players[randintRange(0, TEAM_SIZE - 1)];
+    player* pA = teams[teamA]->players[randintRange(0, TEAM_SIZE - 1)];
+    player* pB = teams[teamB]->players[randintRange(0, TEAM_SIZE - 1)];
 
-    // Get teams avg rating
-    double ratingTeamA = avgRating(teamsAll[teamA]);
-    double ratingTeamB = avgRating(teamsAll[teamB]);
+    double ratingTeamA = avgRating(teams[teamA]);
+    double ratingTeamB = avgRating(teams[teamB]);
 
-    // Swap
-    swapPlayers(&pA, &pB);
+    swapPlayers(pA, pB);
 
-    // Validate by getting avg rating
-    double ratingTeamA_new = avgRating(teamsAll[teamA]);
-    double ratingTeamB_new = avgRating(teamsAll[teamB]);
-
-    //printf("%d %d %d %d %d\n", ratingTeamA, ratingTeamB, ratingTeamA_new, ratingTeamB_new, avgR);
+    double ratingTeamA_new = avgRating(teams[teamA]);
+    double ratingTeamB_new = avgRating(teams[teamB]);
 
     int valid = validateSwap(ratingTeamA, ratingTeamB, ratingTeamA_new, ratingTeamB_new, avgR, oneSideValidation);
 
-    // If worse, reverse swap and add failure
-    // If better, keep swap and reset failures = 0
     if (valid) {
       swaps++;
       failures = 0;
     } else {
       failures++;
-      swapPlayers(&pA, &pB);
+      swapPlayers(pA, pB);
     }
   }
   return swaps;
 }
 
-team* balanceTeamsRand(player** players, const int n) {
-  team* teams = malloc(TEAMS_N * (sizeof(team)));
+team** balanceTeamsRand(player** players, const int n) {
+  team** teams = malloc(sizeof(team*) * TEAMS_N);
+  for (int i = 0; i < TEAMS_N; i++) {
+    char tName[7];
+    sprintf(tName, "Team %d", i);
+    teams[i] = initTeam(tName);
+  }
+
   qsort(players, n, sizeof(player*), cmpPlayers);
   srand(time(0));
 
@@ -118,7 +113,7 @@ team* balanceTeamsRand(player** players, const int n) {
     while(inTeam[ind]) ind = randintRange(group * 6, (group + 1) * 6 - 1);
     inTeam[ind] = 1;
 
-    teams[teamI].players[teamCounters[teamI]++] = players[ind];
+    teams[teamI]->players[teamCounters[teamI]++] = players[ind];
     teamI = (teamI + 1) % TEAMS_N;
     if (teamI == 0) group++;
   }
@@ -140,42 +135,57 @@ team* balanceTeams(player** players, const int n) {
   return teams;
 }
 
-
-int main() {
-  int* pn = malloc(sizeof(int));
-  *pn = 0;
-  player** players = readPlayers("players.txt", pn);
-
-  if (players == NULL) {
-    printf("Players NULL\n");
+int main(int argc, char** argv) {
+  if (argc < 2) {
+    printf("Usage -> \n  vbdist 'fileName' (k-means [0/1])\n");
+    printf("\nPlayers file should be format:\n");
+    printf("PlayerName Defence Spike Serve Setting Saving\n");
     exit(1);
   }
+
+  char* fileName = argv[1];
+  int clustering = 0;
+  if (argc >= 3) {
+    clustering = atoi(argv[2]);
+  }
+
+  int* pn = malloc(sizeof(int));
+  *pn = 0;
+  player** players = readPlayers(fileName, pn);
+
+  if (!players) {
+    printf("File %s not found\n", fileName);
+    free(pn);
+    exit(1);
+  }
+
+  qsort(players, *pn, sizeof(player*), cmpPlayers);
   printPlayers(players, *pn);
 
   assert(*pn == TEAMS_N * TEAM_SIZE);
 
-  team* teams = balanceTeamsRand(players, *pn);
+  team** teams = balanceTeamsRand(players, *pn);
 
-  int swaps = balancedClustering(&teams, 1);
-  printf("\nTotal swaps: %d\n", swaps);
+  if (clustering) {
+    printf("\nBalancing teams..\n");
+    int swaps = balancedClustering(&teams, 1);
+    printf("Total swaps: %d\n", swaps);
+  }
 
   printf("\n");
   for (int i = 0; i < TEAMS_N; i++) {
-    printf("Team %d | Rating: %.1f:\n", i + 1, avgRating(&teams[i]));
+    printf("Team %d | Rating: %.2f:\n", i + 1, avgRating(teams[i]));
     for (int j = 0; j < TEAM_SIZE; j++) {
-      printf("  %-10s Rating: %.1f\n", teams[i].players[j]->name, ovRating(teams[i].players[j]));
+      printf("  %-10s Rating: %.1f\n", teams[i]->players[j]->name, ovRating(teams[i]->players[j]));
     }
   }
 
   for (int i = 0; i < TEAMS_N; i++) {
-    for (int j = 0; j < TEAM_SIZE; j++) {
-      freePlayer(teams[i].players[j]);
-    }
-    //freeTeam(&teams[i]);
+    freeTeam(teams[i]);
   }
   free(teams);
+  free(pn);
 
   return 0;
 }
-
 
