@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
 
 player* initPlayer() {
   player* p = malloc(sizeof(player));
@@ -10,20 +11,34 @@ player* initPlayer() {
 
 player* parsePlayer(char* pStr) {
   player* p = initPlayer();
-  char* del = " ";
-  int i = 0;
-
-  char* token = strtok(pStr, del);
-  p->name = strdup(token);
-
-  while (token != NULL && i < DIFRATINGS) {
-    token = strtok(NULL, del);
-    if (!token) break;
-    p->ratings[i] = atoi(token);
-    i++;
+  char* token = strtok(pStr, "|");
+  char* fullName;
+  if (token != NULL) {
+    while (isspace(*token)) token++;
+    fullName = strdup(token);
+    char* end = fullName + strlen(fullName) - 1;
+    while (end > fullName && isspace(*end)) end--;
+    *(end + 1) = '\0';
   }
-  assert(i == DIFRATINGS);
 
+  char* surnameStart = strrchr(fullName, ' ');
+  if (surnameStart != NULL) {
+    *surnameStart = '\0';
+    surnameStart++;
+    p->firstName = strdup(fullName);
+    p->surName = strdup(surnameStart);
+  } else {
+    p->firstName = strdup(fullName);
+    p->surName = NULL;
+  }
+
+  token = strtok(NULL, " ");
+  int i = 0;
+  while (token != NULL && i < DIFRATINGS) {
+      while (isspace(*token)) token++;
+      p->ratings[i++] = atoi(token);
+      token = strtok(NULL, " ");
+  }
   return p;
 }
 
@@ -49,9 +64,21 @@ void swapPlayers(player* a, player* b) {
   *b = tmp;
 }
 
+void printPlayer(FILE* out, player* p) {
+  char fullName[100] = "\0";
+  strcat(fullName, p->firstName);
+  if (p->surName) strcat(strcat(fullName, " "), p->surName);
+  fprintf(out, "%-20s ", fullName);
+  for (int i = 0; i < DIFRATINGS; i++) {
+    fprintf(out, "%d ", p->ratings[i]);
+  }
+  fprintf(out, "| %.1f\n", ovRating(p));
+}
+
 void freePlayer(player* p) {
   if (!p) return;
-  free(p->name);
+  free(p->firstName);
+  free(p->surName);
   free(p);
 }
 

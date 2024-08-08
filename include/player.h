@@ -1,5 +1,6 @@
+#include <stdio.h>
 
-#define DIFRATINGS 5
+#define DIFRATINGS 6
 
 // typedef struct {
 //   int defence;
@@ -10,7 +11,8 @@
 // } rating;
 
 typedef struct {
-  char* name;
+  char* firstName;
+  char* surName;
   int ratings[DIFRATINGS];
 } player;
 
@@ -20,4 +22,6 @@ player* parsePlayer(char* pStr);
 int cmpPlayers(const void* a, const void* b);
 void swapPlayers(player* a, player* b);
 double ovRating(player* p);
+void printPlayer(FILE* out, player* p);
+
 

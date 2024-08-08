@@ -6,30 +6,56 @@
 #include <math.h>
 #include <time.h>
 
-#define TEAMS_N 6
+#define TEAMS_N 7
+#define MAX_FAILURES 200
+
+typedef struct {
+  char* pA;
+  char* pB;
+} bannedPCombo;
+
+bannedPCombo* initBPC(char* a, char* b) {
+  bannedPCombo* bpc = malloc(sizeof(bannedPCombo));
+  return bpc;
+}
+
+void freeBPC(bannedPCombo* bpc) {
+  free(bpc);
+}
 
 player** readPlayers(const char *fileName, int *pn) {
   FILE *fp = fopen(fileName, "rb");
   player** ps = NULL;
-
   if (fp == NULL) return NULL;
 
-  char buffer[256];
-  while (fgets(buffer, 256, fp))
+  char line[256];
+  while (fgets(line, sizeof(line), fp))
   {
-    buffer[strcspn(buffer, "\n")] = 0;
-    if (buffer[0] == '#' || strcmp(buffer, "") == 0) continue;
+    line[strcspn(line, "\n")] = 0;
+    // if (line[0] == '!') {
+    //   bannedPCombo* bpc = initBPC();
+    // }
+    if (line[0] == '#' || strcmp(line, "") == 0) continue;
     ps = realloc(ps, (*pn + 1) * sizeof(player*));
-    ps[(*pn)++] = parsePlayer(buffer);
+    ps[(*pn)++] = parsePlayer(line);
   }
+
   fclose(fp);
   return ps;
 }
 
 void printPlayers(player** players, const int n) {
   for (int i = 0; i < n; i++) {
-    player* p = players[i];
-    printf("%-10s %d %d %d %d %d | %.1f\n", p->name, p->ratings[0], p->ratings[1], p->ratings[2], p->ratings[3], p->ratings[4], ovRating(p));
+    printPlayer(stdout, players[i]);
+  }
+}
+
+void printTeams(team** teams) {
+  for (int i = 0; i < TEAMS_N; i++) {
+    printf("%s | Rating: %.2f:\n", teams[i]->name, avgRating(teams[i]));
+    for (int j = 0; j < TEAM_SIZE; j++) {
+      printf("  %-10s (%.1f)\n", teams[i]->players[j]->firstName, ovRating(teams[i]->players[j]));
+    }
   }
 }
 
@@ -58,10 +84,9 @@ int balancedClustering(team*** teamsAll, int oneSideValidation) {
   team** teams = *teamsAll;
   double avgR = averageRating(teams);
   int swaps = 0;
-  int max_failures = 200;
   int failures = 0;
 
-  while(failures < max_failures) {
+  while(failures < MAX_FAILURES) {
     int teamA = randintRange(0, TEAMS_N - 1);
     int teamB = randintRange(0, TEAMS_N - 1);
     while(teamB == teamA) teamB = randintRange(0, TEAMS_N - 1);
@@ -86,6 +111,11 @@ int balancedClustering(team*** teamsAll, int oneSideValidation) {
       swapPlayers(pA, pB);
     }
   }
+
+  for (int i = 0; i < TEAMS_N; i++) {
+    qsort(teams[i]->players, TEAM_SIZE, sizeof(player*), cmpPlayers);
+  }
+
   return swaps;
 }
 
@@ -93,7 +123,7 @@ team** balanceTeamsRand(player** players, const int n) {
   team** teams = malloc(sizeof(team*) * TEAMS_N);
   for (int i = 0; i < TEAMS_N; i++) {
     char tName[7];
-    sprintf(tName, "Team %d", i);
+    sprintf(tName, "Team %d", i + 1);
     teams[i] = initTeam(tName);
   }
 
@@ -109,8 +139,8 @@ team** balanceTeamsRand(player** players, const int n) {
   for (int i = 0; i < TEAMS_N; i++) teamCounters[i] = 0;
 
   for (int i = 0; i < n; i++) {
-    int ind = randintRange(group * 6, (group + 1) * 6 - 1);
-    while(inTeam[ind]) ind = randintRange(group * 6, (group + 1) * 6 - 1);
+    int ind = randintRange(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
+    while(inTeam[ind]) ind = randintRange(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
     inTeam[ind] = 1;
 
     teams[teamI]->players[teamCounters[teamI]++] = players[ind];
@@ -135,19 +165,41 @@ team* balanceTeams(player** players, const int n) {
   return teams;
 }
 
+void writeTeamsToFile(team** teams, const char* teamsFile) {
+  FILE* fp = fopen(teamsFile, "w");
+  for(int i = 0; i < TEAMS_N; i++) {
+    fprintf(fp, "%s:\n", teams[i]->name);
+    for(int j = 0; j < TEAM_SIZE; j++) {
+      fprintf(fp, "%s\n", teams[i]->players[j]->firstName);
+    }
+    fprintf(fp, "\n");
+  }
+
+  for (int i = 0; i < TEAMS_N; i++) {
+    fprintf(fp, "%-10s", teams[i]->name);
+  }
+  fprintf(fp, "\n");
+  for(int j = 0; j < TEAM_SIZE; j++) {
+    for(int i = 0; i < TEAMS_N; i++) {
+      fprintf(fp, "%-10s", teams[i]->players[j]->firstName);
+    }
+    fprintf(fp, "\n");
+  }
+  fclose(fp);
+}
+
 int main(int argc, char** argv) {
-  if (argc < 2) {
-    printf("Usage -> \n  vbdist 'fileName' (k-means [0/1])\n");
+  if (argc < 4) {
+    printf("Usage -> \n  vbdist playersFile TEAMS_N TEAM_SIZE\n");
     printf("\nPlayers file should be format:\n");
-    printf("PlayerName Defence Spike Serve Setting Saving\n");
+    printf("PlayerName | Defence Spike Serve Setting Saving Consistency\n");
     exit(1);
   }
 
   char* fileName = argv[1];
-  int clustering = 0;
-  if (argc >= 3) {
-    clustering = atoi(argv[2]);
-  }
+  int teams_n = atoi(argv[2]);
+  int team_size = atoi(argv[3]);
+  int clustering = 1;
 
   int* pn = malloc(sizeof(int));
   *pn = 0;
@@ -160,9 +212,11 @@ int main(int argc, char** argv) {
   }
 
   qsort(players, *pn, sizeof(player*), cmpPlayers);
+
   printPlayers(players, *pn);
 
   assert(*pn == TEAMS_N * TEAM_SIZE);
+  assert(*pn == teams_n * team_size);
 
   team** teams = balanceTeamsRand(players, *pn);
 
@@ -173,12 +227,9 @@ int main(int argc, char** argv) {
   }
 
   printf("\n");
-  for (int i = 0; i < TEAMS_N; i++) {
-    printf("Team %d | Rating: %.2f:\n", i + 1, avgRating(teams[i]));
-    for (int j = 0; j < TEAM_SIZE; j++) {
-      printf("  %-10s Rating: %.1f\n", teams[i]->players[j]->name, ovRating(teams[i]->players[j]));
-    }
-  }
+  printTeams(teams);
+
+  writeTeamsToFile(teams, "teams.txt");
 
   for (int i = 0; i < TEAMS_N; i++) {
     freeTeam(teams[i]);
