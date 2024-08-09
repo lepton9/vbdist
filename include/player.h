@@ -2,17 +2,10 @@
 
 #define DIFRATINGS 6
 
-// typedef struct {
-//   int defence;
-//   int spiking;
-//   int serving;
-//   int setting;
-//   int saving;
-// } rating;
-
 typedef struct {
   char* firstName;
   char* surName;
+  int id;
   int ratings[DIFRATINGS];
 } player;
 

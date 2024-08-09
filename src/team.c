@@ -2,14 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-team* initTeam(char* teamName) {
+team* initTeam(char* teamName, const size_t size) {
   team* t = malloc(sizeof(team));
   t->name = strdup(teamName);
+  t->size = size;
+  t->players = malloc(size * sizeof(player*));
   return t;
 }
 
 void freeTeam(team* t) {
   for (int i = 0; i < 3; i++) freePlayer(t->players[i]);
+  free(t->players);
   free(t->name);
   free(t);
 }
@@ -17,9 +20,9 @@ void freeTeam(team* t) {
 double avgRating(team* t) {
   if (t == NULL) return 0.0;
   double sumRatingT = 0;
-  for (int pI = 0; pI < TEAM_SIZE; pI++) {
+  for (int pI = 0; pI < t->size; pI++) {
     sumRatingT += ovRating(t->players[pI]);
   }
-  return sumRatingT / TEAM_SIZE;
+  return sumRatingT / t->size;
 }
 

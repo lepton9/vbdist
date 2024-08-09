@@ -5,39 +5,92 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <ctype.h>
 
-#define TEAMS_N 7
-#define MAX_FAILURES 200
+#define MAX_FAILURES 500
+
+int TEAMS_N = 0;
+int TEAM_SIZE = 0;
 
 typedef struct {
-  char* pA;
-  char* pB;
+  int pidA;
+  int pidB;
 } bannedPCombo;
 
-bannedPCombo* initBPC(char* a, char* b) {
-  bannedPCombo* bpc = malloc(sizeof(bannedPCombo));
-  return bpc;
+typedef struct {
+  bannedPCombo* combos;
+  size_t n;
+} bannedCombos;
+
+bannedCombos* initBPCs() {
+  bannedCombos* bpcs = malloc(sizeof(bannedCombos));
+  bpcs->combos = malloc(sizeof(bannedPCombo));
+  bpcs->n = 0;
+  return bpcs;
 }
 
-void freeBPC(bannedPCombo* bpc) {
-  free(bpc);
+void addBPC(bannedCombos* bpcs, int a, int b) {
+  bpcs->combos = realloc(bpcs->combos, (bpcs->n + 1) * sizeof(bannedPCombo));
+  bpcs->combos[bpcs->n].pidA = a;
+  bpcs->combos[bpcs->n].pidB = b;
+  bpcs->n++;
 }
 
-player** readPlayers(const char *fileName, int *pn) {
+void freeBPCs(bannedCombos* bpcs) {
+  free(bpcs->combos);
+  free(bpcs);
+}
+
+char* trimWS(char* str) {
+  while(isspace(*str)) str++;
+  if (*str) {
+    char* end = str + strlen(str) - 1;
+    while(end > str && isspace(*end)) end--;
+    *(end + 1) = '\0';
+  }
+  return str;
+}
+
+void parseBPC(char* line, char** nA, char** nB) {
+  if (line[0] == '!') {
+   line++;
+  }
+  char* token = strtok(line, "-");
+  if (token != NULL) *nA = strdup(trimWS(token));
+  token = strtok(NULL, "-");
+  if (token != NULL) *nB = strdup(trimWS(token));
+
+  assert(*nA != NULL && *nB != NULL);
+}
+
+player** readPlayers(const char *fileName, int *pn, bannedCombos* bpcs) {
   FILE *fp = fopen(fileName, "rb");
   player** ps = NULL;
+  int pid = 0;
   if (fp == NULL) return NULL;
 
   char line[256];
   while (fgets(line, sizeof(line), fp))
   {
     line[strcspn(line, "\n")] = 0;
-    // if (line[0] == '!') {
-    //   bannedPCombo* bpc = initBPC();
-    // }
     if (line[0] == '#' || strcmp(line, "") == 0) continue;
+    if (line[0] == '!') {
+      char* ap;
+      char* bp;
+      int a = -1;
+      int b = -1;
+      parseBPC(line, &ap, &bp);
+      for (int i = 0; i < *pn; i++) {
+        if (strcmp(ps[i]->firstName, ap) == 0 && a < 0) a = ps[i]->id;
+        if (strcmp(ps[i]->firstName, bp) == 0 && b < 0) b = ps[i]->id;
+      }
+      // printf("%s-%s\n", a->firstName, b->firstName);
+      if (a >= 0 && b >= 0) addBPC(bpcs, a, b);
+      continue;
+    }
     ps = realloc(ps, (*pn + 1) * sizeof(player*));
-    ps[(*pn)++] = parsePlayer(line);
+    ps[*pn] = parsePlayer(line);
+    ps[(*pn)++]->id = pid++;
   }
 
   fclose(fp);
@@ -72,6 +125,16 @@ double averageRating(team** teams) {
   return sumRating / TEAMS_N;
 }
 
+char bannedCombo(bannedCombos* bpcs, player* a, player* b) {
+  for (int i = 0; i < bpcs->n; i++) {
+    if ((bpcs->combos[i].pidA == a->id && bpcs->combos[i].pidB == b->id) ||
+      (bpcs->combos[i].pidA == b->id && bpcs->combos[i].pidB == a->id)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 int validateSwap(double a, double b, double aNew, double bNew, double avg, int oneSideValidation) {
   int valid = 0;
   if (fabs(aNew - avg) < fabs(a - avg)) valid++;
@@ -80,7 +143,7 @@ int validateSwap(double a, double b, double aNew, double bNew, double avg, int o
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
 }
 
-int balancedClustering(team*** teamsAll, int oneSideValidation) {
+int balancedClustering(team*** teamsAll, int oneSideValidation, bannedCombos* bpcs) {
   team** teams = *teamsAll;
   double avgR = averageRating(teams);
   int swaps = 0;
@@ -104,8 +167,20 @@ int balancedClustering(team*** teamsAll, int oneSideValidation) {
     int valid = validateSwap(ratingTeamA, ratingTeamB, ratingTeamA_new, ratingTeamB_new, avgR, oneSideValidation);
 
     if (valid) {
-      swaps++;
-      failures = 0;
+      char banned = 0;
+      for (int pI = 0; pI < TEAM_SIZE; pI++) {
+        if (bannedCombo(bpcs, pA, teams[teamA]->players[pI]) || bannedCombo(bpcs, pB, teams[teamB]->players[pI])) {
+          banned = 1;
+          break;
+        }
+      }
+      if (banned) {
+        failures++;
+        swapPlayers(pA, pB);
+      } else {
+        swaps++;
+        failures = 0;
+      }
     } else {
       failures++;
       swapPlayers(pA, pB);
@@ -124,7 +199,7 @@ team** balanceTeamsRand(player** players, const int n) {
   for (int i = 0; i < TEAMS_N; i++) {
     char tName[7];
     sprintf(tName, "Team %d", i + 1);
-    teams[i] = initTeam(tName);
+    teams[i] = initTeam(tName, TEAM_SIZE);
   }
 
   qsort(players, n, sizeof(player*), cmpPlayers);
@@ -197,13 +272,16 @@ int main(int argc, char** argv) {
   }
 
   char* fileName = argv[1];
-  int teams_n = atoi(argv[2]);
-  int team_size = atoi(argv[3]);
+  TEAMS_N = atoi(argv[2]);
+  TEAM_SIZE = atoi(argv[3]);
   int clustering = 1;
+  char print = 1;
+  if (argc >= 5) print = atoi(argv[4]);
 
   int* pn = malloc(sizeof(int));
   *pn = 0;
-  player** players = readPlayers(fileName, pn);
+  bannedCombos* bpcs = initBPCs();
+  player** players = readPlayers(fileName, pn, bpcs);
 
   if (!players) {
     printf("File %s not found\n", fileName);
@@ -213,21 +291,27 @@ int main(int argc, char** argv) {
 
   qsort(players, *pn, sizeof(player*), cmpPlayers);
 
-  printPlayers(players, *pn);
+  if (print) printPlayers(players, *pn);
+  printf("Banned combinations: %d\n", (int)bpcs->n);
+  // for (int i = 0; i < bpcs->n; i++) {
+  //   printf("|%s-%s|\n", bpcs->combos[i].a->firstName, bpcs->combos[i].b->firstName);
+  // }
 
-  assert(*pn == TEAMS_N * TEAM_SIZE);
-  assert(*pn == teams_n * team_size);
+  if (*pn != TEAMS_N * TEAM_SIZE) {
+    printf("\nFile %s contains %d players, but %d was expected\n", fileName, *pn, TEAMS_N * TEAM_SIZE);
+    exit(1);
+  }
 
   team** teams = balanceTeamsRand(players, *pn);
 
   if (clustering) {
     printf("\nBalancing teams..\n");
-    int swaps = balancedClustering(&teams, 1);
+    int swaps = balancedClustering(&teams, 1, bpcs);
     printf("Total swaps: %d\n", swaps);
   }
 
   printf("\n");
-  printTeams(teams);
+  if (print) printTeams(teams);
 
   writeTeamsToFile(teams, "teams.txt");
 
@@ -236,6 +320,7 @@ int main(int argc, char** argv) {
   }
   free(teams);
   free(pn);
+  freeBPCs(bpcs);
 
   return 0;
 }

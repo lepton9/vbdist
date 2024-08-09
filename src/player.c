@@ -1,7 +1,6 @@
 #include "../include/player.h"
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <ctype.h>
 
 player* initPlayer() {
