@@ -40,6 +40,9 @@ all_tests: $(addprefix $(TESTS)/bin/, $(TEST_TARGETS))
 $(TESTS)/bin/%_test: ../testLibC/utestC.c $(TESTS)/%_test.c $(OBJ)
 	$(CC) $(INC) $^ $(LINK) -g -o $@
 
+build: 
+	gcc $(SRC)/* -static -o $(BIN)/$(MAIN)Static
+
 clean:
 	rm -rf $(OBJS)/*.o $(BIN)/*
 	rm -rf $(TESTS)/bin/*

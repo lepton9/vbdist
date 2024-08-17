@@ -73,7 +73,7 @@ player** readPlayers(const char *fileName, int *pn, bannedCombos* bpcs) {
   while (fgets(line, sizeof(line), fp))
   {
     line[strcspn(line, "\n")] = 0;
-    if (line[0] == '#' || strcmp(line, "") == 0) continue;
+    if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
     if (line[0] == '!') {
       char* ap;
       char* bp;
@@ -143,8 +143,7 @@ int validateSwap(double a, double b, double aNew, double bNew, double avg, int o
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
 }
 
-int balancedClustering(team*** teamsAll, int oneSideValidation, bannedCombos* bpcs) {
-  team** teams = *teamsAll;
+int balancedClustering(team** teams, int oneSideValidation, bannedCombos* bpcs) {
   double avgR = averageRating(teams);
   int swaps = 0;
   int failures = 0;
@@ -240,8 +239,7 @@ team* balanceTeams(player** players, const int n) {
   return teams;
 }
 
-void writeTeamsToFile(team** teams, const char* teamsFile) {
-  FILE* fp = fopen(teamsFile, "w");
+void printTeamsVert(FILE* fp, team** teams) {
   for(int i = 0; i < TEAMS_N; i++) {
     fprintf(fp, "%s:\n", teams[i]->name);
     for(int j = 0; j < TEAM_SIZE; j++) {
@@ -249,18 +247,33 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
     }
     fprintf(fp, "\n");
   }
+}
 
+void printTeamsHor(FILE* fp, team** teams) {
   for (int i = 0; i < TEAMS_N; i++) {
-    fprintf(fp, "%-10s", teams[i]->name);
+    fprintf(fp, "%-15s", teams[i]->name);
   }
   fprintf(fp, "\n");
   for(int j = 0; j < TEAM_SIZE; j++) {
     for(int i = 0; i < TEAMS_N; i++) {
-      fprintf(fp, "%-10s", teams[i]->players[j]->firstName);
+      fprintf(fp, "%-15s", teams[i]->players[j]->firstName);
     }
     fprintf(fp, "\n");
   }
+}
+
+void writeTeamsToFile(team** teams, const char* teamsFile) {
+  FILE* fp = fopen(teamsFile, "w");
+  printTeamsVert(fp, teams);
+  printTeamsHor(fp, teams);
   fclose(fp);
+}
+
+void changeMode(team** teams) {
+    printTeamsHor(stdout, teams);
+  // while(1) {
+  // }
+
 }
 
 int main(int argc, char** argv) {
@@ -293,9 +306,6 @@ int main(int argc, char** argv) {
 
   if (print) printPlayers(players, *pn);
   printf("Banned combinations: %d\n", (int)bpcs->n);
-  // for (int i = 0; i < bpcs->n; i++) {
-  //   printf("|%s-%s|\n", bpcs->combos[i].a->firstName, bpcs->combos[i].b->firstName);
-  // }
 
   if (*pn != TEAMS_N * TEAM_SIZE) {
     printf("\nFile %s contains %d players, but %d was expected\n", fileName, *pn, TEAMS_N * TEAM_SIZE);
@@ -306,12 +316,20 @@ int main(int argc, char** argv) {
 
   if (clustering) {
     printf("\nBalancing teams..\n");
-    int swaps = balancedClustering(&teams, 1, bpcs);
+    int swaps = balancedClustering(teams, 1, bpcs);
     printf("Total swaps: %d\n", swaps);
   }
 
   printf("\n");
   if (print) printTeams(teams);
+  //
+  // char ans;
+  // printf("\nManually change players? [y/N] ");
+  // scanf("%c", &ans);
+  //
+  // if (ans == 'y' || ans == 'Y') {
+  //   changeMode(teams);
+  // }
 
   writeTeamsToFile(teams, "teams.txt");
 
