@@ -40,6 +40,9 @@ all_tests: $(addprefix $(TESTS)/bin/, $(TEST_TARGETS))
 $(TESTS)/bin/%_test: ../testLibC/utestC.c $(TESTS)/%_test.c $(OBJ)
 	$(CC) $(INC) $^ $(LINK) -g -o $@
 
+dartc: ./dart/vbDist.dart 
+	dart compile exe $^ -o $(BIN)/$(MAIN)Dart
+
 build: 
 	gcc $(SRC)/* -static -o $(BIN)/$(MAIN)Static
 
