@@ -160,6 +160,59 @@ int validateSwap(double a, double b, double aNew, double bNew, double avg, int o
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
 }
 
+int maxTeamFromPrefCombos(pCombos* prefCombos) {
+  int maxSize = 0;
+  int nTeams = 1;
+  int* ns = calloc(nTeams, sizeof(int));
+  int** presetTeams = malloc(sizeof(int*));
+  *presetTeams = calloc(2, sizeof(int));
+
+  for (int i = 0; i < prefCombos->n; i++) {
+    char comboSet = 0;
+    if (nTeams == 1 && ns[0] == 0) {
+      presetTeams[0][ns[0]++] = prefCombos->combos[i].pidA;
+      presetTeams[0][ns[0]++] = prefCombos->combos[i].pidB;
+      maxSize = ns[0];
+      continue;
+    }
+    for (int j = 0; j < nTeams; j++) {
+      for (int k = 0; k < ns[j]; k++) {
+        int id = (presetTeams[j][k] == prefCombos->combos[i].pidA) ? prefCombos->combos[i].pidB : (presetTeams[j][k] == prefCombos->combos[i].pidB) ? prefCombos->combos[i].pidA : -1;
+        if (id >= 0) {
+          char inTeam = 0;
+          for (int l = 0; l < ns[j]; l++) {
+            if (presetTeams[j][l] == id) inTeam = 1;
+          }
+          if (!inTeam) {
+            presetTeams[j] = realloc(presetTeams[j], (ns[j] + 1) * sizeof(int));
+            presetTeams[j][ns[j]++] = id;
+            if (ns[j] > maxSize) maxSize = ns[j];
+            comboSet = 1;
+            break;
+          }
+        } 
+      }
+      if (comboSet) break;
+    }
+     if (!comboSet) {
+      presetTeams = realloc(presetTeams, (nTeams + 1) * sizeof(int*));
+      ns = realloc(ns, (nTeams + 1) * sizeof(int));
+      ns[nTeams] = 0;
+      presetTeams[nTeams] = calloc(2, sizeof(int));
+      presetTeams[nTeams][ns[nTeams]++] = prefCombos->combos[i].pidA;
+      presetTeams[nTeams][ns[nTeams]++] = prefCombos->combos[i].pidB;
+      nTeams++;
+    }
+  }
+
+  for (int i = 0; i < nTeams; i++) {
+    free(presetTeams[i]);
+  }
+  free(presetTeams);
+  free(ns);
+  return maxSize;
+}
+
 void setPreferredCombos(team** teams, pCombos* prefCombos) {
   for (int c = 0; c < prefCombos->n; c++) {
     int t1 = -1;
@@ -371,10 +424,16 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
+  int maxSize = maxTeamFromPrefCombos(prefCombos);
+  if (maxSize > TEAM_SIZE) {
+    printf("Trying to put %d players into the same team, but team size is %d\n", maxSize, TEAM_SIZE);
+    exit(1);
+  }
+
   qsort(players, *pn, sizeof(player*), cmpPlayers);
 
   if (print) printPlayers(players, *pn);
-  printf("Banned combinations: %d\n", (int)bannedCombos->n);
+  printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
   printf("Preferred combinations: %d\n", (int)prefCombos->n);
 
   if (*pn != TEAMS_N * TEAM_SIZE) {
