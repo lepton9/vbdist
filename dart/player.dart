@@ -22,6 +22,12 @@ class Player {
     ratings = p.ratings;
   }
 
+  void clone(Player b) {
+    firstName = b.firstName;
+    surName = b.surName;
+    ratings = List.from(b.ratings);
+  }
+
   double ovRating() {
     if (ratings.isEmpty) return 0.0;
     int sum = ratings.reduce((a, b) => a + b);
@@ -78,14 +84,8 @@ int cmpPlayers(Player a, Player b) {
 
 void swapPlayers(Player a, Player b) {
   Player tmp = Player.fromPlayer(a);
-  
-  a.firstName = b.firstName;
-  a.surName = b.surName;
-  a.ratings = List.from(b.ratings);
-  
-  b.firstName = tmp.firstName;
-  b.surName = tmp.surName;
-  b.ratings = tmp.ratings;
+  a.clone(b);
+  b.clone(tmp);
 }
 
 

@@ -18,16 +18,14 @@ class BannedPCombo {
 
 class BannedCombos {
   List<BannedPCombo> combos = [];
-  int n = 0;
-}
 
-BannedCombos initBPCs() {
-  return BannedCombos();
-}
+  BannedCombos();
 
-void addBPC(BannedCombos bpcs, int a, int b) {
-  bpcs.combos.add(BannedPCombo(a, b));
-  bpcs.n++;
+  int size() {return combos.length;}
+
+  void addBPC(int a, int b) {
+    combos.add(BannedPCombo(a, b));
+  }
 }
 
 String trimWS(String str) {
@@ -63,7 +61,7 @@ List<Player> readPlayers(String fileName, List<int> pn, BannedCombos bpcs) {
         if (ps[i].firstName == ap[0] && a < 0) a = ps[i].id;
         if (ps[i].firstName == bp[0] && b < 0) b = ps[i].id;
       }
-      if (a >= 0 && b >= 0) addBPC(bpcs, a, b);
+      if (a >= 0 && b >= 0) bpcs.addBPC(a, b);
       continue;
     }
     ps.add(parsePlayer(line));
@@ -265,7 +263,7 @@ void main(List<String> args) {
   if (args.length >= 4) printStd = int.parse(args[3]) == 1;
 
   List<int> pn = [0];
-  BannedCombos bpcs = initBPCs();
+  BannedCombos bpcs = BannedCombos();
   List<Player> players = readPlayers(fileName, pn, bpcs);
 
   if (players.isEmpty) {
@@ -276,7 +274,7 @@ void main(List<String> args) {
   players.sort((a, b) => cmpPlayers(a, b));
 
   if (printStd) printPlayers(players);
-  print('Banned combinations: ${bpcs.n}');
+  print('Banned combinations: ${bpcs.size()}');
 
   if (pn[0] != TEAMS_N * TEAM_SIZE) {
     print('\nFile $fileName contains ${pn[0]} players, but ${TEAMS_N * TEAM_SIZE} was expected');

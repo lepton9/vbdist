@@ -7,7 +7,7 @@
 #include <time.h>
 #include <ctype.h>
 
-#define MAX_FAILURES 500
+#define MAX_FAILURES 300
 
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
@@ -15,30 +15,30 @@ int TEAM_SIZE = 0;
 typedef struct {
   int pidA;
   int pidB;
-} bannedPCombo;
+} pCombo;
 
 typedef struct {
-  bannedPCombo* combos;
+  pCombo* combos;
   size_t n;
-} bannedCombos;
+} pCombos;
 
-bannedCombos* initBPCs() {
-  bannedCombos* bpcs = malloc(sizeof(bannedCombos));
-  bpcs->combos = malloc(sizeof(bannedPCombo));
-  bpcs->n = 0;
-  return bpcs;
+pCombos* initCombos() {
+  pCombos* combos = malloc(sizeof(pCombos));
+  combos->combos = malloc(sizeof(pCombo));
+  combos->n = 0;
+  return combos;
 }
 
-void addBPC(bannedCombos* bpcs, int a, int b) {
-  bpcs->combos = realloc(bpcs->combos, (bpcs->n + 1) * sizeof(bannedPCombo));
-  bpcs->combos[bpcs->n].pidA = a;
-  bpcs->combos[bpcs->n].pidB = b;
-  bpcs->n++;
+void addCombo(pCombos* combos, int a, int b) {
+  combos->combos = realloc(combos->combos, (combos->n + 1) * sizeof(pCombo));
+  combos->combos[combos->n].pidA = a;
+  combos->combos[combos->n].pidB = b;
+  combos->n++;
 }
 
-void freeBPCs(bannedCombos* bpcs) {
-  free(bpcs->combos);
-  free(bpcs);
+void freeCombos(pCombos* combos) {
+  free(combos->combos);
+  free(combos);
 }
 
 char* trimWS(char* str) {
@@ -51,8 +51,8 @@ char* trimWS(char* str) {
   return str;
 }
 
-void parseBPC(char* line, char** nA, char** nB) {
-  if (line[0] == '!') {
+void parseCombo(char* line, char** nA, char** nB) {
+  if (line[0] == '!' || line[0] == '+') {
    line++;
   }
   char* token = strtok(line, "-");
@@ -63,7 +63,7 @@ void parseBPC(char* line, char** nA, char** nB) {
   assert(*nA != NULL && *nB != NULL);
 }
 
-player** readPlayers(const char *fileName, int *pn, bannedCombos* bpcs) {
+player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
   player** ps = NULL;
   int pid = 0;
@@ -74,23 +74,25 @@ player** readPlayers(const char *fileName, int *pn, bannedCombos* bpcs) {
   {
     line[strcspn(line, "\n")] = 0;
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
-    if (line[0] == '!') {
+    if (line[0] == '!' || line[0] == '+') {
+      char fc = line[0];
       char* ap;
       char* bp;
       int a = -1;
       int b = -1;
-      parseBPC(line, &ap, &bp);
+      parseCombo(line, &ap, &bp);
       for (int i = 0; i < *pn; i++) {
         if (strcmp(ps[i]->firstName, ap) == 0 && a < 0) a = ps[i]->id;
         if (strcmp(ps[i]->firstName, bp) == 0 && b < 0) b = ps[i]->id;
       }
       // printf("%s-%s\n", a->firstName, b->firstName);
-      if (a >= 0 && b >= 0) addBPC(bpcs, a, b);
-      continue;
+      if (a >= 0 && b >= 0 && fc == '!') addCombo(bpcs, a, b);
+      if (a >= 0 && b >= 0 && fc == '+') addCombo(prefCombos, a, b);
+    } else {
+      ps = realloc(ps, (*pn + 1) * sizeof(player*));
+      ps[*pn] = parsePlayer(line);
+      ps[(*pn)++]->id = pid++;
     }
-    ps = realloc(ps, (*pn + 1) * sizeof(player*));
-    ps[*pn] = parsePlayer(line);
-    ps[(*pn)++]->id = pid++;
   }
 
   fclose(fp);
@@ -116,37 +118,95 @@ int randintRange(const int min, const int max) {
   return rand() % (max + 1 - min) + min;
 }
 
-double averageRating(team** teams) {
-  if (teams == NULL) return 0.0;
-  double sumRating = 0.0;
-  for (int t = 0; t < TEAMS_N; t++) {
-    sumRating += avgRating(teams[t]);
+int isInCombo(pCombos* combos, player* a) {
+  for (int i = 0; i < combos->n; i++) {
+    if ((combos->combos[i].pidA == a->id || combos->combos[i].pidB == a->id)) {
+      return i;
+    }
   }
-  return sumRating / TEAMS_N;
+  return -1;
 }
 
-char bannedCombo(bannedCombos* bpcs, player* a, player* b) {
-  for (int i = 0; i < bpcs->n; i++) {
-    if ((bpcs->combos[i].pidA == a->id && bpcs->combos[i].pidB == b->id) ||
-      (bpcs->combos[i].pidA == b->id && bpcs->combos[i].pidB == a->id)) {
+char isCombo(pCombos* combos, player* a, player* b) {
+  for (int i = 0; i < combos->n; i++) {
+    if ((combos->combos[i].pidA == a->id && combos->combos[i].pidB == b->id) ||
+      (combos->combos[i].pidA == b->id && combos->combos[i].pidB == a->id)) {
       return 1;
     }
   }
   return 0;
 }
 
+double averageRating(team** teams, pCombos* prefCombos) {
+  int n = TEAMS_N * TEAM_SIZE;
+  if (teams == NULL) return 0.0;
+  double sumRating = 0.0;
+  for (int t = 0; t < TEAMS_N; t++) {
+    for (int p = 0; p < TEAM_SIZE; p++) {
+      if (isInCombo(prefCombos, teams[t]->players[p]) >= 0) {
+        n--;
+        continue;
+      }
+      sumRating += ovRating(teams[t]->players[p]);
+    }
+  }
+  return (n <= 0) ? 0.0 : sumRating / n;
+}
+
 int validateSwap(double a, double b, double aNew, double bNew, double avg, int oneSideValidation) {
   int valid = 0;
   if (fabs(aNew - avg) < fabs(a - avg)) valid++;
   if (fabs(bNew - avg) < fabs(b - avg)) valid++;
-
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
 }
 
-int balancedClustering(team** teams, int oneSideValidation, bannedCombos* bpcs) {
-  double avgR = averageRating(teams);
+void setPreferredCombos(team** teams, pCombos* prefCombos) {
+  for (int c = 0; c < prefCombos->n; c++) {
+    int t1 = -1;
+    int t2 = -1;
+    player* p1 = NULL;
+    player* p2 = NULL;
+    player* pToSwap = NULL;
+    // Finds the players in the combo and their teams
+    for (int i = 0; i < TEAMS_N; i++) {
+      for (int j = 0; j < TEAM_SIZE; j++) {
+        if (teams[i]->players[j]->id == prefCombos->combos[c].pidA) {
+          p1 = teams[i]->players[j];
+          t1 = i;
+        }
+        else if (teams[i]->players[j]->id == prefCombos->combos[c].pidB) {
+          p2 = teams[i]->players[j];
+          t2 = i;
+        }
+      }
+      if (p1 && p2) break;
+    }
+    if (t1 == t2 || t1 < 0 || t2 < 0) continue;
+    // Finds player to swap
+    for (int i = 0; i < TEAM_SIZE; i++) {
+      player* maybeSwapP = teams[t1]->players[i];
+      if (maybeSwapP->id == p1->id) continue;
+      // Makes sure the player has no combos with anyone on the team
+      char hasCombo = 0;
+      for (int j = 0; j < TEAM_SIZE; j++) {
+        if ((hasCombo = isCombo(prefCombos, maybeSwapP, teams[t1]->players[j]))) break;
+      }
+      if (hasCombo) continue;
+      else {
+        pToSwap = maybeSwapP;
+        break;
+      }
+    }
+    if (pToSwap) swapPlayers(pToSwap, p2);
+  }
+}
+
+int balancedClustering(team** teams, int oneSideValidation, pCombos* bpcs, pCombos* prefCombos) {
+  double avgR = averageRating(teams, prefCombos);
   int swaps = 0;
   int failures = 0;
+
+  setPreferredCombos(teams, prefCombos);
 
   while(failures < MAX_FAILURES) {
     int teamA = randintRange(0, TEAMS_N - 1);
@@ -165,10 +225,17 @@ int balancedClustering(team** teams, int oneSideValidation, bannedCombos* bpcs) 
 
     int valid = validateSwap(ratingTeamA, ratingTeamB, ratingTeamA_new, ratingTeamB_new, avgR, oneSideValidation);
 
+    for (int pI = 0; pI < TEAM_SIZE; pI++) {
+      if (isCombo(prefCombos, pA, teams[teamB]->players[pI]) || isCombo(prefCombos, pB, teams[teamA]->players[pI])) {
+        valid = 0;
+        break;
+      }
+    }
+
     if (valid) {
       char banned = 0;
       for (int pI = 0; pI < TEAM_SIZE; pI++) {
-        if (bannedCombo(bpcs, pA, teams[teamA]->players[pI]) || bannedCombo(bpcs, pB, teams[teamB]->players[pI])) {
+        if (isCombo(bpcs, pA, teams[teamA]->players[pI]) || isCombo(bpcs, pB, teams[teamB]->players[pI])) {
           banned = 1;
           break;
         }
@@ -184,6 +251,7 @@ int balancedClustering(team** teams, int oneSideValidation, bannedCombos* bpcs) 
       failures++;
       swapPlayers(pA, pB);
     }
+    printf("%3d/%3d | %d\r", failures, MAX_FAILURES, swaps);
   }
 
   for (int i = 0; i < TEAMS_N; i++) {
@@ -293,8 +361,9 @@ int main(int argc, char** argv) {
 
   int* pn = malloc(sizeof(int));
   *pn = 0;
-  bannedCombos* bpcs = initBPCs();
-  player** players = readPlayers(fileName, pn, bpcs);
+  pCombos* bannedCombos = initCombos();
+  pCombos* prefCombos = initCombos();
+  player** players = readPlayers(fileName, pn, bannedCombos, prefCombos);
 
   if (!players) {
     printf("File %s not found\n", fileName);
@@ -305,7 +374,8 @@ int main(int argc, char** argv) {
   qsort(players, *pn, sizeof(player*), cmpPlayers);
 
   if (print) printPlayers(players, *pn);
-  printf("Banned combinations: %d\n", (int)bpcs->n);
+  printf("Banned combinations: %d\n", (int)bannedCombos->n);
+  printf("Preferred combinations: %d\n", (int)prefCombos->n);
 
   if (*pn != TEAMS_N * TEAM_SIZE) {
     printf("\nFile %s contains %d players, but %d was expected\n", fileName, *pn, TEAMS_N * TEAM_SIZE);
@@ -316,7 +386,7 @@ int main(int argc, char** argv) {
 
   if (clustering) {
     printf("\nBalancing teams..\n");
-    int swaps = balancedClustering(teams, 1, bpcs);
+    int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
     printf("Total swaps: %d\n", swaps);
   }
 
@@ -338,7 +408,8 @@ int main(int argc, char** argv) {
   }
   free(teams);
   free(pn);
-  freeBPCs(bpcs);
+  freeCombos(bannedCombos);
+  freeCombos(prefCombos);
 
   return 0;
 }
