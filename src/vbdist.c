@@ -8,6 +8,7 @@
 #include <ctype.h>
 
 #define MAX_FAILURES 300
+#define MAX_SWAPS 1000000
 
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
@@ -51,6 +52,22 @@ char* trimWS(char* str) {
   return str;
 }
 
+char** parseComboLine(char* line, int* n) {
+  if (line[0] == '!' || line[0] == '+') {
+   line++;
+  }
+  *n = 0;
+  char** names = malloc(sizeof(char*));
+  char* token = strtok(line, "-");
+  if (token != NULL) names[(*n)++] = strdup(trimWS(token));
+
+  while ((token = strtok(NULL, "-"))) {
+    names = realloc(names, ((*n)+1) * sizeof(char*));
+    names[(*n)++] = strdup(trimWS(token));
+  }
+  return names;
+}
+
 void parseCombo(char* line, char** nA, char** nB) {
   if (line[0] == '!' || line[0] == '+') {
    line++;
@@ -59,7 +76,6 @@ void parseCombo(char* line, char** nA, char** nB) {
   if (token != NULL) *nA = strdup(trimWS(token));
   token = strtok(NULL, "-");
   if (token != NULL) *nB = strdup(trimWS(token));
-
   assert(*nA != NULL && *nB != NULL);
 }
 
@@ -76,18 +92,30 @@ player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* pref
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
     if (line[0] == '!' || line[0] == '+') {
       char fc = line[0];
-      char* ap;
-      char* bp;
-      int a = -1;
-      int b = -1;
-      parseCombo(line, &ap, &bp);
+
+      int idA = -1;
+      int n = 0;
+      char** names = parseComboLine(line, &n);
+      assert(n > 0);
       for (int i = 0; i < *pn; i++) {
-        if (strcmp(ps[i]->firstName, ap) == 0 && a < 0) a = ps[i]->id;
-        if (strcmp(ps[i]->firstName, bp) == 0 && b < 0) b = ps[i]->id;
+        if (strcmp(ps[i]->firstName, names[0]) == 0) {
+          idA = ps[i]->id;
+          break;
+        }
       }
-      // printf("%s-%s\n", a->firstName, b->firstName);
-      if (a >= 0 && b >= 0 && fc == '!') addCombo(bpcs, a, b);
-      if (a >= 0 && b >= 0 && fc == '+') addCombo(prefCombos, a, b);
+      for (int i = 1; i < n; i++) {
+        int idB = -1;
+        for (int j = 0; j < *pn; j++) {
+          if (strcmp(ps[j]->firstName, names[i]) == 0) {
+            idB = ps[j]->id;
+            break;
+          }
+        }
+        if (idA >= 0 && idB >= 0 && fc == '!') addCombo(bpcs, idA, idB);
+        else if (idA >= 0 && idB >= 0 && fc == '+') addCombo(prefCombos, idA, idB);
+      }
+      for (int i = 0; i < n; i++) free(names[i]);
+      free(names);
     } else {
       ps = realloc(ps, (*pn + 1) * sizeof(player*));
       ps[*pn] = parsePlayer(line);
@@ -259,9 +287,7 @@ int balancedClustering(team** teams, int oneSideValidation, pCombos* bpcs, pComb
   int swaps = 0;
   int failures = 0;
 
-  setPreferredCombos(teams, prefCombos);
-
-  while(failures < MAX_FAILURES) {
+  while(failures < MAX_FAILURES && swaps < MAX_SWAPS) {
     int teamA = randintRange(0, TEAMS_N - 1);
     int teamB = randintRange(0, TEAMS_N - 1);
     while(teamB == teamA) teamB = randintRange(0, TEAMS_N - 1);
@@ -304,12 +330,16 @@ int balancedClustering(team** teams, int oneSideValidation, pCombos* bpcs, pComb
       failures++;
       swapPlayers(pA, pB);
     }
-    printf("%3d/%3d | %d\r", failures, MAX_FAILURES, swaps);
+    #ifdef __linux__
+      printf("%3d/%3d | %d\r", failures, MAX_FAILURES, swaps);
+    #endif
   }
 
   for (int i = 0; i < TEAMS_N; i++) {
     qsort(teams[i]->players, TEAM_SIZE, sizeof(player*), cmpPlayers);
   }
+
+  if (swaps >= MAX_SWAPS && oneSideValidation) swaps += balancedClustering(teams, 0, bpcs, prefCombos);
 
   return swaps;
 }
@@ -442,6 +472,8 @@ int main(int argc, char** argv) {
   }
 
   team** teams = balanceTeamsRand(players, *pn);
+
+  setPreferredCombos(teams, prefCombos);
 
   if (clustering) {
     printf("\nBalancing teams..\n");
