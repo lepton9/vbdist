@@ -495,7 +495,7 @@ int main(int argc, char** argv) {
   writeTeamsToFile(teams, "teams.txt");
 
   for (int i = 0; i < TEAMS_N; i++) {
-    freeTeam(teams[i]);
+    freeTeam(teams[i], TEAM_SIZE);
   }
   free(teams);
   free(pn);
