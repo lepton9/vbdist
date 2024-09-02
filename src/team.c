@@ -10,8 +10,8 @@ team* initTeam(char* teamName, const size_t size) {
   return t;
 }
 
-void freeTeam(team* t) {
-  for (int i = 0; i < 3; i++) freePlayer(t->players[i]);
+void freeTeam(team* t, const int team_size) {
+  for (int i = 0; i < team_size; i++) freePlayer(t->players[i]);
   free(t->players);
   free(t->name);
   free(t);
