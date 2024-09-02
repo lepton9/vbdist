@@ -3,14 +3,14 @@ BIN := ./bin
 OBJS := ./objs
 INC := -I ./include
 FLAGS := -c $(INC)
-LINK := 
+LINK := -lncurses
 CC := gcc
 MAIN := vbdist
 
 TESTS := ./tests
 TEST_TARGETS := 
 
-OBJ := player team 
+OBJ := player team tuiSwitch
 
 $(MAIN): $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ))) | $(BIN)
 	$(CC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)

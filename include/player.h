@@ -1,3 +1,6 @@
+#ifndef PLAYER_H
+#define PLAYER_H
+
 #include <stdio.h>
 
 #define DIFRATINGS 6
@@ -17,4 +20,4 @@ void swapPlayers(player* a, player* b);
 double ovRating(player* p);
 void printPlayer(FILE* out, player* p);
 
-
+#endif

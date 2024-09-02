@@ -1,4 +1,4 @@
-#include "../include/team.h"
+#include "../include/tuiSwitch.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -421,10 +421,42 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
 }
 
 void changeMode(team** teams) {
-    printTeamsHor(stdout, teams);
-  // while(1) {
-  // }
+  tui* tui = initTui(TEAM_SIZE, TEAMS_N);
+  char c;
 
+  initScreen();
+  updateTUI(stdout, tui, teams);
+
+  while((c = keyPress()) != 'q') {
+    switch(c) {
+      case '\n':
+      case ' ':
+	if (selectCur(tui)) {
+	  switchPos(tui, teams);
+	  unselect(tui->selected);
+	}
+	break;
+      case 27: // Esc
+	unselect(tui->selected);
+	break;
+      case 'w':
+	cur_up(tui);
+	break;
+      case 'a':
+	cur_left(tui);
+	break;
+      case 'd':
+	cur_right(tui);
+	break;
+      case 's':
+	cur_down(tui);
+	break;
+    }
+    //printf("%d, %d\n\n", tui->cur->team, tui->cur->player);
+    updateTUI(stdout, tui, teams);
+  }
+  cls(stdout);
+  freeTui(tui);
 }
 
 int main(int argc, char** argv) {
@@ -483,19 +515,19 @@ int main(int argc, char** argv) {
 
   printf("\n");
   if (print) printTeams(teams);
-  //
-  // char ans;
-  // printf("\nManually change players? [y/N] ");
-  // scanf("%c", &ans);
-  //
-  // if (ans == 'y' || ans == 'Y') {
-  //   changeMode(teams);
-  // }
+  
+  char ans;
+  printf("\nManually change players? [y/N] "); // TODO: carriage return to hide if ans is N
+  scanf("%c", &ans);
+  
+  if (ans == 'y' || ans == 'Y') {
+     changeMode(teams);
+  }
 
   writeTeamsToFile(teams, "teams.txt");
 
   for (int i = 0; i < TEAMS_N; i++) {
-    freeTeam(teams[i], TEAM_SIZE);
+    freeTeam(teams[i]);
   }
   free(teams);
   free(pn);
