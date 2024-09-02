@@ -2,10 +2,33 @@
 # Volleyball team maker
 Makes N teams of M players based on given attributes
 
-## Compiling and running
+## Installing and compiling
+### Install dependencies
+  *Arch*:
 ```
+sudo pacman -S ncurses
+```
+  *Ubuntu/Debian*:
+```
+sudo apt-get install libncurses5-dev libncursesw5-dev
+```
+
+```
+git clone https://github.com/lepton9/vbdist.git && cd vbdist
 make
-./bin/vbdist playerFile.txt TEAMS TEAM_SIZE
+```
+
+## Running the program
+TEAMS:
+  - N amount of teams
+TEAM_SIZE:
+  - M players in a team
+PRINT_MODE: (optional)
+  - 0 (Minimal printing, default)
+  - 1 (Print without player ratings)
+  - 2 (Print all)
+```
+./bin/vbdist playerFile.txt TEAMS TEAM_SIZE PRINT_MODE
 ```
 ## Player file format
 ```
