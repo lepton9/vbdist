@@ -21,8 +21,10 @@ make
 ## Running the program
 TEAMS:
   - N amount of teams
+
 TEAM_SIZE:
   - M players in a team
+
 PRINT_MODE: (optional)
   - 0 (Minimal printing, default)
   - 1 (Print without player ratings)
