@@ -6,6 +6,7 @@
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
+#include <time.h>
 
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
@@ -414,8 +415,13 @@ void printTeamsHor(FILE* fp, team** teams) {
 }
 
 void writeTeamsToFile(team** teams, const char* teamsFile) {
-  FILE* fp = fopen(teamsFile, "w");
-  printTeamsVert(fp, teams);
+  FILE* fp = fopen(teamsFile, "a");
+  fprintf(fp, "\n");
+
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  fprintf(fp, "%d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
   printTeamsHor(fp, teams);
   fclose(fp);
 }
@@ -517,7 +523,7 @@ int main(int argc, char** argv) {
   if (print) printTeams(teams);
   
   char ans;
-  printf("\nManually change players? [y/N] "); // TODO: carriage return to hide if ans is N
+  printf("\nManually change players? [y/N] ");
   scanf("%c", &ans);
   
   if (ans == 'y' || ans == 'Y') {
@@ -527,7 +533,7 @@ int main(int argc, char** argv) {
   writeTeamsToFile(teams, "teams.txt");
 
   for (int i = 0; i < TEAMS_N; i++) {
-    freeTeam(teams[i], TEAM_SIZE);
+    freeTeam(teams[i]);
   }
   free(teams);
   free(pn);

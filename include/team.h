@@ -11,7 +11,7 @@ typedef struct {
 } team;
 
 team* initTeam(char* teamName, const size_t size);
-void freeTeam(team* t, const int team_size);
+void freeTeam(team* t);
 double avgRating(team* t);
 
 #endif

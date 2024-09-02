@@ -97,18 +97,19 @@ void printTuiMan(FILE* out) {
 void updateTUI(FILE* out, tui* tui, team** teams) {
   cls(stdout);
   printTuiMan(out);
+  int width = 15;
 
   for (int t = 0; t < tui->team_n; t += MAX_HOR_TEAMS) {
     for (int i = t; i < t + MAX_HOR_TEAMS && i < tui->team_n; i++) {
-      fprintf(out, "%-15.2f", avgRating(teams[i]));
+      fprintf(out, "\033[34m%-*.2f\033[0m", width, avgRating(teams[i]));
     }
     fprintf(out, "\n");
     for(int j = 0; j < tui->team_size; j++) {
       for(int i = t; i < tui->team_n && i - t < MAX_HOR_TEAMS ; i++) {
 	if (highlight(tui, i, j)) {
-          fprintf(out, "\033[7m%-15s\033[0m", teams[i]->players[j]->firstName);
+          fprintf(out, "\033[7m%-*s\033[0m", width, teams[i]->players[j]->firstName);
 	} else {
-          fprintf(out, "%-15s", teams[i]->players[j]->firstName);
+          fprintf(out, "%-*s", width, teams[i]->players[j]->firstName);
 	}
       }
       fprintf(out, "\n");
