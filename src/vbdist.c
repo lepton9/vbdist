@@ -11,6 +11,11 @@
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
 
+#define PRINT_MINIMAL 0
+#define PRINT_NORATING 1
+#define PRINT_ALL 2
+
+
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
 
@@ -134,12 +139,31 @@ void printPlayers(player** players, const int n) {
   }
 }
 
-void printTeams(team** teams) {
-  for (int i = 0; i < TEAMS_N; i++) {
-    printf("%s | Rating: %.2f:\n", teams[i]->name, avgRating(teams[i]));
-    for (int j = 0; j < TEAM_SIZE; j++) {
-      printf("  %-10s (%.1f)\n", teams[i]->players[j]->firstName, ovRating(teams[i]->players[j]));
+void printTeams(FILE* out, team** teams, const int printMode, const int printWidth, const int teamsOnLine, const char indent) {
+  char str[printWidth];
+  for (int t = 0; t < TEAMS_N; t += teamsOnLine) {
+    for (int i = t; i < t + teamsOnLine && i < TEAMS_N; i++) {
+      if (printMode == PRINT_MINIMAL) {
+        fprintf(out, "%-*s", printWidth, teams[i]->name);
+      } else {
+        sprintf(str, "%s | %.2f:", teams[i]->name, avgRating(teams[i]));
+        fprintf(out, "%-*s", printWidth, str);
+      }
     }
+    fprintf(out, "\n");
+    for(int j = 0; j < TEAM_SIZE; j++) {
+      for(int i = t; i < TEAMS_N && i - t < teamsOnLine; i++) {
+	if (printMode == PRINT_ALL) {
+          sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "", teams[i]->players[j]->firstName, ovRating(teams[i]->players[j]));
+          fprintf(out, "%-*s", printWidth, str);
+	} else {
+          sprintf(str, "%s%-10s", (indent) ? "  " : "", teams[i]->players[j]->firstName);
+          fprintf(out, "%-*s", printWidth, str);
+	}
+      }
+      fprintf(out, "\n");
+    }
+    fprintf(out, "\n");
   }
 }
 
@@ -391,29 +415,6 @@ team* balanceTeams(player** players, const int n) {
   return teams;
 }
 
-void printTeamsVert(FILE* fp, team** teams) {
-  for(int i = 0; i < TEAMS_N; i++) {
-    fprintf(fp, "%s:\n", teams[i]->name);
-    for(int j = 0; j < TEAM_SIZE; j++) {
-      fprintf(fp, "%s\n", teams[i]->players[j]->firstName);
-    }
-    fprintf(fp, "\n");
-  }
-}
-
-void printTeamsHor(FILE* fp, team** teams) {
-  for (int i = 0; i < TEAMS_N; i++) {
-    fprintf(fp, "%-15s", teams[i]->name);
-  }
-  fprintf(fp, "\n");
-  for(int j = 0; j < TEAM_SIZE; j++) {
-    for(int i = 0; i < TEAMS_N; i++) {
-      fprintf(fp, "%-15s", teams[i]->players[j]->firstName);
-    }
-    fprintf(fp, "\n");
-  }
-}
-
 void writeTeamsToFile(team** teams, const char* teamsFile) {
   FILE* fp = fopen(teamsFile, "a");
   fprintf(fp, "\n");
@@ -422,7 +423,7 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
   struct tm tm = *localtime(&t);
   fprintf(fp, "%d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-  printTeamsHor(fp, teams);
+  printTeams(fp, teams, PRINT_MINIMAL, 15, TEAMS_N, 0);
   fclose(fp);
 }
 
@@ -473,12 +474,13 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
+  char* teamsOutFile = "teams.txt";
   char* fileName = argv[1];
   TEAMS_N = atoi(argv[2]);
   TEAM_SIZE = atoi(argv[3]);
   int clustering = 1;
-  char print = 1;
-  if (argc >= 5) print = atoi(argv[4]);
+  char printMode = PRINT_MINIMAL;
+  if (argc >= 5) printMode = atoi(argv[4]);
 
   int* pn = malloc(sizeof(int));
   *pn = 0;
@@ -500,7 +502,7 @@ int main(int argc, char** argv) {
 
   qsort(players, *pn, sizeof(player*), cmpPlayers);
 
-  if (print) printPlayers(players, *pn);
+  if (printMode == PRINT_ALL) printPlayers(players, *pn);
   printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
   printf("Preferred combinations: %d\n", (int)prefCombos->n);
 
@@ -520,17 +522,26 @@ int main(int argc, char** argv) {
   }
 
   printf("\n");
-  if (print) printTeams(teams);
+  if (printMode != PRINT_MINIMAL) printTeams(stdout, teams, printMode, 30, 2, 1);
   
   char ans;
+
   printf("\nManually change players? [y/N] ");
   scanf("%c", &ans);
-  
   if (ans == 'y' || ans == 'Y') {
-     changeMode(teams);
+    changeMode(teams);
+    scanf("%c", &ans); // TODO: For some reason there is \n
   }
 
-  writeTeamsToFile(teams, "teams.txt");
+  printf("\n");
+  printTeams(stdout, teams, PRINT_MINIMAL, 15, 3, 0);
+  printf("\nSave teams to a file? [y/N] ");
+  scanf("%c", &ans);
+  if (ans == 'y' || ans == 'Y') {
+    writeTeamsToFile(teams, teamsOutFile);
+    printf("Saved to %s\n", teamsOutFile);
+  }
+
 
   for (int i = 0; i < TEAMS_N; i++) {
     freeTeam(teams[i]);
