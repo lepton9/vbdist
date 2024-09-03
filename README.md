@@ -23,13 +23,13 @@ make
 ```
 ./bin/vbdist playerFile.txt TEAMS TEAM_SIZE PRINT_MODE
 ```
-TEAMS:
+`TEAMS`:
   - N amount of teams
 
-TEAM_SIZE:
+`TEAM_SIZE`:
   - M players in a team
 
-PRINT_MODE: (optional)
+`PRINT_MODE`: (optional)
   - 0 (Minimal printing, default)
   - 1 (Print without player ratings)
   - 2 (Print all)
