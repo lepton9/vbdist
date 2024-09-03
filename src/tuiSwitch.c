@@ -136,6 +136,7 @@ void initScreen() {
 }
 
 char initScreenWin() {
+#ifdef _WIN32
     // Set output mode to handle virtual terminal sequences
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     if (hOut == INVALID_HANDLE_VALUE) return 0;
@@ -145,6 +146,7 @@ char initScreenWin() {
 
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     if (!SetConsoleMode(hOut, dwMode)) return 0;
+#endif
     return 1;
 }
 
