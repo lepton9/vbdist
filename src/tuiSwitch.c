@@ -2,15 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef __linux__
-//#include <unistd.h>
-#include <ncurses.h>
-#endif
-#ifdef _WIN32
-//#include <windows.h>
-#include <conio.h>
-#endif
-
 
 tui* initTui(const int team_size, const int team_n) {
   tui* t = malloc(sizeof(tui));
@@ -119,10 +110,16 @@ void updateTUI(FILE* out, tui* tui, team** teams) {
 }
 
 char keyPress() {
+  char c;
+#ifdef _WIN32
+  c = _getch();
+  //c = _getwch();
+#else
   cbreak();
-  char c = getch();
+  c = getch();
   refresh();
   endwin();
+#endif
   return c;
 }
 
@@ -131,9 +128,23 @@ void cls(FILE* s) {
 }
 
 void initScreen() {
-  cls(stdout);
+#ifdef __linux__
   initscr();
   refresh();
   endwin();
+#endif
+}
+
+char initScreenWin() {
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE) return 0;
+
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode)) return 0;
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode)) return 0;
+    return 1;
 }
 

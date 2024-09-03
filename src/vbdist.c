@@ -431,11 +431,12 @@ void changeMode(team** teams) {
   tui* tui = initTui(TEAM_SIZE, TEAMS_N);
   char c;
 
-  initScreen();
   updateTUI(stdout, tui, teams);
 
-  while((c = keyPress()) != 'q') {
+  while(c != 'q') {
+    c = keyPress();
     switch(c) {
+      case 13: // On windows
       case '\n':
       case ' ':
 	if (selectCur(tui)) {
@@ -473,6 +474,16 @@ int main(int argc, char** argv) {
     printf("PlayerName | Defence Spike Serve Setting Saving Consistency\n");
     exit(1);
   }
+
+#ifdef _WIN32
+  char ret = initScreenWin();
+  if (ret <= 0) {
+    printf("Initializing screen failed\n");
+    exit(1);
+  }
+#else
+  initScreen();
+#endif
 
   char* teamsOutFile = "teams.txt";
   char* fileName = argv[1];

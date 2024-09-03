@@ -13,12 +13,16 @@ sudo pacman -S ncurses
 sudo apt-get install libncurses5-dev libncursesw5-dev
 ```
 
+### Clone and compile
 ```
 git clone https://github.com/lepton9/vbdist.git && cd vbdist
 make
 ```
 
 ## Running the program
+```
+./bin/vbdist playerFile.txt TEAMS TEAM_SIZE PRINT_MODE
+```
 TEAMS:
   - N amount of teams
 
@@ -29,9 +33,7 @@ PRINT_MODE: (optional)
   - 0 (Minimal printing, default)
   - 1 (Print without player ratings)
   - 2 (Print all)
-```
-./bin/vbdist playerFile.txt TEAMS TEAM_SIZE PRINT_MODE
-```
+
 ## Player file format
 ```
 # Line starting with '#' is a comment
