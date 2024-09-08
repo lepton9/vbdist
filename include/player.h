@@ -9,7 +9,7 @@ typedef struct {
   char* firstName;
   char* surName;
   int id;
-  int ratings[DIFRATINGS];
+  float ratings[DIFRATINGS];
 } player;
 
 player* initPlayer();

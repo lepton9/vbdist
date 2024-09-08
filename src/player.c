@@ -35,7 +35,7 @@ player* parsePlayer(char* pStr) {
   int i = 0;
   while (token != NULL && i < DIFRATINGS) {
       while (isspace(*token)) token++;
-      p->ratings[i++] = atoi(token);
+      p->ratings[i++] = strtof(token, NULL);
       token = strtok(NULL, " ");
   }
   return p;
@@ -43,11 +43,11 @@ player* parsePlayer(char* pStr) {
 
 double ovRating(player* p) {
   if (!p) return 0.0;
-  int sum = 0;
+  double sum = 0;
   for (int i = 0; i < DIFRATINGS; i++) {
     sum += p->ratings[i];
   }
-  return (double)sum / DIFRATINGS;
+  return sum / DIFRATINGS;
 }
 
 int cmpPlayers(const void* a, const void* b) {
@@ -67,9 +67,9 @@ void printPlayer(FILE* out, player* p) {
   char fullName[100] = "\0";
   strcat(fullName, p->firstName);
   if (p->surName) strcat(strcat(fullName, " "), p->surName);
-  fprintf(out, "%-20s ", fullName);
+  fprintf(out, "%-25s ", fullName);
   for (int i = 0; i < DIFRATINGS; i++) {
-    fprintf(out, "%d ", p->ratings[i]);
+    fprintf(out, "%.1f ", p->ratings[i]);
   }
   fprintf(out, "| %.1f\n", ovRating(p));
 }
