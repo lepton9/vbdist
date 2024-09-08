@@ -1,4 +1,3 @@
-#include "../include/tuiSwitch.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +7,8 @@
 #include <ctype.h>
 #include <time.h>
 
+#include "../include/tuiSwitch.h"
+
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
 
@@ -15,38 +16,9 @@
 #define PRINT_NORATING 1
 #define PRINT_ALL 2
 
-
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
 
-typedef struct {
-  int pidA;
-  int pidB;
-} pCombo;
-
-typedef struct {
-  pCombo* combos;
-  size_t n;
-} pCombos;
-
-pCombos* initCombos() {
-  pCombos* combos = malloc(sizeof(pCombos));
-  combos->combos = malloc(sizeof(pCombo));
-  combos->n = 0;
-  return combos;
-}
-
-void addCombo(pCombos* combos, int a, int b) {
-  combos->combos = realloc(combos->combos, (combos->n + 1) * sizeof(pCombo));
-  combos->combos[combos->n].pidA = a;
-  combos->combos[combos->n].pidB = b;
-  combos->n++;
-}
-
-void freeCombos(pCombos* combos) {
-  free(combos->combos);
-  free(combos);
-}
 
 char* trimWS(char* str) {
   while(isspace(*str)) str++;
@@ -169,25 +141,6 @@ void printTeams(FILE* out, team** teams, const int printMode, const int printWid
 
 int randintRange(const int min, const int max) {
   return rand() % (max + 1 - min) + min;
-}
-
-int isInCombo(pCombos* combos, player* a) {
-  for (int i = 0; i < combos->n; i++) {
-    if ((combos->combos[i].pidA == a->id || combos->combos[i].pidB == a->id)) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-char isCombo(pCombos* combos, player* a, player* b) {
-  for (int i = 0; i < combos->n; i++) {
-    if ((combos->combos[i].pidA == a->id && combos->combos[i].pidB == b->id) ||
-      (combos->combos[i].pidA == b->id && combos->combos[i].pidB == a->id)) {
-      return 1;
-    }
-  }
-  return 0;
 }
 
 double averageRating(team** teams, pCombos* prefCombos) {
@@ -329,22 +282,10 @@ int balancedClustering(team** teams, int oneSideValidation, pCombos* bpcs, pComb
 
     int valid = validateSwap(ratingTeamA, ratingTeamB, ratingTeamA_new, ratingTeamB_new, avgR, oneSideValidation);
 
-    for (int pI = 0; pI < TEAM_SIZE; pI++) {
-      if (isCombo(prefCombos, pA, teams[teamB]->players[pI]) || isCombo(prefCombos, pB, teams[teamA]->players[pI])) {
-        valid = 0;
-        break;
-      }
-    }
+    if (comboInTeam(prefCombos, teams[teamB], pA) || comboInTeam(prefCombos, teams[teamA], pB)) valid = 0;
 
     if (valid) {
-      char banned = 0;
-      for (int pI = 0; pI < TEAM_SIZE; pI++) {
-        if (isCombo(bpcs, pA, teams[teamA]->players[pI]) || isCombo(bpcs, pB, teams[teamB]->players[pI])) {
-          banned = 1;
-          break;
-        }
-      }
-      if (banned) {
+      if (comboInTeam(bpcs, teams[teamA], pA) || comboInTeam(bpcs, teams[teamB], pB)) {
         failures++;
         swapPlayers(pA, pB);
       } else {
@@ -427,11 +368,11 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
   fclose(fp);
 }
 
-void changeMode(team** teams) {
+void changeMode(team** teams, pCombos* bpcs) {
   tui* tui = initTui(TEAM_SIZE, TEAMS_N);
   char c;
 
-  updateTUI(stdout, tui, teams);
+  updateTUI(stdout, tui, teams, bpcs);
 
   while(c != 'q') {
     c = keyPress();
@@ -461,7 +402,7 @@ void changeMode(team** teams) {
 	break;
     }
     //printf("%d, %d\n\n", tui->cur->team, tui->cur->player);
-    updateTUI(stdout, tui, teams);
+    updateTUI(stdout, tui, teams, bpcs);
   }
   cls(stdout);
   freeTui(tui);
@@ -540,7 +481,7 @@ int main(int argc, char** argv) {
   printf("\nManually change players? [y/N] ");
   scanf("%c", &ans);
   if (ans == 'y' || ans == 'Y') {
-    changeMode(teams);
+    changeMode(teams, bannedCombos);
     scanf("%c", &ans); // TODO: For some reason there is \n
   }
 

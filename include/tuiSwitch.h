@@ -1,7 +1,7 @@
 #ifndef TUISWITCH_H
 #define TUISWITCH_H
 
-#include "../include/team.h"
+#include "../include/combo.h"
 
 #ifdef __linux__
 //#include <unistd.h>
@@ -39,7 +39,7 @@ void cur_down(tui* t);
 void cur_left(tui* t);
 void cur_right(tui* t);
 char highlight(const tui* tui, const int team, const int player);
-void updateTUI(FILE* out, tui* tui, team** teams);
+void updateTUI(FILE* out, tui* tui, team** teams, pCombos* bpcs);
 
 void cls(FILE* s);
 char keyPress();

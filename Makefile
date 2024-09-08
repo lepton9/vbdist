@@ -10,7 +10,7 @@ MAIN := vbdist
 TESTS := ./tests
 TEST_TARGETS := 
 
-OBJ := player team tuiSwitch
+OBJ := player team tuiSwitch combo
 
 $(MAIN): $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ))) | $(BIN)
 	$(CC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)

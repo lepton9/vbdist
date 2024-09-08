@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 tui* initTui(const int team_size, const int team_n) {
   tui* t = malloc(sizeof(tui));
   t->team_size = team_size;
@@ -46,7 +45,6 @@ char selectCur(tui* tui) {
   } else if (samePos(tui->selected, tui->cur)) {
     unselect(tui->selected);
   } else {
-    //tui->selected = tui->cur; // TODO: may need other method?
     tui->selected->team = tui->cur->team;
     tui->selected->player = tui->cur->player;
   }
@@ -85,7 +83,7 @@ void printTuiMan(FILE* out) {
   fprintf(out, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Exit: q\n\n");
 }
 
-void updateTUI(FILE* out, tui* tui, team** teams) {
+void updateTUI(FILE* out, tui* tui, team** teams, pCombos* bpcs) {
   cls(stdout);
   printTuiMan(out);
   int width = 15;
@@ -99,6 +97,8 @@ void updateTUI(FILE* out, tui* tui, team** teams) {
       for(int i = t; i < tui->team_n && i - t < MAX_HOR_TEAMS ; i++) {
 	if (highlight(tui, i, j)) {
           fprintf(out, "\033[7m%-*s\033[0m", width, teams[i]->players[j]->firstName);
+	} else if (comboInTeam(bpcs, teams[i], teams[i]->players[j])) {
+          fprintf(out, "\033[31m%-*s\033[0m", width, teams[i]->players[j]->firstName);
 	} else {
           fprintf(out, "%-*s", width, teams[i]->players[j]->firstName);
 	}
