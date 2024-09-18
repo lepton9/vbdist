@@ -84,7 +84,7 @@ void printTuiMan(FILE* out) {
 }
 
 void updateTUI(FILE* out, tui* tui, team** teams, pCombos* bpcs) {
-  cls(stdout);
+  printf("\033[H");
   printTuiMan(out);
   int width = 15;
 

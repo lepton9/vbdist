@@ -372,6 +372,7 @@ void changeMode(team** teams, pCombos* bpcs) {
   tui* tui = initTui(TEAM_SIZE, TEAMS_N);
   char c;
 
+  cls(stdout);
   updateTUI(stdout, tui, teams, bpcs);
 
   while(c != 'q') {
