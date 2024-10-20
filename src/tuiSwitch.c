@@ -81,7 +81,7 @@ char highlight(const tui* tui, const int team, const int player) {
 
 void markCurPlayer(tui* tui, team** teams, fg_color color) {
   player* p = teams[tui->cur->team]->players[tui->cur->player];
-  if (p->marker.active) unmarkPlayer(p);
+  if (p->marker.active && p->marker.color != DEFAULT_COLOR) unmarkPlayer(p);
   else markPlayer(p, color);
 }
 
