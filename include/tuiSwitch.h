@@ -34,6 +34,7 @@ void unselect(cursor* c);
 char samePos(cursor* a, cursor* b);
 void switchPos(tui* tui, team** teams);
 char selectCur(tui* tui);
+void markCurPlayer(tui* tui, team** teams, fg_color color);
 void cur_up(tui* t);
 void cur_down(tui* t);
 void cur_left(tui* t);

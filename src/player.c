@@ -5,6 +5,7 @@
 
 player* initPlayer() {
   player* p = malloc(sizeof(player));
+  unmarkPlayer(p);
   return p;
 }
 
@@ -61,6 +62,16 @@ void swapPlayers(player* a, player* b) {
   player tmp = *a;
   *a = *b;
   *b = tmp;
+}
+
+void markPlayer(player* p, fg_color color) {
+  p->marker.active = 1;
+  p->marker.color = color;
+}
+
+void unmarkPlayer(player* p) {
+  p->marker.active = 0;
+  p->marker.color = DEFAULT_COLOR;
 }
 
 void printPlayer(FILE* out, player* p) {

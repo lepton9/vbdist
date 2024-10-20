@@ -401,6 +401,13 @@ void changeMode(team** teams, pCombos* bpcs) {
       case 's':
 	cur_down(tui);
 	break;
+      default: {
+        if (isdigit(c)) {
+          int d = c - '0';
+          markCurPlayer(tui, teams, getMarkColor(d));
+        }
+        break;
+      }
     }
     //printf("%d, %d\n\n", tui->cur->team, tui->cur->player);
     updateTUI(stdout, tui, teams, bpcs);

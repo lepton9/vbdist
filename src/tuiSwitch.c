@@ -79,8 +79,14 @@ char highlight(const tui* tui, const int team, const int player) {
   return (tui->cur->team == team && tui->cur->player == player) || (tui->selected->team == team && tui->selected->player == player);
 }
 
+void markCurPlayer(tui* tui, team** teams, fg_color color) {
+  player* p = teams[tui->cur->team]->players[tui->cur->player];
+  if (p->marker.active) unmarkPlayer(p);
+  else markPlayer(p, color);
+}
+
 void printTuiMan(FILE* out) {
-  fprintf(out, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Exit: q\n\n");
+  fprintf(out, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q\n\n");
 }
 
 void updateTUI(FILE* out, tui* tui, team** teams, pCombos* bpcs) {
@@ -95,12 +101,13 @@ void updateTUI(FILE* out, tui* tui, team** teams, pCombos* bpcs) {
     fprintf(out, "\n");
     for(int j = 0; j < tui->team_size; j++) {
       for(int i = t; i < tui->team_n && i - t < MAX_HOR_TEAMS ; i++) {
+	player* p = teams[i]->players[j];
 	if (highlight(tui, i, j)) {
-          fprintf(out, "\033[7m%-*s\033[0m", width, teams[i]->players[j]->firstName);
-	} else if (comboInTeam(bpcs, teams[i], teams[i]->players[j])) {
-          fprintf(out, "\033[31m%-*s\033[0m", width, teams[i]->players[j]->firstName);
+          fprintf(out, "\033[%d;7m%-*s\033[0m", p->marker.color, width, p->firstName);
+	} else if (comboInTeam(bpcs, teams[i], p)) {
+          fprintf(out, "\033[%dm%-*s\033[0m", RED, width, p->firstName);
 	} else {
-          fprintf(out, "%-*s", width, teams[i]->players[j]->firstName);
+          fprintf(out, "\033[%dm%-*s\033[0m", p->marker.color, width, p->firstName);
 	}
       }
       fprintf(out, "\n");
