@@ -11,8 +11,9 @@ TESTS := ./tests
 TEST_TARGETS := 
 
 OBJ := player team tuiSwitch combo mark
+OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
-$(MAIN): $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ))) | $(BIN)
+$(MAIN): $(OBJECT_FILES) | $(BIN)
 	$(CC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)
 
 $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
@@ -38,13 +39,14 @@ test: all_tests
 all_tests: $(addprefix $(TESTS)/bin/, $(TEST_TARGETS))
 
 $(TESTS)/bin/%_test: ../testLibC/utestC.c $(TESTS)/%_test.c $(OBJ)
-	$(CC) $(INC) $^ $(LINK) -g -o $@
+	$(CC) $(INC) $^ -g -o $@ $(LINK)
 
 dartc: ./dart/vbDist.dart 
 	dart compile exe $^ -o $(BIN)/$(MAIN)Dart
 
-build: 
-	gcc $(SRC)/* -static -o $(BIN)/$(MAIN)Static
+build: $(OBJECT_FILES) $(OBJS)/$(MAIN).o | $(BIN)
+	$(CC) -static $^ -o $(BIN)/$(MAIN)Static $(LINK)
+
 
 clean:
 	rm -rf $(OBJS)/*.o $(BIN)/*
