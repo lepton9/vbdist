@@ -3,7 +3,13 @@ BIN := ./bin
 OBJS := ./objs
 INC := -I ./include
 FLAGS := -c $(INC)
-LINK := -lncurses
+LINK :=
+
+PLATFORM := $(shell uname)
+ifeq  ($(PLATFORM),Linux)
+	LINK := -lncurses
+endif
+
 CC := gcc
 MAIN := vbdist
 
