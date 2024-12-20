@@ -31,7 +31,7 @@ char* trimWS(char* str) {
 }
 
 char** parseComboLine(char* line, int* n) {
-  if (line[0] == '!' || line[0] == '+') {
+  if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
    line++;
   }
   *n = 0;
@@ -68,7 +68,7 @@ player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* pref
   {
     line[strcspn(line, "\n")] = 0;
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
-    if (line[0] == '!' || line[0] == '+') {
+    if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
       char fc = line[0];
 
       int idA = -1;
@@ -89,8 +89,27 @@ player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* pref
             break;
           }
         }
-        if (idA >= 0 && idB >= 0 && fc == '!') addCombo(bpcs, idA, idB);
-        else if (idA >= 0 && idB >= 0 && fc == '+') addCombo(prefCombos, idA, idB);
+        if (idA >= 0 && idB >= 0) {
+          if (fc == '+') addCombo(prefCombos, idA, idB);
+          else if (fc == '!') addCombo(bpcs, idA, idB);
+          else if (fc == '?') {
+            for (int j = 0; j < *pn; j++) {
+              if (strcmp(ps[j]->firstName, names[i - 1]) == 0) {
+                idA = ps[j]->id;
+                break;
+              }
+            }
+            for (int j = i; j < n; j++) {
+              for (int k = 0; k < *pn; k++) {
+                if (strcmp(ps[k]->firstName, names[j]) == 0) {
+                  idB = ps[k]->id;
+                  addCombo(bpcs, idA, idB);
+                  break;
+                }
+              }
+            }
+          }
+        }
       }
       for (int i = 0; i < n; i++) free(names[i]);
       free(names);
