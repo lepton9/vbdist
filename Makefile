@@ -1,5 +1,6 @@
 SRC := ./src
 BIN := ./bin
+BUILD := ./bin/build
 OBJS := ./objs
 INC := -I ./include
 FLAGS := -c $(INC)
@@ -31,6 +32,12 @@ $(OBJS):
 $(BIN):
 	mkdir $(BIN)
 
+$(BUILD): $(BIN)
+	mkdir $(BUILD)
+
+build: $(OBJECT_FILES) $(OBJS)/$(MAIN).o | $(BUILD)
+	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
+
 debug:
 	$(CC) $(INC) $(SRC)/*.c -pthread -g -o $(BIN)/db $(LINK)
 	gdb -tui $(BIN)/db
@@ -50,13 +57,9 @@ $(TESTS)/bin/%_test: ../testLibC/utestC.c $(TESTS)/%_test.c $(OBJ)
 dartc: ./dart/vbDist.dart 
 	dart compile exe $^ -o $(BIN)/$(MAIN)Dart
 
-build: $(OBJECT_FILES) $(OBJS)/$(MAIN).o | $(BIN)
-	$(CC) -static $^ -o $(BIN)/$(MAIN)Static $(LINK)
-
-
 clean:
 	rm -rf $(OBJS)/*.o $(BIN)/*
 	rm -rf $(TESTS)/bin/*
 
 run:
-	$(BIN)/$(MAIN) players.txt 1
+	$(BIN)/$(MAIN)
