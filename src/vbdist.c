@@ -144,13 +144,13 @@ void printTeams(FILE* out, team** teams, const int printMode, const int printWid
     fprintf(out, "\n");
     for(int j = 0; j < TEAM_SIZE; j++) {
       for(int i = t; i < TEAMS_N && i - t < teamsOnLine; i++) {
-	if (printMode == PRINT_ALL) {
+        if (printMode == PRINT_ALL) {
           sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "", teams[i]->players[j]->firstName, ovRating(teams[i]->players[j]));
           fprintf(out, "%-*s", printWidth, str);
-	} else {
+        } else {
           sprintf(str, "%s%-10s", (indent) ? "  " : "", teams[i]->players[j]->firstName);
           fprintf(out, "%-*s", printWidth, str);
-	}
+        }
       }
       fprintf(out, "\n");
     }
@@ -202,7 +202,11 @@ int maxTeamFromPrefCombos(pCombos* prefCombos) {
     }
     for (int j = 0; j < nTeams; j++) {
       for (int k = 0; k < ns[j]; k++) {
-        int id = (presetTeams[j][k] == prefCombos->combos[i].pidA) ? prefCombos->combos[i].pidB : (presetTeams[j][k] == prefCombos->combos[i].pidB) ? prefCombos->combos[i].pidA : -1;
+        int id = (presetTeams[j][k] == prefCombos->combos[i].pidA)
+                     ? prefCombos->combos[i].pidB
+                 : (presetTeams[j][k] == prefCombos->combos[i].pidB)
+                     ? prefCombos->combos[i].pidA
+                     : -1;
         if (id >= 0) {
           char inTeam = 0;
           for (int l = 0; l < ns[j]; l++) {
@@ -394,32 +398,36 @@ void changeMode(team** teams, pCombos* bpcs) {
   cls(stdout);
   updateTUI(stdout, tui, teams, bpcs);
 
-  while(c != 'q') {
+  while (c != 'q') {
     c = keyPress();
-    switch(c) {
+    switch (c) {
       case 13: // On windows
       case '\n':
       case ' ':
-	if (selectCur(tui)) {
-	  switchPos(tui, teams);
-	  unselect(tui->selected);
-	}
-	break;
+        if (selectCur(tui)) {
+          switchPos(tui, teams);
+          unselect(tui->selected);
+        }
+        break;
       case 27: // Esc
-	unselect(tui->selected);
-	break;
+        unselect(tui->selected);
+        break;
+      case 'k':
       case 'w':
-	cur_up(tui);
-	break;
+        cur_up(tui);
+        break;
+      case 'h':
       case 'a':
-	cur_left(tui);
-	break;
+        cur_left(tui);
+        break;
+      case 'l':
       case 'd':
-	cur_right(tui);
-	break;
+        cur_right(tui);
+        break;
+      case 'j':
       case 's':
-	cur_down(tui);
-	break;
+        cur_down(tui);
+        break;
       default: {
         if (isdigit(c)) {
           int d = c - '0';
@@ -428,7 +436,6 @@ void changeMode(team** teams, pCombos* bpcs) {
         break;
       }
     }
-    //printf("%d, %d\n\n", tui->cur->team, tui->cur->player);
     updateTUI(stdout, tui, teams, bpcs);
   }
   cls(stdout);
@@ -502,10 +509,10 @@ int main(int argc, char** argv) {
 
   printf("\n");
   if (printMode != PRINT_MINIMAL) printTeams(stdout, teams, printMode, 30, 2, 1);
-  
+
   char ans;
 
-  printf("\nManually change players? [y/N] ");
+  printf("\nManually change teams? [y/N] ");
   scanf("%c", &ans);
   if (ans == 'y' || ans == 'Y') {
     changeMode(teams, bannedCombos);
@@ -520,7 +527,6 @@ int main(int argc, char** argv) {
     writeTeamsToFile(teams, teamsOutFile);
     printf("Saved to %s\n", teamsOutFile);
   }
-
 
   for (int i = 0; i < TEAMS_N; i++) {
     freeTeam(teams[i]);
