@@ -28,7 +28,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vbdist
+          name: vbdist-linux
           path: bin/build/vbdist
 
   build-windows:
@@ -46,8 +46,8 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vbdistWin
-          path: bin/build/vbdist
+          name: vbdist-win
+          path: bin/build/vbdist.exe
 
   release:
     needs: [build-linux, build-windows]
@@ -70,7 +70,7 @@ jobs:
           name: ${{ github.ref_name }}
           body: |
           files: |
-            release/vbdist
-            release/vbdistWin
+            release/vbdist-linux
+            release/vbdist-win
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
