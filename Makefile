@@ -8,7 +8,7 @@ LINK :=
 
 PLATFORM := $(shell uname)
 ifeq  ($(PLATFORM),Linux)
-	LINK := -lncurses
+	LINK := -lncurses -ltinfo
 endif
 
 CC := gcc
