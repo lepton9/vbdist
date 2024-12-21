@@ -63,14 +63,22 @@ jobs:
         with:
           path: release/
 
+      - name: Compress
+        run: |
+          cd release
+          zip -r vbdist-linux.zip vbdist-linux
+          zip -r vbdist-win.zip vbdist-win
+
+      - name: List
+        run: ls -l release
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          body: |
           files: |
-            release/vbdist-linux
-            release/vbdist-win
+            release/vbdist-linux.zip
+            release/vbdist-win.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
