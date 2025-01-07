@@ -37,7 +37,7 @@ args *parseArgs(int argc, char **argv) {
       params->players = atoi(argv[++optind]);
       break;
     case 'm': // Print mode
-      params->pMode = atoi(argv[++optind]);
+      params->printMode = atoi(argv[++optind]);
       break;
     }
   }

@@ -7,7 +7,7 @@ typedef struct {
   char *dbName;
   int teams;
   int players;
-  int pMode;
+  int printMode;
 } args;
 
 void printUsage(FILE *out);

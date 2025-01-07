@@ -28,7 +28,6 @@ typedef enum {
 
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
-dataSource db = NO_SOURCE;
 
 
 char* trimWS(char* str) {
@@ -138,7 +137,6 @@ player** readFileDB(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefC
   fclose(fp);
   return ps;
 }
-
 
 player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
@@ -478,12 +476,6 @@ void changeMode(team** teams, pCombos* bpcs) {
 }
 
 int main(int argc, char** argv) {
-  // if (argc < 4) {
-  //   printf("Usage -> \n  vbdist playersFile TEAMS_N TEAM_SIZE\n");
-  //   printf("\nPlayers file should be format:\n");
-  //   printf("PlayerName | Defence Spike Serve Setting Saving Consistency\n");
-  //   exit(1);
-  // }
 
 #ifdef _WIN32
   char ret = initScreenWin();
@@ -497,131 +489,120 @@ int main(int argc, char** argv) {
 
   args* params = parseArgs(argc, argv);
 
-  if (params->fileName) db = TEXT_FILE;
-  else if (params->dbName) db = DATABASE;
+  dataSource source = (params->fileName && params->dbName) ? DATABASE
+       : (params->fileName)                 ? TEXT_FILE
+                                            : NO_SOURCE;
 
-  // if (params->players <= 0 || params->teams <= 0 || db == NO_SOURCE) {
-  //   printUsage(stdout);
-  //   exit(1);
-  // }
+  // TODO: check correct file format
+  if (params->players <= 0 || params->teams <= 0 || source == NO_SOURCE) {
+    printUsage(stdout);
+    exit(1);
+  }
 
-  TEAMS_N = 4;
-  TEAM_SIZE = 6;
+  TEAMS_N = params->teams;
+  TEAM_SIZE = params->players;
+
+  char* teamsOutFile = "teams.txt";
+  int clustering = 1;
 
   int* pn = malloc(sizeof(int));
   *pn = 0;
   pCombos* bannedCombos = initCombos();
   pCombos* prefCombos = initCombos();
-  sqldb* db = openSqlDB("sql.db");
-  player** players = readFileDB(params->fileName, pn, bannedCombos, prefCombos);
-  createDB(db);
+  sqldb* db = NULL;
+  player** players = NULL;
 
-  if (*pn != 24) {
-    printf("\n%d != 24 players\n", *pn);
+  if (source == DATABASE) {
+    db = openSqlDB(params->dbName);
+    players = readFileDB(params->fileName, pn, bannedCombos, prefCombos);
+    for (int i = 0; i < *pn; i++) {
+      fetchPlayer(db, players[i]);
+    }
+    // TODO: check if db already exists
+    createDB(db);
+  } else {
+    players = readPlayers(params->fileName, pn, bannedCombos, prefCombos);
+  }
+
+  int maxSize = maxTeamFromPrefCombos(prefCombos);
+  if (maxSize > TEAM_SIZE) {
+    printf("Trying to put %d players into the same team, but team size is %d\n", maxSize, TEAM_SIZE);
     exit(1);
   }
 
-  for (int i = 0; i < *pn; i++) {
-    fetchPlayer(db, players[i]);
-    // printf("%s: %d\n", players[i]->firstName, players[i]->ratings_id);
+  qsort(players, *pn, sizeof(player*), cmpPlayers);
+
+  if (params->printMode == PRINT_ALL) printPlayers(players, *pn);
+  printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
+  printf("Preferred combinations: %d\n", (int)prefCombos->n);
+
+  if (*pn != TEAMS_N * TEAM_SIZE) {
+    printf("\nFile %s contains %d players, but %d was expected\n", params->fileName, *pn, TEAMS_N * TEAM_SIZE);
+    exit(1);
   }
 
   team** teams = balanceTeamsRand(players, *pn);
 
   setPreferredCombos(teams, prefCombos);
 
-  printf("\nBalancing teams..\n");
-  int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
-  printf("Total swaps: %d\n", swaps);
-
-  printf("\n");
-  printTeams(stdout, teams, PRINT_ALL, 30, 2, 1);
-
-  for (int i = 0; i < TEAMS_N; i++) {
-    insertTeam(db, teams[i]);
-    for (int j = 0; j < TEAM_SIZE; j++) {
-      insertPlayerTeam(db, teams[i]->players[j], teams[i]);
-    }
+  if (clustering) {
+    printf("\nBalancing teams..\n");
+    int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
+    printf("Total swaps: %d\n", swaps);
   }
 
-  exit(0);
-  closeSqlDB(db);
+  printf("\n");
+  if (params->printMode != PRINT_MINIMAL) printTeams(stdout, teams, params->printMode, 30, 2, 1);
 
-  // char* teamsOutFile = "teams.txt";
-  // char* fileName = argv[1];
-  // TEAMS_N = atoi(argv[2]);
-  // TEAM_SIZE = atoi(argv[3]);
-  // int clustering = 1;
-  // char printMode = PRINT_MINIMAL;
-  // if (argc >= 5) printMode = atoi(argv[4]);
-  //
-  // int* pn = malloc(sizeof(int));
-  // *pn = 0;
-  // pCombos* bannedCombos = initCombos();
-  // pCombos* prefCombos = initCombos();
-  // player** players = readPlayers(fileName, pn, bannedCombos, prefCombos);
-  //
-  // if (!players) {
-  //   printf("File %s not found\n", fileName);
-  //   free(pn);
-  //   exit(1);
-  // }
-  //
-  // int maxSize = maxTeamFromPrefCombos(prefCombos);
-  // if (maxSize > TEAM_SIZE) {
-  //   printf("Trying to put %d players into the same team, but team size is %d\n", maxSize, TEAM_SIZE);
-  //   exit(1);
-  // }
-  //
-  // qsort(players, *pn, sizeof(player*), cmpPlayers);
-  //
-  // if (printMode == PRINT_ALL) printPlayers(players, *pn);
-  // printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
-  // printf("Preferred combinations: %d\n", (int)prefCombos->n);
-  //
-  // if (*pn != TEAMS_N * TEAM_SIZE) {
-  //   printf("\nFile %s contains %d players, but %d was expected\n", fileName, *pn, TEAMS_N * TEAM_SIZE);
-  //   exit(1);
-  // }
-  //
-  // team** teams = balanceTeamsRand(players, *pn);
-  //
-  // setPreferredCombos(teams, prefCombos);
-  //
-  // if (clustering) {
-  //   printf("\nBalancing teams..\n");
-  //   int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
-  //   printf("Total swaps: %d\n", swaps);
-  // }
-  //
-  // printf("\n");
-  // if (printMode != PRINT_MINIMAL) printTeams(stdout, teams, printMode, 30, 2, 1);
-  //
-  // char ans;
-  //
-  // printf("\nManually change teams? [y/N] ");
-  // scanf("%c", &ans);
-  // if (ans == 'y' || ans == 'Y') {
-  //   changeMode(teams, bannedCombos);
-  //   scanf("%c", &ans); // TODO: For some reason there is \n
-  // }
-  //
-  // printf("\n");
-  // printTeams(stdout, teams, PRINT_MINIMAL, 15, 3, 0);
-  // printf("\nSave teams to a file? [y/N] ");
-  // scanf("%c", &ans);
-  // if (ans == 'y' || ans == 'Y') {
-  //   writeTeamsToFile(teams, teamsOutFile);
-  //   printf("Saved to %s\n", teamsOutFile);
-  // }
-  //
-  // for (int i = 0; i < TEAMS_N; i++) {
-  //   freeTeam(teams[i]);
-  // }
-  // free(teams);
-  // free(pn);
-  // freeCombos(bannedCombos);
-  // freeCombos(prefCombos);
+  char ans;
+
+  printf("\nManually change teams? [y/N] ");
+  scanf("%c", &ans);
+  if (ans == 'y' || ans == 'Y') {
+    changeMode(teams, bannedCombos);
+    scanf("%c", &ans); // TODO: For some reason there is \n
+  }
+
+  printf("\n");
+  printTeams(stdout, teams, PRINT_MINIMAL, 15, 3, 0);
+
+  switch (source) {
+    case TEXT_FILE: {
+      printf("\nSave teams to a file? [y/N] ");
+      scanf("%c", &ans);
+      if (ans == 'y' || ans == 'Y') {
+        writeTeamsToFile(teams, teamsOutFile);
+        printf("Saved to %s\n", teamsOutFile);
+      }
+      break;
+    }
+    case DATABASE: {
+      printf("\nSave teams to the database? [y/N] ");
+      scanf("%c", &ans);
+      if (ans == 'y' || ans == 'Y') {
+        for (int i = 0; i < TEAMS_N; i++) {
+          insertTeam(db, teams[i]);
+          for (int j = 0; j < TEAM_SIZE; j++) {
+            insertPlayerTeam(db, teams[i]->players[j], teams[i]);
+          }
+        }
+        printf("Saved to %s\n", params->dbName);
+      }
+      closeSqlDB(db);
+      break;
+    }
+    default:
+      break;
+  }
+
+  for (int i = 0; i < TEAMS_N; i++) {
+    freeTeam(teams[i]);
+  }
+
+  free(teams);
+  free(pn);
+  freeCombos(bannedCombos);
+  freeCombos(prefCombos);
 
   return 0;
 }
