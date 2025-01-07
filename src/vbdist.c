@@ -568,6 +568,7 @@ int main(int argc, char** argv) {
   }
 
   exit(0);
+  closeSqlDB(db);
 
   // char* teamsOutFile = "teams.txt";
   // char* fileName = argv[1];

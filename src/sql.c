@@ -1,5 +1,6 @@
 #include "../include/sql.h"
 #include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -70,11 +71,24 @@ void fetchPlayer(sqldb* db, player* player) {
 }
 
 void insertTeam(sqldb* db, team* team) {
-
+  if (team->id < 0) team->id = generateID();
+  char sql[100];
+  sprintf(sql, "INSERT INTO TEAM (team_id, teamName) VALUES (%d, %s);", team->id, team->name);
+  if (execSQL(db->sqlite, sql)) {
+    printf("Team inserted\n");
+  }
 }
 
 void insertPlayerTeam(sqldb* db, player* player, team* team) {
+  char sql[100];
+  sprintf(sql, "INSERT INTO PlayerTeam (player_id, team_id) VALUES (%d, %d);", player->id, team->id);
+  if (execSQL(db->sqlite, sql)) {
+    printf("PlayerTeam inserted\n");
+  }
+}
 
+int generateID() {
+  return rand() % (INT_MAX);
 }
 
 void createDB(sqldb* db) {

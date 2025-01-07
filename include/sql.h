@@ -21,6 +21,6 @@ void fetchPlayer(sqldb* db, player* player);
 void insertTeam(sqldb* db, team* team);
 void insertPlayerTeam(sqldb* db, player* player, team* team);
 
-
+int generateID();
 
 #endif

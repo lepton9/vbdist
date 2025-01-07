@@ -8,6 +8,7 @@ typedef struct {
   char* name;
   size_t size;
   player** players;
+  int id;
 } team;
 
 team* initTeam(char* teamName, const size_t size);
