@@ -9,16 +9,26 @@
 
 #include "../include/tuiSwitch.h"
 #include "../include/args.h"
+#include "../include/sql.h"
 
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
 
-#define PRINT_MINIMAL 0
-#define PRINT_NORATING 1
-#define PRINT_ALL 2
+typedef enum {
+  PRINT_MINIMAL,
+  PRINT_NORATING,
+  PRINT_ALL
+} printMode;
+
+typedef enum {
+  NO_SOURCE,
+  TEXT_FILE,
+  DATABASE
+} dataSource;
 
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
+dataSource db = NO_SOURCE;
 
 
 char* trimWS(char* str) {
@@ -58,6 +68,75 @@ void parseCombo(char* line, char** nA, char** nB) {
   assert(*nA != NULL && *nB != NULL);
 }
 
+player** readFileDB(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefCombos) {
+  FILE *fp = fopen(fileName, "rb");
+  player** ps = NULL;
+  if (fp == NULL) return NULL;
+
+  char line[256];
+  while (fgets(line, sizeof(line), fp)) {
+    line[strcspn(line, "\n")] = 0;
+    if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
+    // TODO: make a func of this
+    if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
+      char fc = line[0];
+
+      int idA = -1;
+      int n = 0;
+      char** names = parseComboLine(line, &n);
+      assert(n > 0);
+      for (int i = 0; i < *pn; i++) {
+        if (strcmp(ps[i]->firstName, names[0]) == 0) {
+          idA = ps[i]->id;
+          break;
+        }
+      }
+      for (int i = 1; i < n; i++) {
+        int idB = -1;
+        for (int j = 0; j < *pn; j++) {
+          if (strcmp(ps[j]->firstName, names[i]) == 0) {
+            idB = ps[j]->id;
+            break;
+          }
+        }
+        if (idA >= 0 && idB >= 0) {
+          if (fc == '+') addCombo(prefCombos, idA, idB);
+          else if (fc == '!') addCombo(bpcs, idA, idB);
+          else if (fc == '?') {
+            for (int j = 0; j < *pn; j++) {
+              if (strcmp(ps[j]->firstName, names[i - 1]) == 0) {
+                idA = ps[j]->id;
+                break;
+              }
+            }
+            for (int j = i; j < n; j++) {
+              for (int k = 0; k < *pn; k++) {
+                if (strcmp(ps[k]->firstName, names[j]) == 0) {
+                  idB = ps[k]->id;
+                  addCombo(bpcs, idA, idB);
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+      for (int i = 0; i < n; i++) free(names[i]);
+      free(names);
+    } else {
+      ps = realloc(ps, (*pn + 1) * sizeof(player*));
+      ps[*pn] = initPlayer();
+      ps[*pn]->id = atoi(line);
+      // fetchPlayer(ps[*pn]);
+      (*pn)++;
+    }
+  }
+
+  fclose(fp);
+  return ps;
+}
+
+
 player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
   player** ps = NULL;
@@ -65,8 +144,7 @@ player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* pref
   if (fp == NULL) return NULL;
 
   char line[256];
-  while (fgets(line, sizeof(line), fp))
-  {
+  while (fgets(line, sizeof(line), fp)) {
     line[strcspn(line, "\n")] = 0;
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
     if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
@@ -463,86 +541,109 @@ int main(int argc, char** argv) {
 
   args* params = parseArgs(argc, argv);
 
-  if (params->players <= 0 || params->teams <= 0) {
-    printUsage(stdout);
-    exit(1);
-  }
+  if (params->fileName) db = TEXT_FILE;
+  else if (params->dbName) db = DATABASE;
 
-  char* teamsOutFile = "teams.txt";
-  char* fileName = argv[1];
-  TEAMS_N = atoi(argv[2]);
-  TEAM_SIZE = atoi(argv[3]);
-  int clustering = 1;
-  char printMode = PRINT_MINIMAL;
-  if (argc >= 5) printMode = atoi(argv[4]);
+  // if (params->players <= 0 || params->teams <= 0 || db == NO_SOURCE) {
+  //   printUsage(stdout);
+  //   exit(1);
+  // }
 
   int* pn = malloc(sizeof(int));
   *pn = 0;
   pCombos* bannedCombos = initCombos();
   pCombos* prefCombos = initCombos();
-  player** players = readPlayers(fileName, pn, bannedCombos, prefCombos);
+  sqldb* db = openSqlDB("sql.db");
+  player** players = readFileDB(params->fileName, pn, bannedCombos, prefCombos);
+  createDB(db);
 
-  if (!players) {
-    printf("File %s not found\n", fileName);
-    free(pn);
+  if (*pn != 24) {
+    printf("\n%d != 24 players\n", *pn);
     exit(1);
   }
 
-  int maxSize = maxTeamFromPrefCombos(prefCombos);
-  if (maxSize > TEAM_SIZE) {
-    printf("Trying to put %d players into the same team, but team size is %d\n", maxSize, TEAM_SIZE);
-    exit(1);
+  for (int i = 0; i < *pn; i++) {
+    fetchPlayer(db, players[i]);
+    // printf("%s: %d\n", players[i]->firstName, players[i]->ratings_id);
   }
 
-  qsort(players, *pn, sizeof(player*), cmpPlayers);
+  exit(0);
 
-  if (printMode == PRINT_ALL) printPlayers(players, *pn);
-  printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
-  printf("Preferred combinations: %d\n", (int)prefCombos->n);
-
-  if (*pn != TEAMS_N * TEAM_SIZE) {
-    printf("\nFile %s contains %d players, but %d was expected\n", fileName, *pn, TEAMS_N * TEAM_SIZE);
-    exit(1);
-  }
-
-  team** teams = balanceTeamsRand(players, *pn);
-
-  setPreferredCombos(teams, prefCombos);
-
-  if (clustering) {
-    printf("\nBalancing teams..\n");
-    int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
-    printf("Total swaps: %d\n", swaps);
-  }
-
-  printf("\n");
-  if (printMode != PRINT_MINIMAL) printTeams(stdout, teams, printMode, 30, 2, 1);
-
-  char ans;
-
-  printf("\nManually change teams? [y/N] ");
-  scanf("%c", &ans);
-  if (ans == 'y' || ans == 'Y') {
-    changeMode(teams, bannedCombos);
-    scanf("%c", &ans); // TODO: For some reason there is \n
-  }
-
-  printf("\n");
-  printTeams(stdout, teams, PRINT_MINIMAL, 15, 3, 0);
-  printf("\nSave teams to a file? [y/N] ");
-  scanf("%c", &ans);
-  if (ans == 'y' || ans == 'Y') {
-    writeTeamsToFile(teams, teamsOutFile);
-    printf("Saved to %s\n", teamsOutFile);
-  }
-
-  for (int i = 0; i < TEAMS_N; i++) {
-    freeTeam(teams[i]);
-  }
-  free(teams);
-  free(pn);
-  freeCombos(bannedCombos);
-  freeCombos(prefCombos);
+  // char* teamsOutFile = "teams.txt";
+  // char* fileName = argv[1];
+  // TEAMS_N = atoi(argv[2]);
+  // TEAM_SIZE = atoi(argv[3]);
+  // int clustering = 1;
+  // char printMode = PRINT_MINIMAL;
+  // if (argc >= 5) printMode = atoi(argv[4]);
+  //
+  // int* pn = malloc(sizeof(int));
+  // *pn = 0;
+  // pCombos* bannedCombos = initCombos();
+  // pCombos* prefCombos = initCombos();
+  // player** players = readPlayers(fileName, pn, bannedCombos, prefCombos);
+  //
+  // if (!players) {
+  //   printf("File %s not found\n", fileName);
+  //   free(pn);
+  //   exit(1);
+  // }
+  //
+  // int maxSize = maxTeamFromPrefCombos(prefCombos);
+  // if (maxSize > TEAM_SIZE) {
+  //   printf("Trying to put %d players into the same team, but team size is %d\n", maxSize, TEAM_SIZE);
+  //   exit(1);
+  // }
+  //
+  // qsort(players, *pn, sizeof(player*), cmpPlayers);
+  //
+  // if (printMode == PRINT_ALL) printPlayers(players, *pn);
+  // printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
+  // printf("Preferred combinations: %d\n", (int)prefCombos->n);
+  //
+  // if (*pn != TEAMS_N * TEAM_SIZE) {
+  //   printf("\nFile %s contains %d players, but %d was expected\n", fileName, *pn, TEAMS_N * TEAM_SIZE);
+  //   exit(1);
+  // }
+  //
+  // team** teams = balanceTeamsRand(players, *pn);
+  //
+  // setPreferredCombos(teams, prefCombos);
+  //
+  // if (clustering) {
+  //   printf("\nBalancing teams..\n");
+  //   int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
+  //   printf("Total swaps: %d\n", swaps);
+  // }
+  //
+  // printf("\n");
+  // if (printMode != PRINT_MINIMAL) printTeams(stdout, teams, printMode, 30, 2, 1);
+  //
+  // char ans;
+  //
+  // printf("\nManually change teams? [y/N] ");
+  // scanf("%c", &ans);
+  // if (ans == 'y' || ans == 'Y') {
+  //   changeMode(teams, bannedCombos);
+  //   scanf("%c", &ans); // TODO: For some reason there is \n
+  // }
+  //
+  // printf("\n");
+  // printTeams(stdout, teams, PRINT_MINIMAL, 15, 3, 0);
+  // printf("\nSave teams to a file? [y/N] ");
+  // scanf("%c", &ans);
+  // if (ans == 'y' || ans == 'Y') {
+  //   writeTeamsToFile(teams, teamsOutFile);
+  //   printf("Saved to %s\n", teamsOutFile);
+  // }
+  //
+  // for (int i = 0; i < TEAMS_N; i++) {
+  //   freeTeam(teams[i]);
+  // }
+  // free(teams);
+  // free(pn);
+  // freeCombos(bannedCombos);
+  // freeCombos(prefCombos);
 
   return 0;
 }

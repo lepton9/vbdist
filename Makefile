@@ -4,11 +4,11 @@ BUILD := ./bin/build
 OBJS := ./objs
 INC := -I ./include
 FLAGS := -c $(INC)
-LINK :=
+LINK := -lsqlite3
 
 PLATFORM := $(shell uname)
 ifeq  ($(PLATFORM),Linux)
-	LINK := -lncurses -ltinfo
+	LINK := $(LINK) -lncurses -ltinfo
 endif
 
 CC := gcc
@@ -17,7 +17,7 @@ MAIN := vbdist
 TESTS := ./tests
 TEST_TARGETS := 
 
-OBJ := player team tuiSwitch combo mark args
+OBJ := player team tuiSwitch combo mark args sql
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
 $(MAIN): $(OBJECT_FILES) | $(BIN)
