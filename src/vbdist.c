@@ -464,6 +464,7 @@ int main(int argc, char** argv) {
   args* params = parseArgs(argc, argv);
 
   if (params->players <= 0 || params->teams <= 0) {
+    printUsage(stdout);
     exit(1);
   }
 
