@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "../include/tuiSwitch.h"
+#include "../include/args.h"
 
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
@@ -443,12 +444,12 @@ void changeMode(team** teams, pCombos* bpcs) {
 }
 
 int main(int argc, char** argv) {
-  if (argc < 4) {
-    printf("Usage -> \n  vbdist playersFile TEAMS_N TEAM_SIZE\n");
-    printf("\nPlayers file should be format:\n");
-    printf("PlayerName | Defence Spike Serve Setting Saving Consistency\n");
-    exit(1);
-  }
+  // if (argc < 4) {
+  //   printf("Usage -> \n  vbdist playersFile TEAMS_N TEAM_SIZE\n");
+  //   printf("\nPlayers file should be format:\n");
+  //   printf("PlayerName | Defence Spike Serve Setting Saving Consistency\n");
+  //   exit(1);
+  // }
 
 #ifdef _WIN32
   char ret = initScreenWin();
@@ -459,6 +460,12 @@ int main(int argc, char** argv) {
 #else
   initScreen();
 #endif
+
+  args* params = parseArgs(argc, argv);
+
+  if (params->players <= 0 || params->teams <= 0) {
+    exit(1);
+  }
 
   char* teamsOutFile = "teams.txt";
   char* fileName = argv[1];
