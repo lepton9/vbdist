@@ -51,7 +51,7 @@ int execSQL(sqlite3* db, const char* sql) {
 
 void fetchPlayer(sqldb* db, player* player) {
   char sql[100];
-  sprintf(sql, "SELECT playerName, rating_id FROM Player WHERE player_id = %d;", player->id);
+  sprintf(sql, "SELECT name, rating_id FROM Player WHERE player_id = %d;", player->id);
 
   char* err_msg = NULL;
   int result = sqlite3_exec(db->sqlite, sql, cb_player, player, &err_msg);
@@ -71,9 +71,9 @@ void fetchPlayer(sqldb* db, player* player) {
 }
 
 void insertTeam(sqldb* db, team* team) {
-  if (team->id < 0) team->id = generateID();
+  if (team->id < 0) team->id = randintRange(0, INT_MAX);
   char sql[100];
-  sprintf(sql, "INSERT INTO TEAM (team_id, teamName) VALUES (%d, %s);", team->id, team->name);
+  sprintf(sql, "INSERT INTO Team (team_id, name) VALUES (%d, '%s');", team->id, team->name);
   if (execSQL(db->sqlite, sql)) {
     printf("Team inserted\n");
   }
@@ -87,8 +87,8 @@ void insertPlayerTeam(sqldb* db, player* player, team* team) {
   }
 }
 
-int generateID() {
-  return rand() % (INT_MAX);
+int randintRange(const int min, const int max) {
+  return rand() % (max + 1 - min) + min;
 }
 
 void createDB(sqldb* db) {

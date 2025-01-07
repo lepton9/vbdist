@@ -57,6 +57,7 @@ char** parseComboLine(char* line, int* n) {
   return names;
 }
 
+// TODO: useless
 void parseCombo(char* line, char** nA, char** nB) {
   if (line[0] == '!' || line[0] == '+') {
    line++;
@@ -68,6 +69,53 @@ void parseCombo(char* line, char** nA, char** nB) {
   assert(*nA != NULL && *nB != NULL);
 }
 
+void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefCombos) {
+  char fc = line[0];
+
+  int idA = -1;
+  int n = 0;
+  char** names = parseComboLine(line, &n);
+  assert(n > 0);
+  for (int i = 0; i < *pn; i++) {
+    if (strcmp(ps[i]->firstName, names[0]) == 0) {
+      idA = ps[i]->id;
+      break;
+    }
+  }
+  for (int i = 1; i < n; i++) {
+    int idB = -1;
+    for (int j = 0; j < *pn; j++) {
+      if (strcmp(ps[j]->firstName, names[i]) == 0) {
+        idB = ps[j]->id;
+        break;
+      }
+    }
+    if (idA >= 0 && idB >= 0) {
+      if (fc == '+') addCombo(prefCombos, idA, idB);
+      else if (fc == '!') addCombo(bpcs, idA, idB);
+      else if (fc == '?') {
+        for (int j = 0; j < *pn; j++) {
+          if (strcmp(ps[j]->firstName, names[i - 1]) == 0) {
+            idA = ps[j]->id;
+            break;
+          }
+        }
+        for (int j = i; j < n; j++) {
+          for (int k = 0; k < *pn; k++) {
+            if (strcmp(ps[k]->firstName, names[j]) == 0) {
+              idB = ps[k]->id;
+              addCombo(bpcs, idA, idB);
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  for (int i = 0; i < n; i++) free(names[i]);
+  free(names);
+}
+
 player** readFileDB(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
   player** ps = NULL;
@@ -77,57 +125,12 @@ player** readFileDB(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefC
   while (fgets(line, sizeof(line), fp)) {
     line[strcspn(line, "\n")] = 0;
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
-    // TODO: make a func of this
     if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
-      char fc = line[0];
-
-      int idA = -1;
-      int n = 0;
-      char** names = parseComboLine(line, &n);
-      assert(n > 0);
-      for (int i = 0; i < *pn; i++) {
-        if (strcmp(ps[i]->firstName, names[0]) == 0) {
-          idA = ps[i]->id;
-          break;
-        }
-      }
-      for (int i = 1; i < n; i++) {
-        int idB = -1;
-        for (int j = 0; j < *pn; j++) {
-          if (strcmp(ps[j]->firstName, names[i]) == 0) {
-            idB = ps[j]->id;
-            break;
-          }
-        }
-        if (idA >= 0 && idB >= 0) {
-          if (fc == '+') addCombo(prefCombos, idA, idB);
-          else if (fc == '!') addCombo(bpcs, idA, idB);
-          else if (fc == '?') {
-            for (int j = 0; j < *pn; j++) {
-              if (strcmp(ps[j]->firstName, names[i - 1]) == 0) {
-                idA = ps[j]->id;
-                break;
-              }
-            }
-            for (int j = i; j < n; j++) {
-              for (int k = 0; k < *pn; k++) {
-                if (strcmp(ps[k]->firstName, names[j]) == 0) {
-                  idB = ps[k]->id;
-                  addCombo(bpcs, idA, idB);
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-      for (int i = 0; i < n; i++) free(names[i]);
-      free(names);
+      parseCombos(line, ps, pn, bpcs, prefCombos);
     } else {
       ps = realloc(ps, (*pn + 1) * sizeof(player*));
       ps[*pn] = initPlayer();
       ps[*pn]->id = atoi(line);
-      // fetchPlayer(ps[*pn]);
       (*pn)++;
     }
   }
@@ -148,50 +151,7 @@ player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* pref
     line[strcspn(line, "\n")] = 0;
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
     if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
-      char fc = line[0];
-
-      int idA = -1;
-      int n = 0;
-      char** names = parseComboLine(line, &n);
-      assert(n > 0);
-      for (int i = 0; i < *pn; i++) {
-        if (strcmp(ps[i]->firstName, names[0]) == 0) {
-          idA = ps[i]->id;
-          break;
-        }
-      }
-      for (int i = 1; i < n; i++) {
-        int idB = -1;
-        for (int j = 0; j < *pn; j++) {
-          if (strcmp(ps[j]->firstName, names[i]) == 0) {
-            idB = ps[j]->id;
-            break;
-          }
-        }
-        if (idA >= 0 && idB >= 0) {
-          if (fc == '+') addCombo(prefCombos, idA, idB);
-          else if (fc == '!') addCombo(bpcs, idA, idB);
-          else if (fc == '?') {
-            for (int j = 0; j < *pn; j++) {
-              if (strcmp(ps[j]->firstName, names[i - 1]) == 0) {
-                idA = ps[j]->id;
-                break;
-              }
-            }
-            for (int j = i; j < n; j++) {
-              for (int k = 0; k < *pn; k++) {
-                if (strcmp(ps[k]->firstName, names[j]) == 0) {
-                  idB = ps[k]->id;
-                  addCombo(bpcs, idA, idB);
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-      for (int i = 0; i < n; i++) free(names[i]);
-      free(names);
+      parseCombos(line, ps, pn, bpcs, prefCombos);
     } else {
       ps = realloc(ps, (*pn + 1) * sizeof(player*));
       ps[*pn] = parsePlayer(line);
@@ -235,10 +195,6 @@ void printTeams(FILE* out, team** teams, const int printMode, const int printWid
     }
     fprintf(out, "\n");
   }
-}
-
-int randintRange(const int min, const int max) {
-  return rand() % (max + 1 - min) + min;
 }
 
 double averageRating(team** teams, pCombos* prefCombos) {
@@ -298,7 +254,7 @@ int maxTeamFromPrefCombos(pCombos* prefCombos) {
             comboSet = 1;
             break;
           }
-        } 
+        }
       }
       if (comboSet) break;
     }
@@ -549,6 +505,9 @@ int main(int argc, char** argv) {
   //   exit(1);
   // }
 
+  TEAMS_N = 4;
+  TEAM_SIZE = 6;
+
   int* pn = malloc(sizeof(int));
   *pn = 0;
   pCombos* bannedCombos = initCombos();
@@ -565,6 +524,24 @@ int main(int argc, char** argv) {
   for (int i = 0; i < *pn; i++) {
     fetchPlayer(db, players[i]);
     // printf("%s: %d\n", players[i]->firstName, players[i]->ratings_id);
+  }
+
+  team** teams = balanceTeamsRand(players, *pn);
+
+  setPreferredCombos(teams, prefCombos);
+
+  printf("\nBalancing teams..\n");
+  int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
+  printf("Total swaps: %d\n", swaps);
+
+  printf("\n");
+  printTeams(stdout, teams, PRINT_ALL, 30, 2, 1);
+
+  for (int i = 0; i < TEAMS_N; i++) {
+    insertTeam(db, teams[i]);
+    for (int j = 0; j < TEAM_SIZE; j++) {
+      insertPlayerTeam(db, teams[i]->players[j], teams[i]);
+    }
   }
 
   exit(0);
