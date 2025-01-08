@@ -5,8 +5,17 @@
 
 player* initPlayer() {
   player* p = malloc(sizeof(player));
+  p->firstName = NULL;
+  p->surName = NULL;
   unmarkPlayer(p);
   return p;
+}
+
+void freePlayer(player* p) {
+  if (!p) return;
+  if (p->firstName) free(p->firstName);
+  if (p->surName) free(p->surName);
+  free(p);
 }
 
 player* parsePlayer(char* pStr) {
@@ -83,12 +92,5 @@ void printPlayer(FILE* out, player* p) {
     fprintf(out, "%.1f ", p->ratings[i]);
   }
   fprintf(out, "| %.1f\n", ovRating(p));
-}
-
-void freePlayer(player* p) {
-  if (!p) return;
-  free(p->firstName);
-  free(p->surName);
-  free(p);
 }
 

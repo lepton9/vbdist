@@ -14,7 +14,7 @@ sqldb* openSqlDB(const char* path);
 void closeSqlDB(sqldb* db);
 int execSQL(sqlite3* db, const char* sql);
 
-void createDB(sqldb* db);
+int createDB(sqldb* db);
 
 void fetchPlayer(sqldb* db, player* player);
 

@@ -514,12 +514,19 @@ int main(int argc, char** argv) {
 
   if (source == DATABASE) {
     db = openSqlDB(params->dbName);
+    if (!db->sqlite) {
+      exit(1);
+    }
+    int r = createDB(db);
+    if (r) printf("Created tables\n");
     players = readFileDB(params->fileName, pn, bannedCombos, prefCombos);
+    if (!players) {
+      printf("Can't find players\n");
+      exit(1);
+    }
     for (int i = 0; i < *pn; i++) {
       fetchPlayer(db, players[i]);
     }
-    // TODO: check if db already exists
-    createDB(db);
   } else {
     players = readPlayers(params->fileName, pn, bannedCombos, prefCombos);
   }

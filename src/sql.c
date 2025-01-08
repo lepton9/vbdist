@@ -91,9 +91,9 @@ int randintRange(const int min, const int max) {
   return rand() % (max + 1 - min) + min;
 }
 
-void createDB(sqldb* db) {
+int createDB(sqldb* db) {
   const char *sql =
-      "CREATE TABLE Player ("
+      "CREATE TABLE IF NOT EXISTS Player ("
       "  player_id INTEGER NOT NULL UNIQUE,"
       "  rating_id INTEGER NOT NULL,"
       "  name TEXT,"
@@ -101,7 +101,7 @@ void createDB(sqldb* db) {
       "  FOREIGN KEY (rating_id) REFERENCES Rating (rating_id) ON DELETE RESTRICT"
       ");"
       ""
-      "CREATE TABLE Rating ("
+      "CREATE TABLE IF NOT EXISTS Rating ("
       "  rating_id INTEGER NOT NULL UNIQUE,"
       "  defence REAL NOT NULL,"
       "  spike REAL NOT NULL,"
@@ -112,7 +112,7 @@ void createDB(sqldb* db) {
       "  PRIMARY KEY (rating_id)"
       ");"
       ""
-      "CREATE TABLE PlayerTeam ("
+      "CREATE TABLE IF NOT EXISTS PlayerTeam ("
       "  player_id INTEGER NOT NULL,"
       "  team_id INTEGER NOT NULL,"
       "  PRIMARY KEY (player_id, team_id),"
@@ -121,16 +121,12 @@ void createDB(sqldb* db) {
       "FOREIGN KEY (team_id) REFERENCES Team (team_id) ON DELETE RESTRICT"
       ");"
       ""
-      "CREATE TABLE Team ("
+      "CREATE TABLE IF NOT EXISTS Team ("
       "  team_id INTEGER NOT NULL UNIQUE,"
       "  name TEXT,"
       "  PRIMARY KEY (team_id)"
       ");";
 
-  printf("Creating sqlite3 database\n");
-
-  if (execSQL(db->sqlite, sql)) {
-    printf("Tables created successfully.\n");
-  }
+  return execSQL(db->sqlite, sql);
 }
 
