@@ -12,6 +12,7 @@ typedef struct {
   int id;
   float ratings[DIFRATINGS];
   int ratings_id;
+  int found;
   mark marker;
 } player;
 

@@ -507,6 +507,7 @@ int main(int argc, char** argv) {
 
   int* pn = malloc(sizeof(int));
   *pn = 0;
+  int valid_players = 0;
   pCombos* bannedCombos = initCombos();
   pCombos* prefCombos = initCombos();
   sqldb* db = NULL;
@@ -520,15 +521,21 @@ int main(int argc, char** argv) {
     int r = createDB(db);
     if (r) printf("Created tables\n");
     players = readFileDB(params->fileName, pn, bannedCombos, prefCombos);
+    valid_players = *pn;
     if (!players) {
       printf("Can't find players\n");
       exit(1);
     }
     for (int i = 0; i < *pn; i++) {
-      fetchPlayer(db, players[i]);
+      int found = fetchPlayer(db, players[i]);
+      if (!found) {
+        valid_players--;
+        printf("Player with id %d not found\n", players[i]->id);
+      }
     }
   } else {
     players = readPlayers(params->fileName, pn, bannedCombos, prefCombos);
+    valid_players = *pn;
   }
 
   int maxSize = maxTeamFromPrefCombos(prefCombos);
@@ -545,6 +552,10 @@ int main(int argc, char** argv) {
 
   if (*pn != TEAMS_N * TEAM_SIZE) {
     printf("\nFile %s contains %d players, but %d was expected\n", params->fileName, *pn, TEAMS_N * TEAM_SIZE);
+    exit(1);
+  }
+  if (valid_players != TEAMS_N * TEAM_SIZE) {
+    printf("\nFound %d valid players, but %d was expected\n", valid_players, TEAMS_N * TEAM_SIZE);
     exit(1);
   }
 

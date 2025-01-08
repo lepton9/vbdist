@@ -7,6 +7,7 @@ player* initPlayer() {
   player* p = malloc(sizeof(player));
   p->firstName = NULL;
   p->surName = NULL;
+  p->found = 0;
   unmarkPlayer(p);
   return p;
 }

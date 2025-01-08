@@ -28,6 +28,7 @@ int cb_player(void* p, int argc, char **argv, char **colName) {
   assert(argc == 2);
   player->firstName = strdup(argv[0]);
   player->ratings_id = atoi(argv[1]);
+  player->found = 1;
   return 0;
 }
 
@@ -49,7 +50,7 @@ int execSQL(sqlite3* db, const char* sql) {
   return result == SQLITE_OK;
 }
 
-void fetchPlayer(sqldb* db, player* player) {
+int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name, rating_id FROM Player WHERE player_id = %d;", player->id);
 
@@ -68,6 +69,7 @@ void fetchPlayer(sqldb* db, player* player) {
     fprintf(stderr, "SQL error: %s\n", err_msg);
     sqlite3_free(err_msg);
   }
+  return player->found;
 }
 
 void insertTeam(sqldb* db, team* team) {
