@@ -16,6 +16,7 @@ void printUsage(FILE *out) {
                "which option is set.\n");
 }
 
+// TODO: longer -- option versions
 args *parseArgs(int argc, char **argv) {
   args *params = malloc(sizeof(args));
 
@@ -24,10 +25,10 @@ args *parseArgs(int argc, char **argv) {
     if (strlen(argv[optind]) != 2)
       continue;
     switch (argv[optind][1]) {
-    case 'f': // Textfile name if using file
+    case 'f': // Textfile containing players
       params->fileName = argv[++optind];
       break;
-    case 'd': // Database name if using db
+    case 'd': // Sqlite3 database file name
       params->dbName = argv[++optind];
       break;
     case 't': // Amount of teams
@@ -39,6 +40,13 @@ args *parseArgs(int argc, char **argv) {
     case 'm': // Print mode
       params->printMode = atoi(argv[++optind]);
       break;
+    case 'h':
+      free(params);
+      // TODO: Print more help info
+      // File formats
+      // Example usage
+      printUsage(stdout);
+      return NULL;
     }
   }
   return params;

@@ -488,6 +488,9 @@ int main(int argc, char** argv) {
 #endif
 
   args* params = parseArgs(argc, argv);
+  if (!params) {
+    exit(0);
+  }
 
   dataSource source = (params->fileName && params->dbName) ? DATABASE
        : (params->fileName)                 ? TEXT_FILE
@@ -513,29 +516,36 @@ int main(int argc, char** argv) {
   sqldb* db = NULL;
   player** players = NULL;
 
-  if (source == DATABASE) {
-    db = openSqlDB(params->dbName);
-    if (!db->sqlite) {
-      exit(1);
-    }
-    int r = createDB(db);
-    if (r) printf("Created tables\n");
-    players = readFileDB(params->fileName, pn, bannedCombos, prefCombos);
-    valid_players = *pn;
-    if (!players) {
-      printf("Can't find players\n");
-      exit(1);
-    }
-    for (int i = 0; i < *pn; i++) {
-      int found = fetchPlayer(db, players[i]);
-      if (!found) {
-        valid_players--;
-        printf("Player with id %d not found\n", players[i]->id);
+  switch (source) {
+    case DATABASE: {
+      db = openSqlDB(params->dbName);
+      if (!db->sqlite) {
+        exit(1);
       }
+      int r = createDB(db);
+      if (r) printf("Created tables\n");
+      players = readFileDB(params->fileName, pn, bannedCombos, prefCombos);
+      valid_players = *pn;
+      if (!players) {
+        printf("Can't find players\n");
+        exit(1);
+      }
+      for (int i = 0; i < *pn; i++) {
+        int found = fetchPlayer(db, players[i]);
+        if (!found) {
+          valid_players--;
+          printf("Player with id %d not found\n", players[i]->id);
+        }
+      }
+      break;
     }
-  } else {
-    players = readPlayers(params->fileName, pn, bannedCombos, prefCombos);
-    valid_players = *pn;
+    case TEXT_FILE: {
+      players = readPlayers(params->fileName, pn, bannedCombos, prefCombos);
+      valid_players = *pn;
+      break;
+    }
+    default:
+      break;
   }
 
   int maxSize = maxTeamFromPrefCombos(prefCombos);
