@@ -4,7 +4,7 @@ BUILD := ./bin/build
 OBJS := ./objs
 INC := -I ./include
 FLAGS := -c $(INC)
-LINK := -lsqlite3
+LINK := -lsqlite3 -lm
 
 PLATFORM := $(shell uname)
 ifeq  ($(PLATFORM),Linux)
