@@ -5,7 +5,7 @@ OBJS := ./objs
 INC := -I ./include
 LIB := -L ./lib
 FLAGS := -c $(INC)
-LINK := -lsqlite3
+LINK := -lsqlite3 -lm
 
 PLATFORM := $(shell uname)
 ifeq  ($(PLATFORM),Linux)
