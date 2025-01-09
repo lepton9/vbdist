@@ -5,7 +5,6 @@
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
-#include <time.h>
 
 #include "../include/tuiSwitch.h"
 #include "../include/args.h"
@@ -28,6 +27,7 @@ typedef enum {
 
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
+dataSource SOURCE = NO_SOURCE;
 
 
 char* trimWS(char* str) {
@@ -45,27 +45,15 @@ char** parseComboLine(char* line, int* n) {
    line++;
   }
   *n = 0;
-  char** names = malloc(sizeof(char*));
+  char** tokens = malloc(sizeof(char*));
   char* token = strtok(line, "-");
-  if (token != NULL) names[(*n)++] = strdup(trimWS(token));
+  if (token != NULL) tokens[(*n)++] = strdup(trimWS(token));
 
   while ((token = strtok(NULL, "-"))) {
-    names = realloc(names, ((*n)+1) * sizeof(char*));
-    names[(*n)++] = strdup(trimWS(token));
+    tokens = realloc(tokens, ((*n)+1) * sizeof(char*));
+    tokens[(*n)++] = strdup(trimWS(token));
   }
-  return names;
-}
-
-// TODO: useless
-void parseCombo(char* line, char** nA, char** nB) {
-  if (line[0] == '!' || line[0] == '+') {
-   line++;
-  }
-  char* token = strtok(line, "-");
-  if (token != NULL) *nA = strdup(trimWS(token));
-  token = strtok(NULL, "-");
-  if (token != NULL) *nB = strdup(trimWS(token));
-  assert(*nA != NULL && *nB != NULL);
+  return tokens;
 }
 
 void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefCombos) {
@@ -73,10 +61,11 @@ void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefC
 
   int idA = -1;
   int n = 0;
-  char** names = parseComboLine(line, &n);
+  char** tokens = parseComboLine(line, &n);
   assert(n > 0);
   for (int i = 0; i < *pn; i++) {
-    if (strcmp(ps[i]->firstName, names[0]) == 0) {
+    if ((SOURCE == TEXT_FILE && strcmp(ps[i]->firstName, tokens[0]) == 0)
+    || (SOURCE == DATABASE && ps[i]->id == atoi(tokens[0]))) {
       idA = ps[i]->id;
       break;
     }
@@ -84,7 +73,8 @@ void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefC
   for (int i = 1; i < n; i++) {
     int idB = -1;
     for (int j = 0; j < *pn; j++) {
-      if (strcmp(ps[j]->firstName, names[i]) == 0) {
+      if ((SOURCE == TEXT_FILE && strcmp(ps[j]->firstName, tokens[i]) == 0)
+      || (SOURCE == DATABASE && ps[j]->id == atoi(tokens[i]))) {
         idB = ps[j]->id;
         break;
       }
@@ -94,14 +84,16 @@ void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefC
       else if (fc == '!') addCombo(bpcs, idA, idB);
       else if (fc == '?') {
         for (int j = 0; j < *pn; j++) {
-          if (strcmp(ps[j]->firstName, names[i - 1]) == 0) {
+          if ((SOURCE == TEXT_FILE && strcmp(ps[j]->firstName, tokens[i - 1]) == 0)
+            || (SOURCE == DATABASE && ps[j]->id == atoi(tokens[i - 1]))) {
             idA = ps[j]->id;
             break;
           }
         }
         for (int j = i; j < n; j++) {
           for (int k = 0; k < *pn; k++) {
-            if (strcmp(ps[k]->firstName, names[j]) == 0) {
+            if ((SOURCE == TEXT_FILE && strcmp(ps[k]->firstName, tokens[j]) == 0)
+              || (SOURCE == DATABASE && ps[k]->id == atoi(tokens[j]))) {
               idB = ps[k]->id;
               addCombo(bpcs, idA, idB);
               break;
@@ -111,31 +103,8 @@ void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefC
       }
     }
   }
-  for (int i = 0; i < n; i++) free(names[i]);
-  free(names);
-}
-
-player** readFileDB(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefCombos) {
-  FILE *fp = fopen(fileName, "rb");
-  player** ps = NULL;
-  if (fp == NULL) return NULL;
-
-  char line[256];
-  while (fgets(line, sizeof(line), fp)) {
-    line[strcspn(line, "\n")] = 0;
-    if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
-    if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
-      parseCombos(line, ps, pn, bpcs, prefCombos);
-    } else {
-      ps = realloc(ps, (*pn + 1) * sizeof(player*));
-      ps[*pn] = initPlayer();
-      ps[*pn]->id = atoi(line);
-      (*pn)++;
-    }
-  }
-
-  fclose(fp);
-  return ps;
+  for (int i = 0; i < n; i++) free(tokens[i]);
+  free(tokens);
 }
 
 player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefCombos) {
@@ -151,9 +120,23 @@ player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* pref
     if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
       parseCombos(line, ps, pn, bpcs, prefCombos);
     } else {
-      ps = realloc(ps, (*pn + 1) * sizeof(player*));
-      ps[*pn] = parsePlayer(line);
-      ps[(*pn)++]->id = pid++;
+      switch (SOURCE) {
+        case DATABASE: {
+          ps = realloc(ps, (*pn + 1) * sizeof(player*));
+          ps[*pn] = initPlayer();
+          ps[*pn]->id = atoi(line);
+          (*pn)++;
+          break;
+        }
+        case TEXT_FILE: {
+          ps = realloc(ps, (*pn + 1) * sizeof(player*));
+          ps[*pn] = parsePlayer(line);
+          ps[(*pn)++]->id = pid++;
+          break;
+        }
+        default:
+          break;
+      }
     }
   }
 
@@ -519,12 +502,12 @@ int main(int argc, char** argv) {
     exit(0);
   }
 
-  dataSource source = (params->fileName && params->dbName) ? DATABASE
+  SOURCE = (params->fileName && params->dbName) ? DATABASE
        : (params->fileName)                 ? TEXT_FILE
                                             : NO_SOURCE;
 
   // TODO: check correct file format
-  if (params->players <= 0 || params->teams <= 0 || source == NO_SOURCE) {
+  if (params->players <= 0 || params->teams <= 0 || SOURCE == NO_SOURCE) {
     printUsage(stdout);
     exit(1);
   }
@@ -543,7 +526,7 @@ int main(int argc, char** argv) {
   sqldb* db = NULL;
   player** players = NULL;
 
-  switch (source) {
+  switch (SOURCE) {
     case DATABASE: {
       db = openSqlDB(params->dbName);
       if (!db->sqlite) {
@@ -551,7 +534,7 @@ int main(int argc, char** argv) {
       }
       int r = createDB(db);
       if (r) printf("Created tables\n");
-      players = readFileDB(params->fileName, pn, bannedCombos, prefCombos);
+      players = readPlayers(params->fileName, pn, bannedCombos, prefCombos);
       valid_players = *pn;
       if (!players) {
         printf("Can't find players\n");
@@ -618,7 +601,7 @@ int main(int argc, char** argv) {
 
   printTeams(stdout, teams, PRINT_MINIMAL, 15, 3, 0);
 
-  switch (source) {
+  switch (SOURCE) {
     case TEXT_FILE: {
       askSaveToFile(teamsOutFile, teams);
       break;
