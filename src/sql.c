@@ -77,7 +77,7 @@ void insertTeam(sqldb* db, team* team) {
   char sql[100];
   sprintf(sql, "INSERT INTO Team (team_id, name) VALUES (%d, '%s');", team->id, team->name);
   if (execSQL(db->sqlite, sql)) {
-    printf("Team inserted\n");
+    // TODO: maybe log to a file
   }
 }
 
@@ -85,7 +85,7 @@ void insertPlayerTeam(sqldb* db, player* player, team* team) {
   char sql[100];
   sprintf(sql, "INSERT INTO PlayerTeam (player_id, team_id) VALUES (%d, %d);", player->id, team->id);
   if (execSQL(db->sqlite, sql)) {
-    printf("PlayerTeam inserted\n");
+    // TODO: log
   }
 }
 

@@ -475,6 +475,33 @@ void changeMode(team** teams, pCombos* bpcs) {
   freeTui(tui);
 }
 
+void askSaveToFile(char* fileName, team** teams) {
+  printf("\nSave teams to a file? [y/N] ");
+  fflush(stdout);
+  char ans = keyPress();
+  if (ans == 'y' || ans == 'Y') {
+    writeTeamsToFile(teams, fileName);
+    printf("\033[2K");
+    printf("Saved to %s\n", fileName);
+  }
+}
+
+void askSaveToDB(sqldb* db, team** teams) {
+  printf("Save teams to the database? [y/N] ");
+  fflush(stdout);
+  char ans = keyPress();
+  if (ans == 'y' || ans == 'Y') {
+    printf("\033[2K");
+    for (int i = 0; i < TEAMS_N; i++) {
+      insertTeam(db, teams[i]);
+      for (int j = 0; j < TEAM_SIZE; j++) {
+        insertPlayerTeam(db, teams[i]->players[j], teams[i]);
+      }
+    }
+    printf("Saved to %s\n", db->path);
+  }
+}
+
 int main(int argc, char** argv) {
 
 #ifdef _WIN32
@@ -579,43 +606,26 @@ int main(int argc, char** argv) {
     printf("Total swaps: %d\n", swaps);
   }
 
-  printf("\n");
   if (params->printMode != PRINT_MINIMAL) printTeams(stdout, teams, params->printMode, 30, 2, 1);
 
-  char ans;
-
   printf("\nManually change teams? [y/N] ");
-  scanf("%c", &ans);
+  fflush(stdout);
+  char ans = keyPress();
+  printf("\033[2K\n");
   if (ans == 'y' || ans == 'Y') {
     changeMode(teams, bannedCombos);
-    scanf("%c", &ans); // TODO: For some reason there is \n
   }
 
-  printf("\n");
   printTeams(stdout, teams, PRINT_MINIMAL, 15, 3, 0);
 
   switch (source) {
     case TEXT_FILE: {
-      printf("\nSave teams to a file? [y/N] ");
-      scanf("%c", &ans);
-      if (ans == 'y' || ans == 'Y') {
-        writeTeamsToFile(teams, teamsOutFile);
-        printf("Saved to %s\n", teamsOutFile);
-      }
+      askSaveToFile(teamsOutFile, teams);
       break;
     }
     case DATABASE: {
-      printf("\nSave teams to the database? [y/N] ");
-      scanf("%c", &ans);
-      if (ans == 'y' || ans == 'Y') {
-        for (int i = 0; i < TEAMS_N; i++) {
-          insertTeam(db, teams[i]);
-          for (int j = 0; j < TEAM_SIZE; j++) {
-            insertPlayerTeam(db, teams[i]->players[j], teams[i]);
-          }
-        }
-        printf("Saved to %s\n", params->dbName);
-      }
+      askSaveToFile(teamsOutFile, teams);
+      askSaveToDB(db, teams);
       closeSqlDB(db);
       break;
     }
