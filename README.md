@@ -6,11 +6,11 @@ Makes `N` teams of `M` players based on given attributes
 ### Install dependencies
   *Arch*:
 ```
-sudo pacman -S ncurses
+sudo pacman -S ncurses sqlite3
 ```
   *Ubuntu/Debian*:
 ```
-sudo apt-get install libncurses5-dev libncursesw5-dev
+sudo apt-get install libncurses5-dev libncursesw5-dev libsqlite3-dev
 ```
 
 ### Clone and compile
