@@ -1,11 +1,12 @@
 SRC := ./src
 BIN := ./bin
+LIB := ./lib
+INCLUDE := ./include
 BUILD := $(BIN)/build
 OBJS := ./objs
-INC := -I ./include
-LIB := -L ./lib
+INC := -I$(INCLUDE) -I$(LIB)
 FLAGS := -c $(INC)
-LINK := -lsqlite3 -lm
+LINK := -L$(LIB)
 
 PLATFORM := $(shell uname)
 ifeq  ($(PLATFORM),Linux)
@@ -21,10 +22,13 @@ TEST_TARGETS :=
 OBJ := player team tuiSwitch combo mark args sql
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
-$(MAIN): $(OBJECT_FILES) | $(BIN)
-	$(CC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LIB) $(LINK)
+$(MAIN): $(OBJECT_FILES) $(OBJS)/sqlite3.o | $(BIN)
+	$(CC) $(INC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)
 
 $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
+	$(CC) $(FLAGS) $< -o $@
+
+$(OBJS)/sqlite3.o: ./lib/sqlite3.c
 	$(CC) $(FLAGS) $< -o $@
 
 $(OBJS):
@@ -36,8 +40,8 @@ $(BIN):
 $(BUILD): $(BIN)
 	mkdir $(BUILD)
 
-build: $(OBJECT_FILES) $(OBJS)/$(MAIN).o | $(BUILD)
-	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LIB) $(LINK)
+build: $(OBJECT_FILES) $(OBJS)/sqlite3.o $(OBJS)/$(MAIN).o | $(BUILD)
+	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
 
 debug:
 	$(CC) $(INC) $(SRC)/*.c -pthread -g -o $(BIN)/db $(LINK)
@@ -50,8 +54,7 @@ dep:
 	rm -f sqlite-amalgamation-$(SQLITE_VER).zip
 	cd lib && \
 	gcc -o sqlite3.o -c -fPIC sqlite3.c && \
-	gcc -shared -o sqlite3.so sqlite3.o -lm && \
-	ar rcs libsqlite3.a sqlite3.o
+	gcc -shared -o libsqlite3.so sqlite3.o -lm
 
 
 #Testing
@@ -68,6 +71,9 @@ $(TESTS)/bin/%_test: ../testLibC/utestC.c $(TESTS)/%_test.c $(OBJ)
 clean:
 	rm -rf $(OBJS)/*.o $(BIN)/*
 	rm -rf $(TESTS)/bin/*
+
+cleanall: clean
+	rm -rf $(BIN) $(OBJS) $(LIB)
 
 run:
 	$(BIN)/$(MAIN)
