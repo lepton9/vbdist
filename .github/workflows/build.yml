@@ -25,6 +25,7 @@ jobs:
       - name: Build with make
         run: |
           make clean
+          make dep
           make build
 
       - name: Upload build artifacts
@@ -43,6 +44,7 @@ jobs:
       - name: Build with make
         run: |
           make clean
+          make dep
           make build
 
       - name: Upload build artifacts
