@@ -352,7 +352,7 @@ int balancedClustering(team** teams, int oneSideValidation, pCombos* bpcs, pComb
 team** balanceTeamsRand(player** players, const int n) {
   team** teams = malloc(sizeof(team*) * TEAMS_N);
   for (int i = 0; i < TEAMS_N; i++) {
-    char tName[7];
+    char tName[20];
     sprintf(tName, "Team %d", i + 1);
     teams[i] = initTeam(tName, TEAM_SIZE);
   }

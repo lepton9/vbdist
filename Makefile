@@ -5,7 +5,7 @@ INCLUDE := ./include
 BUILD := $(BIN)/build
 OBJS := ./objs
 INC := -I$(INCLUDE) -I$(LIB)
-FLAGS := -c $(INC)
+FLAGS := -O3 -Wextra -Wall
 LINK := -L$(LIB)
 
 PLATFORM := $(shell uname)
@@ -22,14 +22,14 @@ TEST_TARGETS :=
 OBJ := player team tuiSwitch combo mark args sql
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
-$(MAIN): $(OBJECT_FILES) $(OBJS)/sqlite3.o | $(BIN)
-	$(CC) $(INC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)
+$(MAIN): $(OBJECT_FILES) $(LIB)/sqlite3.o | $(BIN)
+	$(CC) $(FLAGS) $(INC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)
 
 $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
-	$(CC) $(FLAGS) $< -o $@
+	$(CC) $(FLAGS) -c $(INC) $< -o $@
 
-$(OBJS)/sqlite3.o: ./lib/sqlite3.c
-	$(CC) $(FLAGS) $< -o $@
+$(LIB)/sqlite3.o: ./lib/sqlite3.c
+	$(CC) $(FLAGS) -c $(INC) $< -o $@
 
 $(OBJS):
 	mkdir $(OBJS)
