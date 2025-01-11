@@ -2,7 +2,7 @@
 #define SQL_H
 
 #include <stdio.h>
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include "../include/team.h"
 
 typedef struct {

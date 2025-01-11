@@ -1,10 +1,12 @@
 SRC := ./src
 BIN := ./bin
-BUILD := ./bin/build
+LIB := ./lib
+INCLUDE := ./include
+BUILD := $(BIN)/build
 OBJS := ./objs
-INC := -I ./include
+INC := -I$(INCLUDE) -I$(LIB)
 FLAGS := -c $(INC)
-LINK := -lsqlite3 -lm
+LINK := -L$(LIB)
 
 PLATFORM := $(shell uname)
 ifeq  ($(PLATFORM),Linux)
@@ -20,10 +22,13 @@ TEST_TARGETS :=
 OBJ := player team tuiSwitch combo mark args sql
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
-$(MAIN): $(OBJECT_FILES) | $(BIN)
-	$(CC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)
+$(MAIN): $(OBJECT_FILES) $(OBJS)/sqlite3.o | $(BIN)
+	$(CC) $(INC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)
 
 $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
+	$(CC) $(FLAGS) $< -o $@
+
+$(OBJS)/sqlite3.o: ./lib/sqlite3.c
 	$(CC) $(FLAGS) $< -o $@
 
 $(OBJS):
@@ -35,12 +40,21 @@ $(BIN):
 $(BUILD): $(BIN)
 	mkdir $(BUILD)
 
-build: $(OBJECT_FILES) $(OBJS)/$(MAIN).o | $(BUILD)
+build: $(OBJECT_FILES) $(OBJS)/sqlite3.o $(OBJS)/$(MAIN).o | $(BUILD)
 	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
 
 debug:
 	$(CC) $(INC) $(SRC)/*.c -pthread -g -o $(BIN)/db $(LINK)
 	gdb -tui $(BIN)/db
+
+SQLITE_VER := 3470200
+dep:
+	curl -O https://www.sqlite.org/2024/sqlite-amalgamation-$(SQLITE_VER).zip
+	unzip -j sqlite-amalgamation-$(SQLITE_VER).zip -d lib
+	rm -f sqlite-amalgamation-$(SQLITE_VER).zip
+	cd lib && \
+	gcc -o sqlite3.o -c -fPIC sqlite3.c && \
+	gcc -shared -o libsqlite3.so sqlite3.o -lm
 
 
 #Testing
@@ -54,12 +68,12 @@ all_tests: $(addprefix $(TESTS)/bin/, $(TEST_TARGETS))
 $(TESTS)/bin/%_test: ../testLibC/utestC.c $(TESTS)/%_test.c $(OBJ)
 	$(CC) $(INC) $^ -g -o $@ $(LINK)
 
-dartc: ./dart/vbDist.dart 
-	dart compile exe $^ -o $(BIN)/$(MAIN)Dart
-
 clean:
 	rm -rf $(OBJS)/*.o $(BIN)/*
 	rm -rf $(TESTS)/bin/*
+
+cleanall: clean
+	rm -rf $(BIN) $(OBJS) $(LIB)
 
 run:
 	$(BIN)/$(MAIN)
