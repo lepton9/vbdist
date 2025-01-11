@@ -1,5 +1,9 @@
 
 # Volleyball team maker
+
+[![Build](https://github.com/lepton9/vbdist/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/lepton9/vbdist/actions/workflows/build.yml)
+![Release](https://img.shields.io/github/v/release/lepton9/vbdist)
+
 Makes `N` teams of `M` players based on given attributes
 
 ## Installing and compiling
@@ -16,6 +20,7 @@ sudo apt-get install libncurses5-dev libncursesw5-dev libsqlite3-dev
 ### Clone and compile
 ```
 git clone https://github.com/lepton9/vbdist.git && cd vbdist
+make dep
 make
 ```
 
