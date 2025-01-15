@@ -19,7 +19,7 @@ MAIN := vbdist
 TESTS := ./tests
 TEST_TARGETS := 
 
-OBJ := player team tuiSwitch combo mark args sql
+OBJ := player team tui tuiSwitch tuidb combo mark args sql
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
 $(MAIN): $(OBJECT_FILES) $(LIB)/sqlite3.o | $(BIN)

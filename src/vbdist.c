@@ -7,6 +7,7 @@
 #include <ctype.h>
 
 #include "../include/tuiSwitch.h"
+#include "../include/tui.h"
 #include "../include/args.h"
 #include "../include/sql.h"
 
