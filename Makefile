@@ -28,7 +28,7 @@ $(MAIN): $(OBJECT_FILES) $(LIB)/sqlite3.o | $(BIN)
 $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
 	$(CC) $(FLAGS) -c $(INC) $< -o $@
 
-$(LIB)/sqlite3.o: ./lib/sqlite3.c
+$(LIB)/sqlite3.o: $(LIB)/sqlite3.c
 	$(CC) $(FLAGS) -c $(INC) $< -o $@
 
 $(OBJS):
@@ -40,7 +40,7 @@ $(BIN):
 $(BUILD): $(BIN)
 	mkdir $(BUILD)
 
-build: $(OBJECT_FILES) $(OBJS)/sqlite3.o $(OBJS)/$(MAIN).o | $(BUILD)
+build: $(OBJECT_FILES) $(LIB)/sqlite3.o $(OBJS)/$(MAIN).o | $(BUILD)
 	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
 
 debug:

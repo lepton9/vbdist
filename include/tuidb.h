@@ -6,8 +6,11 @@
 
 typedef struct {
   sqldb* db;
+  player** allPlayers;
   player** players;
+  size_t all_n;
   size_t n;
+  int selected;
   int teams;
   int team_size;
 
@@ -17,9 +20,19 @@ typedef struct {
 tuidb* initTuiDB();
 void freeTuiDB(tuidb* tui);
 
+void runTuiDB(tuidb* tui);
+
 void selectPlayer();
 void unselectPlayer();
 
 int isSelected(player** players, int player_id);
+
+
+void list_up(tuidb* tui);
+void list_down(tuidb* tui);
+void list_left(tuidb* tui);
+void list_right(tuidb* tui);
+
+void renderTuidb(tuidb* tui);
 
 #endif

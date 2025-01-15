@@ -17,6 +17,8 @@ int execSQL(sqlite3* db, const char* sql);
 int createDB(sqldb* db);
 
 int fetchPlayer(sqldb* db, player* player);
+int fetchRating(sqldb* db, player* player);
+playerList* fetchPlayers(sqldb* db);
 
 void insertTeam(sqldb* db, team* team);
 void insertPlayerTeam(sqldb* db, player* player, team* team);

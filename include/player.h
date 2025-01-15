@@ -16,6 +16,12 @@ typedef struct {
   mark marker;
 } player;
 
+typedef struct {
+  player** players;
+  size_t n;
+  size_t size;
+} playerList;
+
 player* initPlayer();
 void freePlayer(player* p);
 player* parsePlayer(char* pStr);

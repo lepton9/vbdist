@@ -23,6 +23,20 @@ void closeSqlDB(sqldb* db) {
   free(db);
 }
 
+int cb_players(void* pList, int count, char **data, char **columns) {
+  playerList* list = pList;
+  player* p = initPlayer();
+  p->id = atoi(data[0]);
+  p->ratings_id = atoi(data[1]);
+  p->firstName = strdup(data[2]);
+  if (list->n >= list->size) {
+    list->size *= 2;
+    list->players = realloc(list->players, list->size * sizeof(player*));
+  }
+  list->players[list->n++] = p;
+  return 0;
+}
+
 int cb_player(void* p, int argc, char **argv, char **colName) {
   player* player = p;
   assert(argc == 2);
@@ -50,6 +64,38 @@ int execSQL(sqlite3* db, const char* sql) {
   return result == SQLITE_OK;
 }
 
+playerList* fetchPlayers(sqldb* db) {
+  char* sql = "SELECT * FROM Player;";
+  char* err_msg = NULL;
+
+  playerList* list = malloc(sizeof(playerList));
+  memset(list, 0, sizeof(playerList));
+  list->size = 50;
+  list->players = malloc(list->size * sizeof(player*));
+
+  int result = sqlite3_exec(db->sqlite, sql, cb_players, list, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+  for (int i = 0; i < (int)list->n; i++) {
+    fetchRating(db, list->players[i]);
+  }
+  return list;
+}
+
+int fetchRating(sqldb* db, player* player) {
+  char sql_rating[100];
+  sprintf(sql_rating, "SELECT * FROM Rating WHERE rating_id = %d;", player->ratings_id);
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db->sqlite, sql_rating, cb_rating, player, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+  return result;
+}
+
 int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name, rating_id FROM Player WHERE player_id = %d;", player->id);
@@ -60,15 +106,7 @@ int fetchPlayer(sqldb* db, player* player) {
     fprintf(stderr, "SQL error: %s\n", err_msg);
     sqlite3_free(err_msg);
   }
-
-  char sql_rating[100];
-  sprintf(sql_rating, "SELECT * FROM Rating WHERE rating_id = %d;", player->ratings_id);
-
-  result = sqlite3_exec(db->sqlite, sql_rating, cb_rating, player, &err_msg);
-  if (err_msg) {
-    fprintf(stderr, "SQL error: %s\n", err_msg);
-    sqlite3_free(err_msg);
-  }
+  fetchRating(db, player);
   return player->found;
 }
 

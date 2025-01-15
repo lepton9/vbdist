@@ -1,4 +1,5 @@
 #include "../include/tuidb.h"
+#include "../include/tui.h"
 #include <stdlib.h>
 
 tuidb* initTuiDB(int teams, int team_size) {
@@ -13,4 +14,20 @@ tuidb* initTuiDB(int teams, int team_size) {
 void freeTuiDB(tuidb* tui) {
   free(tui);
 }
+
+void runTuiDB(tuidb* tui) {
+  char c = 0;
+
+  while (c != 'q') {
+    renderTuidb(tui);
+
+    c = keyPress();
+  }
+
+}
+
+void renderTuidb(tuidb* tui) {
+
+}
+
 
