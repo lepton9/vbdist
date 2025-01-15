@@ -11,6 +11,7 @@ typedef struct {
 } args;
 
 void printUsage(FILE *out);
+void printUsageVerbose(FILE *out);
 args *parseArgs(int argc, char **argv);
 
 #endif

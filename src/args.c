@@ -16,6 +16,16 @@ void printUsage(FILE *out) {
                "which option is set.\n");
 }
 
+void printUsageVerbose(FILE *out) {
+  printUsage(out);
+  fprintf(out, "\nExample usage:\n"
+               "  Using a text file:\n"
+               "    vbdist -f players.txt -t 4 -p 6 -m 1\n"
+               "  Using a database:\n"
+               "    vbdist -d sql.db -f players.txt -t 4 -p 6 -m 1\n"
+               "");
+}
+
 args *parseArgs(int argc, char **argv) {
   args *params = malloc(sizeof(args));
   memset(params, 0, sizeof(args));
@@ -36,15 +46,13 @@ args *parseArgs(int argc, char **argv) {
       params->printMode = atoi(argv[++optind]);
     } else if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
       free(params);
-      // TODO: Print more help info
-      // File formats
-      // Example usage
-      printUsage(stdout);
+      printUsageVerbose(stdout);
       return NULL;
     } else {
       free(params);
       printf("Invalid option `%s`\n", arg);
-      printf("See `vbdist --help` for usage.\n");
+      printf("See `vbdist --help` for more.\n\n");
+      printUsage(stdout);
       return NULL;
     }
   }
