@@ -22,7 +22,7 @@ void freePlayer(player* p) {
 player* parsePlayer(char* pStr) {
   player* p = initPlayer();
   char* token = strtok(pStr, "|");
-  char* fullName;
+  char* fullName = NULL;
   if (token != NULL) {
     while (isspace(*token)) token++;
     fullName = strdup(token);

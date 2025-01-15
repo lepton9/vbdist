@@ -20,7 +20,7 @@ void printUsage(FILE *out) {
 args *parseArgs(int argc, char **argv) {
   args *params = malloc(sizeof(args));
 
-  size_t optind;
+  int optind;
   for (optind = 1; optind < argc && argv[optind][0] == '-'; optind++) {
     if (strlen(argv[optind]) != 2)
       continue;

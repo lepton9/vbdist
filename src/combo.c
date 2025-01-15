@@ -20,7 +20,7 @@ void freeCombos(pCombos* combos) {
 }
 
 int isInCombo(pCombos* combos, player* a) {
-  for (int i = 0; i < combos->n; i++) {
+  for (int i = 0; i < (int)combos->n; i++) {
     if ((combos->combos[i].pidA == a->id || combos->combos[i].pidB == a->id)) {
       return i;
     }
@@ -29,7 +29,7 @@ int isInCombo(pCombos* combos, player* a) {
 }
 
 char isCombo(pCombos* combos, player* a, player* b) {
-  for (int i = 0; i < combos->n; i++) {
+  for (int i = 0; i < (int)combos->n; i++) {
     if ((combos->combos[i].pidA == a->id && combos->combos[i].pidB == b->id) ||
       (combos->combos[i].pidA == b->id && combos->combos[i].pidB == a->id)) {
       return 1;
@@ -39,7 +39,7 @@ char isCombo(pCombos* combos, player* a, player* b) {
 }
 
 char comboInTeam(pCombos* combos, team* t, player* p) {
-  for (int i = 0; i < t->size; i++) {
+  for (int i = 0; i < (int)t->size; i++) {
     if (isCombo(combos, p, t->players[i])) return 1;
   }
   return 0;

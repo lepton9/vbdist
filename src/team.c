@@ -13,7 +13,7 @@ team* initTeam(char* teamName, const size_t size) {
 
 void freeTeam(team* t) {
   if (!t) return;
-  for (int i = 0; i < t->size; i++) freePlayer(t->players[i]);
+  for (int i = 0; i < (int)t->size; i++) freePlayer(t->players[i]);
   free(t->players);
   free(t->name);
   free(t);
@@ -22,7 +22,7 @@ void freeTeam(team* t) {
 double avgRating(team* t) {
   if (t == NULL) return 0.0;
   double sumRatingT = 0;
-  for (int pI = 0; pI < t->size; pI++) {
+  for (int pI = 0; pI < (int)t->size; pI++) {
     sumRatingT += ovRating(t->players[pI]);
   }
   return sumRatingT / t->size;

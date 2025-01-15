@@ -208,7 +208,7 @@ int maxTeamFromPrefCombos(pCombos* prefCombos) {
   int** presetTeams = malloc(sizeof(int*));
   *presetTeams = calloc(2, sizeof(int));
 
-  for (int i = 0; i < prefCombos->n; i++) {
+  for (int i = 0; i < (int)prefCombos->n; i++) {
     char comboSet = 0;
     if (nTeams == 1 && ns[0] == 0) {
       presetTeams[0][ns[0]++] = prefCombos->combos[i].pidA;
@@ -259,7 +259,7 @@ int maxTeamFromPrefCombos(pCombos* prefCombos) {
 }
 
 void setPreferredCombos(team** teams, pCombos* prefCombos) {
-  for (int c = 0; c < prefCombos->n; c++) {
+  for (int c = 0; c < (int)prefCombos->n; c++) {
     int t1 = -1;
     int t2 = -1;
     player* p1 = NULL;
@@ -409,7 +409,7 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
 
 void changeMode(team** teams, pCombos* bpcs) {
   tui* tui = initTui(TEAM_SIZE, TEAMS_N);
-  char c;
+  char c = 0;
 
   cls(stdout);
   updateTUI(stdout, tui, teams, bpcs);
