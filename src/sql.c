@@ -66,13 +66,8 @@ int execSQL(sqlite3* db, const char* sql) {
 
 playerList* fetchPlayers(sqldb* db) {
   char* sql = "SELECT * FROM Player;";
+  playerList* list = mallocPList(50);
   char* err_msg = NULL;
-
-  playerList* list = malloc(sizeof(playerList));
-  memset(list, 0, sizeof(playerList));
-  list->size = 50;
-  list->players = malloc(list->size * sizeof(player*));
-
   int result = sqlite3_exec(db->sqlite, sql, cb_players, list, &err_msg);
   if (err_msg) {
     fprintf(stderr, "SQL error: %s\n", err_msg);

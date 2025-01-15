@@ -16,11 +16,14 @@ typedef struct {
   mark marker;
 } player;
 
+// TODO: make general list struct
 typedef struct {
   player** players;
   size_t n;
   size_t size;
 } playerList;
+
+playerList* mallocPList(size_t size);
 
 player* initPlayer();
 void freePlayer(player* p);

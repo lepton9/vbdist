@@ -3,21 +3,28 @@
 
 #include "sql.h"
 #include "player.h"
+#include "tui.h"
 
 typedef struct {
-  sqldb* db;
-  player** allPlayers;
-  player** players;
-  size_t all_n;
-  size_t n;
+  size_t maxShown;
+  size_t width;
+  size_t firstInd;
   int selected;
+} listArea;
+
+typedef struct {
+  // sqldb* db;
+  playerList* allPlayers;
+  playerList* players;
+  listArea* allPlayersArea;
+  term_size* term;
   int teams;
   int team_size;
 
 } tuidb;
 
 
-tuidb* initTuiDB();
+tuidb* initTuiDB(int teams, int team_size);
 void freeTuiDB(tuidb* tui);
 
 void runTuiDB(tuidb* tui);
@@ -33,6 +40,7 @@ void list_down(tuidb* tui);
 void list_left(tuidb* tui);
 void list_right(tuidb* tui);
 
+void renderPlayerList(tuidb* tui);
 void renderTuidb(tuidb* tui);
 
 #endif

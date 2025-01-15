@@ -19,6 +19,14 @@ void freePlayer(player* p) {
   free(p);
 }
 
+playerList* mallocPList(size_t size) {
+  playerList* list = malloc(sizeof(playerList));
+  memset(list, 0, sizeof(playerList));
+  list->size = size;
+  list->players = malloc(list->size * sizeof(player*));
+  return list;
+}
+
 player* parsePlayer(char* pStr) {
   player* p = initPlayer();
   char* token = strtok(pStr, "|");
