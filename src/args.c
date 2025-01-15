@@ -6,46 +6,45 @@
 void printUsage(FILE *out) {
   fprintf(out, "Usage: vbdist [options]\n"
                "  Options:\n"
-               "    -f <file>      Path to textfile\n"
-               "    -d <database>  Path to sqlite database\n"
-               "    -t <int>       Set number of teams\n"
-               "    -p <int>       Set number of players in a team\n"
-               "    -m <int>       Set print mode (Optional, default minimal)\n"
-               "    -h             Display help\n"
+               "    -f, --file <file>          Path to textfile\n"
+               "    -d, --database <database>  Path to sqlite database\n"
+               "    -t, --teams <int>          Set number of teams\n"
+               "    -p, --players <int>        Set number of players in a team\n"
+               "    -m, --mode <int>           Set print mode 0-2 (Optional, default minimal)\n"
+               "    -h, --help                 Display help\n"
                "\nUses a file or database to store and retrieve data based on "
                "which option is set.\n");
 }
 
-// TODO: longer -- option versions
 args *parseArgs(int argc, char **argv) {
   args *params = malloc(sizeof(args));
+  memset(params, 0, sizeof(args));
 
   int optind;
-  for (optind = 1; optind < argc && argv[optind][0] == '-'; optind++) {
-    if (strlen(argv[optind]) != 2)
-      continue;
-    switch (argv[optind][1]) {
-    case 'f': // Textfile containing players
+  for (optind = 1; optind < argc; optind++) {
+    char* arg = argv[optind];
+
+    if (strcmp(arg, "-f") == 0 || strcmp(arg, "--file") == 0) {
       params->fileName = argv[++optind];
-      break;
-    case 'd': // Sqlite3 database file name
+    } else if (strcmp(arg, "-d") == 0 || strcmp(arg, "--database") == 0) {
       params->dbName = argv[++optind];
-      break;
-    case 't': // Amount of teams
+    } else if (strcmp(arg, "-t") == 0 || strcmp(arg, "--teams") == 0) {
       params->teams = atoi(argv[++optind]);
-      break;
-    case 'p': // Players in team
+    } else if (strcmp(arg, "-p") == 0 || strcmp(arg, "--players") == 0) {
       params->players = atoi(argv[++optind]);
-      break;
-    case 'm': // Print mode
+    } else if (strcmp(arg, "-m") == 0 || strcmp(arg, "--mode") == 0) {
       params->printMode = atoi(argv[++optind]);
-      break;
-    case 'h':
+    } else if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
       free(params);
       // TODO: Print more help info
       // File formats
       // Example usage
       printUsage(stdout);
+      return NULL;
+    } else {
+      free(params);
+      printf("Invalid option `%s`\n", arg);
+      printf("See `vbdist --help` for usage.\n");
       return NULL;
     }
   }
