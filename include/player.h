@@ -24,9 +24,11 @@ typedef struct {
 } playerList;
 
 playerList* mallocPList(size_t size);
+void pushPlayer(playerList* list, player* p);
 
 player* initPlayer();
 void freePlayer(player* p);
+player* copyPlayer(player* p);
 player* parsePlayer(char* pStr);
 int cmpPlayers(const void* a, const void* b);
 void swapPlayers(player* a, player* b);

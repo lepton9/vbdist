@@ -32,8 +32,8 @@ void freeTuiDB(tuidb* tui);
 
 void runTuiDB(tuidb* tui);
 
-void selectPlayer();
-void unselectPlayer();
+void selectPlayer(tuidb* tui);
+void unselectPlayer(tuidb* tui);
 
 int isSelected(player** players, int player_id);
 

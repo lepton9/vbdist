@@ -29,11 +29,7 @@ int cb_players(void* pList, int count, char **data, char **columns) {
   p->id = atoi(data[0]);
   p->ratings_id = atoi(data[1]);
   p->firstName = strdup(data[2]);
-  if (list->n >= list->size) {
-    list->size *= 2;
-    list->players = realloc(list->players, list->size * sizeof(player*));
-  }
-  list->players[list->n++] = p;
+  pushPlayer(list, p);
   return 0;
 }
 

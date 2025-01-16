@@ -27,6 +27,22 @@ playerList* mallocPList(size_t size) {
   return list;
 }
 
+void pushPlayer(playerList* list, player* p) {
+  if (list->n >= list->size) {
+    list->size *= 2;
+    list->players = realloc(list->players, list->size * sizeof(player*));
+  }
+  list->players[list->n++] = p;
+}
+
+player* copyPlayer(player* p) {
+  player* copy = initPlayer();
+  *copy = *p;
+  copy->firstName = strdup(p->firstName);
+  if (p->surName) copy->surName = strdup(p->surName);
+  return copy;
+}
+
 player* parsePlayer(char* pStr) {
   player* p = initPlayer();
   char* token = strtok(pStr, "|");

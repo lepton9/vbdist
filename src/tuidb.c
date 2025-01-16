@@ -38,6 +38,16 @@ void freeTuiDB(tuidb* tui) {
 }
 
 
+void selectPlayer(tuidb* tui) {
+  if (tui->allPlayersArea->selected < 0 || tui->allPlayers->n <= 0) return;
+  pushPlayer(tui->players, copyPlayer(tui->allPlayers->players[tui->allPlayersArea->selected]));
+}
+
+void unselectPlayer(tuidb* tui) {
+
+}
+
+
 void list_up(tuidb* tui) {
   if (tui->allPlayersArea->selected > 0) {
     tui->allPlayersArea->selected -= 1;
@@ -69,6 +79,7 @@ void list_right(tuidb* tui) {
 void handleKeyPress(tuidb* tui, char c) {
     switch (c) {
       case 13: case '\n': case ' ':
+        selectPlayer(tui);
         break;
       case 27: // Esc
         break;
@@ -81,6 +92,8 @@ void handleKeyPress(tuidb* tui, char c) {
       case 'h': case 'a':
         break;
       case 'l': case 'd':
+        break;
+      case 'i': // Player info
         break;
       default: {
         break;
@@ -146,7 +159,23 @@ void renderAllPlayersList(tuidb* tui) {
 }
 
 void renderSelectedList(tuidb* tui) {
+  int startCol = tui->allPlayersArea->width + 5;
+  curSet(1, startCol);
+  printf("Selected %d/%d", (int)tui->players->n, tui->teams * tui->team_size);
 
+  int line = 2;
+  for (int i = 0;
+       line <= tui->term->rows - 1 &&
+       i + 1 <= tui->allPlayersArea->maxShown &&
+       i < tui->players->n;
+       i++) {
+
+    curSet(line, startCol);
+    formatPlayerLine(tui->players->players[i]);
+    line++;
+  }
+
+  fflush(stdout);
 }
 
 
