@@ -7,6 +7,7 @@
 #include <ctype.h>
 
 #include "../include/tuiSwitch.h"
+#include "../include/tuidb.h"
 #include "../include/tui.h"
 #include "../include/args.h"
 #include "../include/sql.h"
@@ -502,6 +503,24 @@ int main(int argc, char** argv) {
   if (!params) {
     exit(0);
   }
+
+
+  sqldb* d = openSqlDB("sql.db");
+  tuidb* tui = initTuiDB(4, 6);
+  tui->allPlayers = fetchPlayers(d);
+
+  // printf("Rows: %d, Cols: %d\n\n", tui->term->rows, tui->term->cols);
+
+  // for (int i = 0; i < (int)tui->allPlayers->n; i++) {
+  //   printf("%d ", tui->allPlayers->players[i]->id);
+  //   printPlayer(stdout, tui->allPlayers->players[i]);
+  // }
+
+  runTuiDB(tui);
+
+  freeTuiDB(tui);
+  return 0;
+
 
   SOURCE = (params->fileName && params->dbName) ? DATABASE
        : (params->fileName)                 ? TEXT_FILE

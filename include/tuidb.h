@@ -40,7 +40,11 @@ void list_down(tuidb* tui);
 void list_left(tuidb* tui);
 void list_right(tuidb* tui);
 
-void renderPlayerList(tuidb* tui);
+void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);
+void renderAllPlayersList(tuidb* tui);
+void renderSelectedList(tuidb* tui);
+
+void handleKeyPress(tuidb* tui, char c);
 
 #endif

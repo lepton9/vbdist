@@ -12,6 +12,10 @@ void altBufferDisable() {
   printf("\033[?1049l");
 }
 
+void curSet(int row, int col) {
+  printf("\033[%d;%dH", row, col);
+}
+
 char keyPress() {
   char c;
 #ifdef _WIN32
