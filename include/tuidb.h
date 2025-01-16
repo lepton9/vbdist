@@ -5,6 +5,9 @@
 #include "player.h"
 #include "tui.h"
 
+#define BASE_LIST_LEN 30
+#define BASE_SECTION_WIDTH 50
+
 typedef struct {
   size_t maxShown;
   size_t width;

@@ -41,6 +41,9 @@ void freeTuiDB(tuidb* tui) {
 void list_up(tuidb* tui) {
   if (tui->allPlayersArea->selected > 0) {
     tui->allPlayersArea->selected -= 1;
+    if (tui->allPlayersArea->selected < tui->allPlayersArea->firstInd) {
+      tui->allPlayersArea->firstInd = tui->allPlayersArea->selected;
+    }
   }
 }
 
@@ -48,6 +51,10 @@ void list_up(tuidb* tui) {
 void list_down(tuidb* tui) {
   if (tui->allPlayersArea->selected < tui->allPlayers->n - 1) {
     tui->allPlayersArea->selected += 1;
+    if (tui->allPlayersArea->selected > tui->allPlayersArea->firstInd + tui->allPlayersArea->maxShown - 1) {
+      tui->allPlayersArea->firstInd = tui->allPlayersArea->selected - tui->allPlayersArea->maxShown + 1;
+    }
+
   }
 }
 
@@ -84,6 +91,7 @@ void handleKeyPress(tuidb* tui, char c) {
 
 void runTuiDB(tuidb* tui) {
   altBufferEnable();
+  curHide();
 
   char c = 0;
   while (c != 'q') {
@@ -93,6 +101,7 @@ void runTuiDB(tuidb* tui) {
     handleKeyPress(tui, c);
   }
 
+  curShow();
   cls(stdout);
   altBufferDisable();
 }
@@ -100,6 +109,10 @@ void runTuiDB(tuidb* tui) {
 void updateArea(tuidb* tui) {
   getTermSize(tui->term);
   tui->allPlayersArea->width = tui->term->cols / 2;
+  tui->allPlayersArea->width =
+      (tui->term->rows < BASE_SECTION_WIDTH) ? tui->term->cols / 2 : BASE_SECTION_WIDTH;
+  tui->allPlayersArea->maxShown =
+      (tui->term->rows < BASE_LIST_LEN) ? tui->term->rows - 2 : BASE_LIST_LEN;
 }
 
 void formatPlayerLine(player* player) {
@@ -113,9 +126,14 @@ void renderTuidb(tuidb* tui) {
 }
 
 void renderAllPlayersList(tuidb* tui) {
-  int line = 1;
+  curSet(1, 0);
+  printf("\033[4m %-20s %s\033[24m", "Name", "Rating");
+  int line = 2;
   for (int i = tui->allPlayersArea->firstInd;
-       line < tui->term->rows - 1 && i < tui->allPlayers->n; i++) {
+       line <= tui->term->rows - 1 &&
+       i - tui->allPlayersArea->firstInd + 1 <= tui->allPlayersArea->maxShown &&
+       i < tui->allPlayers->n;
+       i++) {
     curSet(line, 0);
     if (tui->allPlayersArea->selected == i) printf("\033[7m");
     formatPlayerLine(tui->allPlayers->players[i]);

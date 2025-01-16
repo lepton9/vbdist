@@ -16,6 +16,14 @@ void curSet(int row, int col) {
   printf("\033[%d;%dH", row, col);
 }
 
+void curHide() {
+  printf("\033[?25l");
+}
+
+void curShow() {
+  printf("\033[?25h");
+}
+
 char keyPress() {
   char c;
 #ifdef _WIN32

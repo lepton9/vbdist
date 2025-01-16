@@ -20,6 +20,8 @@ typedef struct {
 void altBufferEnable();
 void altBufferDisable();
 void curSet(int row, int col);
+void curHide();
+void curShow();
 void cls(FILE* s);
 char keyPress();
 void initScreen();
