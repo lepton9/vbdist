@@ -35,6 +35,13 @@ void pushPlayer(playerList* list, player* p) {
   list->players[list->n++] = p;
 }
 
+int playerInList(playerList* list, int player_id) {
+  for (int i = 0; i < list->n; i++) {
+    if (list->players[i]->id == player_id) return i;
+  }
+  return -1;
+}
+
 player* copyPlayer(player* p) {
   player* copy = initPlayer();
   *copy = *p;

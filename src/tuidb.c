@@ -37,16 +37,26 @@ void freeTuiDB(tuidb* tui) {
   free(tui);
 }
 
-
 void selectPlayer(tuidb* tui) {
   if (tui->allPlayersArea->selected < 0 || tui->allPlayers->n <= 0) return;
-  pushPlayer(tui->players, copyPlayer(tui->allPlayers->players[tui->allPlayersArea->selected]));
+  player* selected = tui->allPlayers->players[tui->allPlayersArea->selected];
+  if (playerInList(tui->players, selected->id) >= 0) {
+    unselectPlayer(tui);
+    return;
+  }
+  pushPlayer(tui->players, copyPlayer(selected));
 }
 
 void unselectPlayer(tuidb* tui) {
-
+  player* selected = tui->allPlayers->players[tui->allPlayersArea->selected];
+  int i = playerInList(tui->players, selected->id);
+  if (i < 0) return;
+  freePlayer(tui->players->players[i]);
+  if (i != tui->players->n - 1) {
+    tui->players->players[i] = tui->players->players[tui->players->n - 1];
+  }
+  tui->players->n--;
 }
-
 
 void list_up(tuidb* tui) {
   if (tui->allPlayersArea->selected > 0) {
@@ -56,7 +66,6 @@ void list_up(tuidb* tui) {
     }
   }
 }
-
 
 void list_down(tuidb* tui) {
   if (tui->allPlayersArea->selected < tui->allPlayers->n - 1) {
@@ -99,7 +108,6 @@ void handleKeyPress(tuidb* tui, char c) {
         break;
       }
     }
-
 }
 
 void runTuiDB(tuidb* tui) {
@@ -169,12 +177,10 @@ void renderSelectedList(tuidb* tui) {
        i + 1 <= tui->allPlayersArea->maxShown &&
        i < tui->players->n;
        i++) {
-
     curSet(line, startCol);
     formatPlayerLine(tui->players->players[i]);
     line++;
   }
-
   fflush(stdout);
 }
 

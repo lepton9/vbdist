@@ -29,6 +29,7 @@ void pushPlayer(playerList* list, player* p);
 player* initPlayer();
 void freePlayer(player* p);
 player* copyPlayer(player* p);
+int playerInList(playerList* list, int player_id);
 player* parsePlayer(char* pStr);
 int cmpPlayers(const void* a, const void* b);
 void swapPlayers(player* a, player* b);
