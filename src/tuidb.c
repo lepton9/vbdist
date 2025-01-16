@@ -16,6 +16,7 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->allPlayersArea->selected = 0;
   tui->allPlayersArea->width = 50;
   tui->allPlayersArea->maxShown = 10;
+  tui->show_info = 0;
 
   tui->term = malloc(sizeof(term_size));
   getTermSize(tui->term);
@@ -90,8 +91,10 @@ void handleKeyPress(tuidb* tui, char c) {
       case 13: case '\n': case ' ':
         selectPlayer(tui);
         break;
-      case 27: // Esc
+      case 27: {  // Esc
+        tui->show_info = 0;
         break;
+      }
       case 'k': case 'w':
         list_up(tui);
         break;
@@ -103,6 +106,7 @@ void handleKeyPress(tuidb* tui, char c) {
       case 'l': case 'd':
         break;
       case 'i': // Player info
+        tui->show_info ^= 1;
         break;
       default: {
         break;
@@ -143,7 +147,8 @@ void formatPlayerLine(player* player) {
 void renderTuidb(tuidb* tui) {
   cls(stdout);
   renderAllPlayersList(tui);
-  renderSelectedList(tui);
+  if (tui->show_info) renderPlayerInfo(tui);
+  else renderSelectedList(tui);
 }
 
 void renderAllPlayersList(tuidb* tui) {
@@ -157,6 +162,9 @@ void renderAllPlayersList(tuidb* tui) {
        i++) {
     curSet(line, 0);
     if (tui->allPlayersArea->selected == i) printf("\033[7m");
+    if (playerInList(tui->players, tui->allPlayers->players[i]->id) >= 0) {
+      printf(">");
+    }
     formatPlayerLine(tui->allPlayers->players[i]);
     if (tui->allPlayersArea->selected == i) printf("\033[27m");
     curSet(line, tui->allPlayersArea->width);
@@ -177,10 +185,26 @@ void renderSelectedList(tuidb* tui) {
        i + 1 <= tui->allPlayersArea->maxShown &&
        i < tui->players->n;
        i++) {
-    curSet(line, startCol);
+    curSet(line++, startCol);
     formatPlayerLine(tui->players->players[i]);
-    line++;
   }
+  fflush(stdout);
+}
+
+void renderPlayerInfo(tuidb* tui) {
+  player* p = tui->allPlayers->players[tui->allPlayersArea->selected];
+  int startCol = tui->allPlayersArea->width + 5;
+  int line = 1;
+  curSet(line++, startCol);
+  printf("Name: %s", p->firstName);
+  curSet(line++, startCol);
+  printf("ID: %d", p->id);
+  curSet(line++, startCol);
+  printf("Rating: %.2f %.2f %.2f %.2f %.2f %.2f", p->ratings[0], p->ratings[1],
+         p->ratings[2], p->ratings[3], p->ratings[4], p->ratings[5]);
+  curSet(line++, startCol);
+  printf("Overall: %.2f", ovRating(p));
+
   fflush(stdout);
 }
 

@@ -24,6 +24,7 @@ typedef struct {
   int teams;
   int team_size;
 
+  int show_info;
 } tuidb;
 
 
@@ -47,6 +48,7 @@ void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);
 void renderAllPlayersList(tuidb* tui);
 void renderSelectedList(tuidb* tui);
+void renderPlayerInfo(tuidb* tui);
 
 void handleKeyPress(tuidb* tui, char c);
 
