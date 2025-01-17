@@ -1,6 +1,7 @@
 #ifndef TUI_H
 #define TUI_H
 
+#include <stdio.h>
 #ifdef __linux__
 #include <unistd.h>
 #include <ncurses.h>

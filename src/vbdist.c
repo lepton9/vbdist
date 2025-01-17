@@ -504,24 +504,6 @@ int main(int argc, char** argv) {
     exit(0);
   }
 
-
-  sqldb* d = openSqlDB("sql.db");
-  tuidb* tui = initTuiDB(4, 6);
-  tui->allPlayers = fetchPlayers(d);
-
-  // printf("Rows: %d, Cols: %d\n\n", tui->term->rows, tui->term->cols);
-
-  // for (int i = 0; i < (int)tui->allPlayers->n; i++) {
-  //   printf("%d ", tui->allPlayers->players[i]->id);
-  //   printPlayer(stdout, tui->allPlayers->players[i]);
-  // }
-
-  runTuiDB(tui);
-
-  freeTuiDB(tui);
-  return 0;
-
-
   SOURCE = (params->fileName && params->dbName) ? DATABASE
        : (params->fileName)                 ? TEXT_FILE
                                             : NO_SOURCE;
@@ -585,6 +567,20 @@ int main(int argc, char** argv) {
   }
 
   qsort(players, *pn, sizeof(player*), cmpPlayers);
+
+
+
+  tuidb* tui = initTuiDB(TEAMS_N, TEAM_SIZE);
+  tui->allPlayers = fetchPlayers(db);
+  tui->players->n = *pn;
+  tui->players->size = *pn;
+  tui->players->players = players;
+  runTuiDB(tui);
+  freeTuiDB(tui);
+  return 0;
+
+  // TODO: check if correct amount of players
+
 
   if (params->printMode == PRINT_ALL) printPlayers(players, *pn);
   printf("\nBanned combinations: %d\n", (int)bannedCombos->n);

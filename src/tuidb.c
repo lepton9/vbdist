@@ -28,9 +28,6 @@ void freeTuiDB(tuidb* tui) {
   for (int i = 0; i < tui->allPlayers->n; i++) {
     freePlayer(tui->allPlayers->players[i]);
   }
-  for (int i = 0; i < tui->players->n; i++) {
-    freePlayer(tui->players->players[i]);
-  }
   free(tui->allPlayers);
   free(tui->players);
   free(tui->allPlayersArea);
