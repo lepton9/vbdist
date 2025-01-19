@@ -8,8 +8,7 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->teams = teams;
   tui->team_size = team_size;
 
-  tui->allPlayers = mallocPList(50);
-  tui->players = mallocPList(teams * team_size);
+  tui->allPlayers = init_list(sizeof(player*));
 
   tui->allPlayersArea = malloc(sizeof(listArea));
   tui->allPlayersArea->firstInd = 0;
@@ -26,7 +25,7 @@ tuidb* initTuiDB(int teams, int team_size) {
 
 void freeTuiDB(tuidb* tui) {
   for (int i = 0; i < tui->allPlayers->n; i++) {
-    freePlayer(tui->allPlayers->players[i]);
+    freePlayer(tui->allPlayers->items[i]);
   }
   free(tui->allPlayers);
   free(tui->players);
@@ -35,23 +34,30 @@ void freeTuiDB(tuidb* tui) {
   free(tui);
 }
 
+int playerInList(dlist* list, int player_id) {
+  for (int i = 0; i < list->n; i++) {
+    if (((player*)list->items[i])->id == player_id) return i;
+  }
+  return -1;
+}
+
 void selectPlayer(tuidb* tui) {
   if (tui->allPlayersArea->selected < 0 || tui->allPlayers->n <= 0) return;
-  player* selected = tui->allPlayers->players[tui->allPlayersArea->selected];
+  player* selected = tui->allPlayers->items[tui->allPlayersArea->selected];
   if (playerInList(tui->players, selected->id) >= 0) {
     unselectPlayer(tui);
     return;
   }
-  pushPlayer(tui->players, copyPlayer(selected));
+  list_add(tui->players, copyPlayer(selected));
 }
 
 void unselectPlayer(tuidb* tui) {
-  player* selected = tui->allPlayers->players[tui->allPlayersArea->selected];
+  player* selected = tui->allPlayers->items[tui->allPlayersArea->selected];
   int i = playerInList(tui->players, selected->id);
   if (i < 0) return;
-  freePlayer(tui->players->players[i]);
+  freePlayer(tui->players->items[i]);
   if (i != tui->players->n - 1) {
-    tui->players->players[i] = tui->players->players[tui->players->n - 1];
+    tui->players->items[i] = tui->players->items[tui->players->n - 1];
   }
   tui->players->n--;
 }
@@ -166,10 +172,10 @@ void renderAllPlayersList(tuidb* tui) {
        i++) {
     curSet(line, 0);
     if (tui->allPlayersArea->selected == i) printf("\033[7m");
-    if (playerInList(tui->players, tui->allPlayers->players[i]->id) >= 0) {
+    if (playerInList(tui->players, ((player*)tui->allPlayers->items[i])->id) >= 0) {
       printf(">");
     }
-    formatPlayerLine(tui->allPlayers->players[i]);
+    formatPlayerLine(tui->allPlayers->items[i]);
     if (tui->allPlayersArea->selected == i) printf("\033[27m");
     curSet(line, tui->allPlayersArea->width);
     printf("|");
@@ -190,17 +196,17 @@ void renderSelectedList(tuidb* tui) {
        i < tui->players->n;
        i++) {
     curSet(line++, startCol);
-    formatPlayerLine(tui->players->players[i]);
+    formatPlayerLine(tui->players->items[i]);
   }
   fflush(stdout);
 }
 
 void renderPlayerInfo(tuidb* tui) {
-  player* p = tui->allPlayers->players[tui->allPlayersArea->selected];
+  player* p = tui->allPlayers->items[tui->allPlayersArea->selected];
   int startCol = tui->allPlayersArea->width + 5;
   int line = 1;
   curSet(line++, startCol);
-  printf("Name: %s", p->firstName, p->surName ? p->surName : "");
+  printf("Name: %s %s", p->firstName, p->surName ? p->surName : "");
   curSet(line++, startCol);
   printf("ID: %d", p->id);
   curSet(line++, startCol);
@@ -219,7 +225,7 @@ void renderPlayerInfo(tuidb* tui) {
     if (t->a == p->id) continue;
     int ind = playerInList(tui->allPlayers, t->a);
     if (ind >= 0) {
-      player* p = tui->allPlayers->players[ind];
+      player* p = tui->allPlayers->items[ind];
       curSet(line++, startCol);
       printf("%3d %s %s", t->b, p->firstName, p->surName ? p->surName : "");
     }

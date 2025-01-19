@@ -17,8 +17,8 @@ typedef struct {
 
 typedef struct {
   sqldb* db;
-  playerList* allPlayers;
-  playerList* players;
+  dlist* allPlayers;
+  dlist* players;
   listArea* allPlayersArea;
   term_size* term;
   int teams;
@@ -33,6 +33,7 @@ void freeTuiDB(tuidb* tui);
 
 void runTuiDB(tuidb* tui);
 
+int playerInList(dlist* list, int player_id);
 void selectPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui);
 

@@ -24,12 +24,12 @@ void closeSqlDB(sqldb* db) {
 }
 
 int cb_players(void* pList, int count, char **data, char **columns) {
-  playerList* list = pList;
+  dlist* list = pList;
   player* p = initPlayer();
   p->id = atoi(data[0]);
   p->ratings_id = atoi(data[1]);
   p->firstName = strdup(data[2]);
-  pushPlayer(list, p);
+  list_add(list, p);
   return 0;
 }
 
@@ -78,9 +78,9 @@ int execSQL(sqlite3* db, const char* sql) {
   return result == SQLITE_OK;
 }
 
-playerList* fetchPlayers(sqldb* db) {
+dlist* fetchPlayers(sqldb* db) {
   char* sql = "SELECT * FROM Player;";
-  playerList* list = mallocPList(50);
+  dlist* list = init_list(sizeof(player*));
   char* err_msg = NULL;
   int result = sqlite3_exec(db->sqlite, sql, cb_players, list, &err_msg);
   if (err_msg) {
@@ -88,7 +88,7 @@ playerList* fetchPlayers(sqldb* db) {
     sqlite3_free(err_msg);
   }
   for (int i = 0; i < (int)list->n; i++) {
-    fetchRating(db, list->players[i]);
+    fetchRating(db, list->items[i]);
   }
   return list;
 }

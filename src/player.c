@@ -19,29 +19,6 @@ void freePlayer(player* p) {
   free(p);
 }
 
-playerList* mallocPList(size_t size) {
-  playerList* list = malloc(sizeof(playerList));
-  memset(list, 0, sizeof(playerList));
-  list->size = size;
-  list->players = malloc(list->size * sizeof(player*));
-  return list;
-}
-
-void pushPlayer(playerList* list, player* p) {
-  if (list->n >= list->size) {
-    list->size *= 2;
-    list->players = realloc(list->players, list->size * sizeof(player*));
-  }
-  list->players[list->n++] = p;
-}
-
-int playerInList(playerList* list, int player_id) {
-  for (int i = 0; i < list->n; i++) {
-    if (list->players[i]->id == player_id) return i;
-  }
-  return -1;
-}
-
 player* copyPlayer(player* p) {
   player* copy = initPlayer();
   *copy = *p;

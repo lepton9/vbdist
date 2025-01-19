@@ -573,9 +573,7 @@ int main(int argc, char** argv) {
   tuidb* tui = initTuiDB(TEAMS_N, TEAM_SIZE);
   tui->db = db;
   tui->allPlayers = fetchPlayers(db);
-  tui->players->n = *pn;
-  tui->players->size = *pn;
-  tui->players->players = players;
+  tui->players = list_from((void**)players, sizeof(player*), *pn);
   runTuiDB(tui);
   freeTuiDB(tui);
   return 0;

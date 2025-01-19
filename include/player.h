@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "../include/mark.h"
+#include "../include/dlist.h"
 
 #define DIFRATINGS 6
 
@@ -16,20 +17,9 @@ typedef struct {
   mark marker;
 } player;
 
-// TODO: make general list struct
-typedef struct {
-  player** players;
-  size_t n;
-  size_t size;
-} playerList;
-
-playerList* mallocPList(size_t size);
-void pushPlayer(playerList* list, player* p);
-
 player* initPlayer();
 void freePlayer(player* p);
 player* copyPlayer(player* p);
-int playerInList(playerList* list, int player_id);
 player* parsePlayer(char* pStr);
 int cmpPlayers(const void* a, const void* b);
 void swapPlayers(player* a, player* b);

@@ -24,7 +24,7 @@ int createDB(sqldb* db);
 
 int fetchPlayer(sqldb* db, player* player);
 int fetchRating(sqldb* db, player* player);
-playerList* fetchPlayers(sqldb* db);
+dlist* fetchPlayers(sqldb* db);
 dlist* fetchPlayerTeams(sqldb* db, player* player);
 dlist* fetchFormerTeammates(sqldb* db, player* player);
 
