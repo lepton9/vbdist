@@ -430,20 +430,16 @@ void changeMode(team** teams, pCombos* bpcs) {
       case 27: // Esc
         unselect(tui->selected);
         break;
-      case 'k':
-      case 'w':
+      case 'k': case 'w':
         cur_up(tui);
         break;
-      case 'h':
-      case 'a':
+      case 'h': case 'a':
         cur_left(tui);
         break;
-      case 'l':
-      case 'd':
+      case 'l': case 'd':
         cur_right(tui);
         break;
-      case 'j':
-      case 's':
+      case 'j': case 's':
         cur_down(tui);
         break;
       default: {
@@ -574,11 +570,56 @@ int main(int argc, char** argv) {
   tui->db = db;
   tui->allPlayers = fetchPlayers(db);
   tui->players = list_from((void**)players, sizeof(player*), *pn);
-  runTuiDB(tui);
-  freeTuiDB(tui);
-  return 0;
+  // runTuiDB(tui);
+  // *pn = tui->players->n;
+  // freeTuiDB(tui);
+  // return 0;
 
-  // TODO: check if correct amount of players
+  char error_msg[100];
+  char c = 0;
+  int loop = 1;
+  while (loop) {
+    cls(stdout);
+    curSet(1, 1);
+    printf("\n Players selected: %d/%d\n", *pn, TEAMS_N * TEAM_SIZE);
+    printf("\n Banned combinations: %d\n", (int)bannedCombos->n);
+    printf(" Preferred combinations: %d\n", (int)prefCombos->n);
+    printf("\n");
+
+    printf(" [g] Generate teams\n");
+    if (SOURCE == DATABASE) printf(" [d] Database\n");
+    printf(" [q] Quit\n");
+
+    printf("\n \033[31m%s\033[0m\n", error_msg);
+    c = keyPress();
+    switch (c) {
+      case 'g':
+        if (*pn != TEAMS_N * TEAM_SIZE) {
+          sprintf(error_msg, "Selected %d players, but %d was expected", *pn, TEAMS_N * TEAM_SIZE);
+        } else {
+          loop = 0;
+        }
+        break;
+      case 27: // Esc
+        error_msg[0] = '\0';
+        break;
+      case 'q':
+        cls(stdout);
+        return 0;
+      case 'd':
+        if (SOURCE == DATABASE) {
+          error_msg[0] = '\0';
+          runTuiDB(tui);
+          players = (player**)tui->players->items;
+          *pn = tui->players->n;
+        }
+        break;
+      default: {
+        break;
+      }
+    }
+  }
+  cls(stdout);
 
 
   if (params->printMode == PRINT_ALL) printPlayers(players, *pn);

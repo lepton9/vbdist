@@ -67,6 +67,13 @@ int cb_teammates(void* teammates, int count, char **data, char **columns) {
   return 0;
 }
 
+int cb_not_teammates(void* not_teammates, int count, char **data, char **columns) {
+  assert(count == 1);
+  int* id = malloc(sizeof(int));
+  *id = atoi(data[0]);
+  list_add(not_teammates, id);
+  return 0;
+}
 
 int execSQL(sqlite3* db, const char* sql) {
   char* err_msg = NULL;
@@ -146,6 +153,23 @@ dlist* fetchFormerTeammates(sqldb* db, player* player) {
     sqlite3_free(err_msg);
   }
   return teammates;
+}
+
+dlist* fetchNotTeammates(sqldb* db, player* player) {
+  dlist* no_teammates = init_list(sizeof(int*));
+  char sql[200];
+  sprintf(sql,
+          "SELECT player_id FROM Player WHERE player_id NOT IN (SELECT player_id FROM "
+          "PlayerTeam WHERE team_id IN (SELECT team_id FROM PlayerTeam WHERE "
+          "player_id = %d) GROUP BY player_id);",
+          player->id);
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db->sqlite, sql, cb_not_teammates, no_teammates, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+  return no_teammates;
 }
 
 void insertTeam(sqldb* db, team* team) {

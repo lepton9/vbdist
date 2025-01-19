@@ -230,6 +230,28 @@ void renderPlayerInfo(tuidb* tui) {
       printf("%3d %s %s", t->b, p->firstName, p->surName ? p->surName : "");
     }
   }
+
+  line = 6;
+  curSet(line, startCol + 30);
+  printf("Not teammates with:");
+  line += 2;
+
+  dlist* not_player_ids = fetchNotTeammates(tui->db, p);
+  for (int i = 0; i < not_player_ids->n && line < tui->term->rows - 2; i++) {
+    int_tuple* t = not_player_ids->items[i];
+    if (t->a == p->id) continue;
+    int ind = playerInList(tui->allPlayers, t->a);
+    if (ind >= 0) {
+      player* p = tui->allPlayers->items[ind];
+      curSet(line++, startCol + 30);
+      printf("%s %s", p->firstName, p->surName ? p->surName : "");
+    }
+  }
+  for (int i = 0; i < not_player_ids->n; i++) {
+    free(not_player_ids->items[i]);
+  }
+  free_list(not_player_ids);
+
   for (int i = 0; i < player_ids->n; i++) {
     free(player_ids->items[i]);
   }
