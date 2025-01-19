@@ -202,7 +202,22 @@ void renderPlayerInfo(tuidb* tui) {
   curSet(line++, startCol);
   printf("Overall: %.2f", ovRating(p));
 
+  dlist* player_ids = fetchFormerTeammates(tui->db, p);
+  for (int i = 0; i < player_ids->n; i++) {
+    int_tuple* t = player_ids->items[i];
+    int ind = playerInList(tui->allPlayers, t->a);
+    if (ind >= 0) {
+      player* p = tui->allPlayers->players[ind];
+      curSet(line++, startCol);
+      printf("%s: %d", p->firstName, t->b);
+    }
+  }
+
+  for (int i = 0; i < player_ids->n; i++) {
+    free(player_ids->items[i]);
+  }
+  free_list(player_ids);
+
   fflush(stdout);
 }
-
 

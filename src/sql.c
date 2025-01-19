@@ -50,6 +50,24 @@ int cb_rating(void* p, int argc, char **argv, char **colName) {
   return 0;
 }
 
+int cb_player_teams(void* team_ids, int count, char **data, char **columns) {
+  assert(count == 1);
+  int* id = malloc(sizeof(int));
+  *id = atoi(data[0]);
+  list_add(team_ids, id);
+  return 0;
+}
+
+int cb_teammates(void* teammates, int count, char **data, char **columns) {
+  assert(count == 2);
+  int_tuple* tuple = malloc(sizeof(int_tuple));
+  tuple->a = atoi(data[0]);
+  tuple->b = atoi(data[1]);
+  list_add(teammates, tuple);
+  return 0;
+}
+
+
 int execSQL(sqlite3* db, const char* sql) {
   char* err_msg = NULL;
   int result = sqlite3_exec(db, sql, NULL, NULL, &err_msg);
@@ -90,7 +108,6 @@ int fetchRating(sqldb* db, player* player) {
 int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name, rating_id FROM Player WHERE player_id = %d;", player->id);
-
   char* err_msg = NULL;
   int result = sqlite3_exec(db->sqlite, sql, cb_player, player, &err_msg);
   if (err_msg) {
@@ -99,6 +116,36 @@ int fetchPlayer(sqldb* db, player* player) {
   }
   fetchRating(db, player);
   return player->found;
+}
+
+dlist* fetchPlayerTeams(sqldb* db, player* player) {
+  char sql[100];
+  sprintf(sql, "SELECT team_id FROM PlayerTeam WHERE player_id = %d;", player->id);
+  dlist* teams = init_list(sizeof(int*));
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db->sqlite, sql, cb_player_teams, teams, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+  return teams;
+}
+
+dlist* fetchFormerTeammates(sqldb* db, player* player) {
+  dlist* teammates = init_list(sizeof(int_tuple*));
+  char sql[200];
+  sprintf(sql,
+          "SELECT player_id, COUNT(player_id) as teammate_count FROM "
+          "PlayerTeam WHERE team_id IN (SELECT team_id FROM PlayerTeam WHERE "
+          "player_id = %d) GROUP BY player_id ORDER BY teammate_count DESC;",
+          player->id);
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db->sqlite, sql, cb_teammates, teammates, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+  return teammates;
 }
 
 void insertTeam(sqldb* db, team* team) {

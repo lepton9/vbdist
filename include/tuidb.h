@@ -16,7 +16,7 @@ typedef struct {
 } listArea;
 
 typedef struct {
-  // sqldb* db;
+  sqldb* db;
   playerList* allPlayers;
   playerList* players;
   listArea* allPlayersArea;
