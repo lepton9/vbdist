@@ -5,7 +5,7 @@
 #include "player.h"
 #include "tui.h"
 
-#define BASE_LIST_LEN 30
+#define BASE_LIST_LEN 50
 #define BASE_SECTION_WIDTH 50
 
 typedef struct {
@@ -36,14 +36,12 @@ void runTuiDB(tuidb* tui);
 void selectPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui);
 
-int isSelected(player** players, int player_id);
-
-
 void list_up(tuidb* tui);
 void list_down(tuidb* tui);
 void list_left(tuidb* tui);
 void list_right(tuidb* tui);
 
+void fitToScreen(tuidb* tui);
 void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);
 void renderAllPlayersList(tuidb* tui);

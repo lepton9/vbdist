@@ -15,7 +15,7 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->allPlayersArea->firstInd = 0;
   tui->allPlayersArea->selected = 0;
   tui->allPlayersArea->width = 50;
-  tui->allPlayersArea->maxShown = 10;
+  tui->allPlayersArea->maxShown = BASE_LIST_LEN;
   tui->show_info = 0;
 
   tui->term = malloc(sizeof(term_size));
@@ -56,22 +56,28 @@ void unselectPlayer(tuidb* tui) {
   tui->players->n--;
 }
 
+void fitToScreen(tuidb* tui) {
+  if (tui->allPlayersArea->selected < tui->allPlayersArea->firstInd) {
+    tui->allPlayersArea->firstInd = tui->allPlayersArea->selected;
+  }
+  else if (tui->allPlayersArea->selected >
+    tui->allPlayersArea->firstInd + tui->allPlayersArea->maxShown - 1) {
+    tui->allPlayersArea->firstInd =
+      tui->allPlayersArea->selected - tui->allPlayersArea->maxShown + 1;
+  }
+}
+
 void list_up(tuidb* tui) {
   if (tui->allPlayersArea->selected > 0) {
     tui->allPlayersArea->selected -= 1;
-    if (tui->allPlayersArea->selected < tui->allPlayersArea->firstInd) {
-      tui->allPlayersArea->firstInd = tui->allPlayersArea->selected;
-    }
+    fitToScreen(tui);
   }
 }
 
 void list_down(tuidb* tui) {
   if (tui->allPlayersArea->selected < tui->allPlayers->n - 1) {
     tui->allPlayersArea->selected += 1;
-    if (tui->allPlayersArea->selected > tui->allPlayersArea->firstInd + tui->allPlayersArea->maxShown - 1) {
-      tui->allPlayersArea->firstInd = tui->allPlayersArea->selected - tui->allPlayersArea->maxShown + 1;
-    }
-
+    fitToScreen(tui);
   }
 }
 
@@ -133,8 +139,9 @@ void updateArea(tuidb* tui) {
   tui->allPlayersArea->width = tui->term->cols / 2;
   tui->allPlayersArea->width =
       (tui->term->rows < BASE_SECTION_WIDTH) ? tui->term->cols / 2 : BASE_SECTION_WIDTH;
-  tui->allPlayersArea->maxShown =
-      (tui->term->rows < BASE_LIST_LEN) ? tui->term->rows - 2 : BASE_LIST_LEN;
+  int maxRows = tui->term->rows - 2;
+  tui->allPlayersArea->maxShown = (maxRows < BASE_LIST_LEN) ? maxRows : BASE_LIST_LEN;
+  fitToScreen(tui);
 }
 
 void formatPlayerLine(player* player) {
@@ -193,7 +200,7 @@ void renderPlayerInfo(tuidb* tui) {
   int startCol = tui->allPlayersArea->width + 5;
   int line = 1;
   curSet(line++, startCol);
-  printf("Name: %s", p->firstName);
+  printf("Name: %s", p->firstName, p->surName ? p->surName : "");
   curSet(line++, startCol);
   printf("ID: %d", p->id);
   curSet(line++, startCol);
@@ -202,22 +209,25 @@ void renderPlayerInfo(tuidb* tui) {
   curSet(line++, startCol);
   printf("Overall: %.2f", ovRating(p));
 
+  curSet(++line, startCol);
+  printf("Former teammates:");
+  line += 2;
+
   dlist* player_ids = fetchFormerTeammates(tui->db, p);
-  for (int i = 0; i < player_ids->n; i++) {
+  for (int i = 0; i < player_ids->n && line < tui->term->rows - 2; i++) {
     int_tuple* t = player_ids->items[i];
+    if (t->a == p->id) continue;
     int ind = playerInList(tui->allPlayers, t->a);
     if (ind >= 0) {
       player* p = tui->allPlayers->players[ind];
       curSet(line++, startCol);
-      printf("%s: %d", p->firstName, t->b);
+      printf("%3d %s %s", t->b, p->firstName, p->surName ? p->surName : "");
     }
   }
-
   for (int i = 0; i < player_ids->n; i++) {
     free(player_ids->items[i]);
   }
   free_list(player_ids);
-
   fflush(stdout);
 }
 
