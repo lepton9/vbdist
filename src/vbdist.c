@@ -494,7 +494,7 @@ int askUpdateParamNum(const char* query, int current) {
     printf("\n Current: %d\n", current);
     printf(" %s: %s", query, new);
     fflush(stdout);
-    char c = keyPress();
+    c = keyPress();
     if (isdigit(c) && len < max_len) {
       strncat(new, &c, 1);
       len++;

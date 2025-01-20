@@ -316,7 +316,7 @@ void renderPlayerInfo(tuidb* tui) {
 
 void renderAllTeamsList(tuidb* tui) {
   curSet(1, 0);
-  printf("\033[4m %-20s %s\033[24m", "Name", "Rating");
+  printf("\033[4m %-20s\033[24m", "Name");
   int line = 2;
   for (int i = tui->allTeamsArea->firstInd;
        line <= tui->term->rows - 1 &&
@@ -335,7 +335,28 @@ void renderAllTeamsList(tuidb* tui) {
 }
 
 void renderSelectedTeam(tuidb* tui) {
+  team* t = tui->allTeams->items[tui->allTeamsArea->selected];
+  int startCol = tui->allTeamsArea->width + 5;
+  int line = 1;
+  curSet(line++, startCol);
+  printf("Players in team %s:", t->name);
+  line++;
 
+  dlist* player_ids = fetchPlayersInTeam(tui->db, t);
+  for (int i = 0; i < player_ids->n && line < tui->term->rows - 2; i++) {
+    int* id = player_ids->items[i];
+    int ind = playerInList(tui->allPlayers, *id);
+    if (ind >= 0) {
+      player* p = tui->allPlayers->items[ind];
+      curSet(line++, startCol);
+      printf("%s %s", p->firstName, p->surName ? p->surName : "");
+    }
+  }
+
+  for (int i = 0; i < player_ids->n; i++) {
+    free(player_ids->items[i]);
+  }
+  free_list(player_ids);
   fflush(stdout);
 }
 

@@ -59,14 +59,6 @@ int cb_rating(void* p, int argc, char **argv, char **colName) {
   return 0;
 }
 
-int cb_player_teams(void* team_ids, int count, char **data, char **columns) {
-  assert(count == 1);
-  int* id = malloc(sizeof(int));
-  *id = atoi(data[0]);
-  list_add(team_ids, id);
-  return 0;
-}
-
 int cb_teammates(void* teammates, int count, char **data, char **columns) {
   assert(count == 2);
   int_tuple* tuple = malloc(sizeof(int_tuple));
@@ -81,6 +73,14 @@ int cb_not_teammates(void* not_teammates, int count, char **data, char **columns
   int* id = malloc(sizeof(int));
   *id = atoi(data[0]);
   list_add(not_teammates, id);
+  return 0;
+}
+
+int cb_add_id_list(void* list, int count, char **data, char **columns) {
+  assert(count == 1);
+  int* id = malloc(sizeof(int));
+  *id = atoi(data[0]);
+  list_add(list, id);
   return 0;
 }
 
@@ -151,7 +151,7 @@ dlist* fetchPlayerTeams(sqldb* db, player* player) {
   sprintf(sql, "SELECT team_id FROM PlayerTeam WHERE player_id = %d;", player->id);
   dlist* teams = init_list(sizeof(int*));
   char* err_msg = NULL;
-  int result = sqlite3_exec(db->sqlite, sql, cb_player_teams, teams, &err_msg);
+  int result = sqlite3_exec(db->sqlite, sql, cb_add_id_list, teams, &err_msg);
   if (err_msg) {
     fprintf(stderr, "SQL error: %s\n", err_msg);
     sqlite3_free(err_msg);
@@ -191,6 +191,19 @@ dlist* fetchNotTeammates(sqldb* db, player* player) {
     sqlite3_free(err_msg);
   }
   return no_teammates;
+}
+
+dlist* fetchPlayersInTeam(sqldb* db, team* team) {
+  char sql[100];
+  sprintf(sql, "SELECT player_id FROM PlayerTeam WHERE team_id = %d;", team->id);
+  dlist* players = init_list(sizeof(int*));
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db->sqlite, sql, cb_add_id_list, players, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+  return players;
 }
 
 void insertTeam(sqldb* db, team* team) {

@@ -29,6 +29,7 @@ dlist* fetchTeams(sqldb* db);
 dlist* fetchPlayerTeams(sqldb* db, player* player);
 dlist* fetchFormerTeammates(sqldb* db, player* player);
 dlist* fetchNotTeammates(sqldb* db, player* player);
+dlist* fetchPlayersInTeam(sqldb* db, team* team);
 
 void insertTeam(sqldb* db, team* team);
 void insertPlayerTeam(sqldb* db, player* player, team* team);
