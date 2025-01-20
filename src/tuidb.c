@@ -9,13 +9,22 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->team_size = team_size;
 
   tui->allPlayers = init_list(sizeof(player*));
+  tui->allTeams = init_list(sizeof(team*));
 
   tui->allPlayersArea = malloc(sizeof(listArea));
   tui->allPlayersArea->firstInd = 0;
   tui->allPlayersArea->selected = 0;
   tui->allPlayersArea->width = 50;
   tui->allPlayersArea->maxShown = BASE_LIST_LEN;
-  tui->show_info = 0;
+
+  tui->allTeamsArea = malloc(sizeof(listArea));
+  tui->allTeamsArea->firstInd = 0;
+  tui->allTeamsArea->selected = 0;
+  tui->allTeamsArea->width = 50;
+  tui->allTeamsArea->maxShown = BASE_LIST_LEN;
+
+  tui->tab = PLAYERS_TAB;
+  tui->show_player_info = 0;
 
   tui->term = malloc(sizeof(term_size));
   getTermSize(tui->term);
@@ -68,47 +77,69 @@ void unselectPlayer(tuidb* tui) {
 }
 
 void fitToScreen(tuidb* tui) {
-  if (tui->allPlayersArea->selected < tui->allPlayersArea->firstInd) {
-    tui->allPlayersArea->firstInd = tui->allPlayersArea->selected;
+  if (tui->tab == PLAYERS_TAB) fitAreaToScreen(tui->allPlayersArea);
+  if (tui->tab == TEAMS_TAB) fitAreaToScreen(tui->allTeamsArea);
+}
+
+void fitAreaToScreen(listArea* a) {
+  if (a->selected < a->firstInd) {
+    a->firstInd = a->selected;
   }
-  else if (tui->allPlayersArea->selected >
-    tui->allPlayersArea->firstInd + tui->allPlayersArea->maxShown - 1) {
-    tui->allPlayersArea->firstInd =
-      tui->allPlayersArea->selected - tui->allPlayersArea->maxShown + 1;
+  else if (a->selected > a->firstInd + a->maxShown - 1) {
+    a->firstInd = a->selected - a->maxShown + 1;
   }
 }
 
 void list_up(tuidb* tui) {
-  if (tui->allPlayersArea->selected > 0) {
-    tui->allPlayersArea->selected -= 1;
-    fitToScreen(tui);
+  switch (tui->tab) {
+    case PLAYERS_TAB: {
+      if (tui->allPlayersArea->selected > 0) {
+        tui->allPlayersArea->selected -= 1;
+        fitToScreen(tui);
+      }
+      break;
+    }
+    case TEAMS_TAB: {
+      if (tui->allTeamsArea->selected > 0) {
+        tui->allTeamsArea->selected -= 1;
+        fitToScreen(tui);
+      }
+      break;
+    }
   }
 }
 
 void list_down(tuidb* tui) {
-  if (tui->allPlayersArea->selected < tui->allPlayers->n - 1) {
-    tui->allPlayersArea->selected += 1;
-    fitToScreen(tui);
+  switch (tui->tab) {
+    case PLAYERS_TAB: {
+      if (tui->allPlayersArea->selected < tui->allPlayers->n - 1) {
+        tui->allPlayersArea->selected += 1;
+        fitToScreen(tui);
+      }
+      break;
+    }
+    case TEAMS_TAB: {
+      if (tui->allTeamsArea->selected < tui->allTeams->n - 1) {
+        tui->allTeamsArea->selected += 1;
+        fitToScreen(tui);
+      }
+      break;
+    }
   }
-}
-
-void list_left(tuidb* tui) {
-
-}
-
-void list_right(tuidb* tui) {
-
 }
 
 void handleKeyPress(tuidb* tui, char c) {
     switch (c) {
       case 13: case '\n': case ' ':
-        selectPlayer(tui);
+        if (tui->tab == PLAYERS_TAB) selectPlayer(tui);
         break;
       case 27: {  // Esc
-        tui->show_info = 0;
+        tui->show_player_info = 0;
         break;
       }
+      case 9: // Tab
+        tui->tab = (tui->tab == PLAYERS_TAB) ? TEAMS_TAB : PLAYERS_TAB;
+        break;
       case 'k': case 'w':
         list_up(tui);
         break;
@@ -120,7 +151,7 @@ void handleKeyPress(tuidb* tui, char c) {
       case 'l': case 'd':
         break;
       case 'i': // Player info
-        tui->show_info ^= 1;
+        if (tui->tab == PLAYERS_TAB) tui->show_player_info ^= 1;
         break;
       default: {
         break;
@@ -161,9 +192,19 @@ void formatPlayerLine(player* player) {
 
 void renderTuidb(tuidb* tui) {
   cls(stdout);
-  renderAllPlayersList(tui);
-  if (tui->show_info) renderPlayerInfo(tui);
-  else renderSelectedList(tui);
+  switch (tui->tab) {
+    case PLAYERS_TAB: {
+      renderAllPlayersList(tui);
+      if (tui->show_player_info) renderPlayerInfo(tui);
+      else renderSelectedList(tui);
+      break;
+    }
+    case TEAMS_TAB: {
+      renderAllTeamsList(tui);
+      renderSelectedTeam(tui);
+      break;
+    }
+  }
 }
 
 void renderAllPlayersList(tuidb* tui) {
@@ -261,6 +302,16 @@ void renderPlayerInfo(tuidb* tui) {
     free(player_ids->items[i]);
   }
   free_list(player_ids);
+  fflush(stdout);
+}
+
+void renderAllTeamsList(tuidb* tui) {
+
+  fflush(stdout);
+}
+
+void renderSelectedTeam(tuidb* tui) {
+
   fflush(stdout);
 }
 

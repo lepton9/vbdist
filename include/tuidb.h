@@ -8,6 +8,11 @@
 #define BASE_LIST_LEN 50
 #define BASE_SECTION_WIDTH 50
 
+typedef enum {
+  PLAYERS_TAB,
+  TEAMS_TAB
+} TuiTab;
+
 typedef struct {
   size_t maxShown;
   size_t width;
@@ -17,13 +22,16 @@ typedef struct {
 
 typedef struct {
   sqldb* db;
-  dlist* allPlayers;
   dlist* players;
+  dlist* allPlayers;
+  dlist* allTeams;
   listArea* allPlayersArea;
+  listArea* allTeamsArea;
   term_size* term;
   int teams_n;
   int team_size;
-  int show_info;
+  TuiTab tab;
+  int show_player_info;
 } tuidb;
 
 
@@ -39,15 +47,16 @@ void unselectPlayer(tuidb* tui);
 
 void list_up(tuidb* tui);
 void list_down(tuidb* tui);
-void list_left(tuidb* tui);
-void list_right(tuidb* tui);
 
 void fitToScreen(tuidb* tui);
+void fitAreaToScreen(listArea* a);
 void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);
 void renderAllPlayersList(tuidb* tui);
 void renderSelectedList(tuidb* tui);
 void renderPlayerInfo(tuidb* tui);
+void renderAllTeamsList(tuidb* tui);
+void renderSelectedTeam(tuidb* tui);
 
 void handleKeyPress(tuidb* tui, char c);
 
