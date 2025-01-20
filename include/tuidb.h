@@ -38,6 +38,9 @@ typedef struct {
 
 tuidb* initTuiDB(int teams, int team_size);
 void freeTuiDB(tuidb* tui);
+
+listArea* initListArea();
+
 void updateTeamSize(tuidb* tui, int team_n, int team_size);
 
 void runTuiDB(tuidb* tui);

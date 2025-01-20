@@ -12,17 +12,8 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->allPlayers = init_list(sizeof(player*));
   tui->allTeams = init_list(sizeof(team*));
 
-  tui->allPlayersArea = malloc(sizeof(listArea));
-  tui->allPlayersArea->firstInd = 0;
-  tui->allPlayersArea->selected = 0;
-  tui->allPlayersArea->width = 50;
-  tui->allPlayersArea->maxShown = BASE_LIST_LEN;
-
-  tui->allTeamsArea = malloc(sizeof(listArea));
-  tui->allTeamsArea->firstInd = 0;
-  tui->allTeamsArea->selected = 0;
-  tui->allTeamsArea->width = 50;
-  tui->allTeamsArea->maxShown = BASE_LIST_LEN;
+  tui->allPlayersArea = initListArea();
+  tui->allTeamsArea = initListArea();
 
   tui->tab = PLAYERS_TAB;
   tui->show_player_info = 0;
@@ -33,6 +24,15 @@ tuidb* initTuiDB(int teams, int team_size) {
   return tui;
 }
 
+listArea* initListArea() {
+  listArea* area = malloc(sizeof(listArea));
+  area->firstInd = 0;
+  area->selected = 0;
+  area->width = BASE_SECTION_WIDTH;
+  area->maxShown = BASE_LIST_LEN;
+  return area;
+}
+
 void freeTuiDB(tuidb* tui) {
   for (int i = 0; i < (int)tui->allPlayers->n; i++) {
     freePlayer(tui->allPlayers->items[i]);
@@ -40,7 +40,6 @@ void freeTuiDB(tuidb* tui) {
   for (int i = 0; i < (int)tui->allTeams->n; i++) {
     freePlayer(tui->allTeams->items[i]);
   }
-  free_list(tui->players);
   free_list(tui->allPlayers);
   free_list(tui->allTeams);
   free(tui->allPlayersArea);
@@ -149,9 +148,9 @@ void renameSelectedListElem(tuidb* tui) {
     row = tui->allTeamsArea->selected_term_row;
   }
   const int max_len = 50;
-  int len = strlen(old_name);
+  int len = strlen((old_name) ? old_name : 0);
   char new[max_len + 1];
-  strcpy(new, old_name);
+  strcpy(new, (old_name) ? old_name : "");
   char c = 0;
   while (1) {
     curSet(row, width - 1);
