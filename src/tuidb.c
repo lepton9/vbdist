@@ -170,7 +170,38 @@ void renameSelectedPlayer(tuidb* tui) {
 }
 
 void renameSelectedTeam(tuidb* tui) {
-
+  curShow();
+  team* t = tui->allTeams->items[tui->allTeamsArea->selected];
+  const int max_len = 50;
+  int len = strlen(t->name);
+  char new[max_len + 1];
+  strcpy(new, t->name);
+  char c = 0;
+  while (1) {
+    curSet(tui->allTeamsArea->selected_term_row, tui->allTeamsArea->width - 1);
+    printf("\033[1K");
+    curSet(tui->allTeamsArea->selected_term_row, 1);
+    printf("|> %s", new);
+    fflush(stdout);
+    c = keyPress();
+    if (c == 27) {
+      break;
+    } else if (c == 13 || c == '\n') {
+      int r = renameTeam(tui->db, t, new);
+      if (r) {
+        if (t->name) free(t->name);
+        t->name = strdup(new);
+      }
+      break;
+    } else if (c == 127 || c == 8) {
+      new[len - 1] = '\0';
+      len--;
+    } else if (len < max_len) {
+      strncat(new, &c, 1);
+      len++;
+    }
+  }
+  curHide();
 }
 
 void handleKeyPress(tuidb* tui, char c) {
