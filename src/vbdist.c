@@ -483,6 +483,34 @@ void askSaveToDB(sqldb* db, team** teams) {
   }
 }
 
+int askUpdateParamNum(const char* query, int current) {
+  const int max_len = 5;
+  int len = 0;
+  char new[max_len + 1];
+  new[0] = '\0';
+  char c = 0;
+  while (1) {
+    cls(stdout);
+    printf("\n Current: %d\n", current);
+    printf(" %s: %s", query, new);
+    fflush(stdout);
+    char c = keyPress();
+    if (isdigit(c) && len < max_len) {
+      strncat(new, &c, 1);
+      len++;
+    } else if (c == 127 || c == 8) {
+      new[len - 1] = '\0';
+      len--;
+    }
+    else if (c == 13 || c == '\n') {
+      break;
+    } else if (c == 'q') {
+      return current;
+    }
+  }
+  return (strcmp(new, "") == 0) ? current : atoi(new);
+}
+
 int main(int argc, char** argv) {
 
 #ifdef _WIN32
@@ -588,6 +616,8 @@ int main(int argc, char** argv) {
 
     printf(" [g] Generate teams\n");
     if (SOURCE == DATABASE) printf(" [d] Database\n");
+    printf(" [t] Teams: %d\n", TEAMS_N);
+    printf(" [p] Team size: %d\n", TEAM_SIZE);
     printf(" [q] Quit\n");
 
     printf("\n \033[31m%s\033[0m\n", error_msg);
@@ -603,12 +633,19 @@ int main(int argc, char** argv) {
       case 27: // Esc
         error_msg[0] = '\0';
         break;
+      case 't':
+        TEAMS_N = askUpdateParamNum("Set new team amount", TEAMS_N);
+        break;
+      case 'p':
+        TEAM_SIZE = askUpdateParamNum("Set new team size", TEAM_SIZE);
+        break;
       case 'q':
         cls(stdout);
         return 0;
       case 'd':
         if (SOURCE == DATABASE) {
           error_msg[0] = '\0';
+          updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
           runTuiDB(tui);
           players = (player**)tui->players->items;
           *pn = tui->players->n;

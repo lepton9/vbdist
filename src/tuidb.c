@@ -5,7 +5,7 @@
 
 tuidb* initTuiDB(int teams, int team_size) {
   tuidb* tui = malloc(sizeof(tuidb));
-  tui->teams = teams;
+  tui->teams_n = teams;
   tui->team_size = team_size;
 
   tui->allPlayers = init_list(sizeof(player*));
@@ -32,6 +32,11 @@ void freeTuiDB(tuidb* tui) {
   free(tui->allPlayersArea);
   free(tui->term);
   free(tui);
+}
+
+void updateTeamSize(tuidb* tui, int team_n, int team_size) {
+  tui->teams_n = team_n;
+  tui->team_size = team_size;
 }
 
 int playerInList(dlist* list, int player_id) {
@@ -187,7 +192,7 @@ void renderAllPlayersList(tuidb* tui) {
 void renderSelectedList(tuidb* tui) {
   int startCol = tui->allPlayersArea->width + 5;
   curSet(1, startCol);
-  printf("Selected %d/%d", (int)tui->players->n, tui->teams * tui->team_size);
+  printf("Selected %d/%d", (int)tui->players->n, tui->teams_n * tui->team_size);
 
   int line = 2;
   for (int i = 0;

@@ -21,15 +21,15 @@ typedef struct {
   dlist* players;
   listArea* allPlayersArea;
   term_size* term;
-  int teams;
+  int teams_n;
   int team_size;
-
   int show_info;
 } tuidb;
 
 
 tuidb* initTuiDB(int teams, int team_size);
 void freeTuiDB(tuidb* tui);
+void updateTeamSize(tuidb* tui, int team_n, int team_size);
 
 void runTuiDB(tuidb* tui);
 
