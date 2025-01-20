@@ -34,10 +34,10 @@ tuidb* initTuiDB(int teams, int team_size) {
 }
 
 void freeTuiDB(tuidb* tui) {
-  for (int i = 0; i < tui->allPlayers->n; i++) {
+  for (int i = 0; i < (int)tui->allPlayers->n; i++) {
     freePlayer(tui->allPlayers->items[i]);
   }
-  for (int i = 0; i < tui->allTeams->n; i++) {
+  for (int i = 0; i < (int)tui->allTeams->n; i++) {
     freePlayer(tui->allTeams->items[i]);
   }
   free_list(tui->players);
@@ -55,7 +55,7 @@ void updateTeamSize(tuidb* tui, int team_n, int team_size) {
 }
 
 int playerInList(dlist* list, int player_id) {
-  for (int i = 0; i < list->n; i++) {
+  for (int i = 0; i < (int)list->n; i++) {
     if (((player*)list->items[i])->id == player_id) return i;
   }
   return -1;
@@ -76,7 +76,7 @@ void unselectPlayer(tuidb* tui) {
   int i = playerInList(tui->players, selected->id);
   if (i < 0) return;
   freePlayer(tui->players->items[i]);
-  if (i != tui->players->n - 1) {
+  if (i != (int)tui->players->n - 1) {
     tui->players->items[i] = tui->players->items[tui->players->n - 1];
   }
   tui->players->n--;
@@ -91,7 +91,7 @@ void fitAreaToScreen(listArea* a) {
   if (a->selected < a->firstInd) {
     a->firstInd = a->selected;
   }
-  else if (a->selected > a->firstInd + a->maxShown - 1) {
+  else if (a->selected > a->firstInd + (int)a->maxShown - 1) {
     a->firstInd = a->selected - a->maxShown + 1;
   }
 }
@@ -118,14 +118,14 @@ void list_up(tuidb* tui) {
 void list_down(tuidb* tui) {
   switch (tui->tab) {
     case PLAYERS_TAB: {
-      if (tui->allPlayersArea->selected < tui->allPlayers->n - 1) {
+      if (tui->allPlayersArea->selected < (int)tui->allPlayers->n - 1) {
         tui->allPlayersArea->selected += 1;
         fitToScreen(tui);
       }
       break;
     }
     case TEAMS_TAB: {
-      if (tui->allTeamsArea->selected < tui->allTeams->n - 1) {
+      if (tui->allTeamsArea->selected < (int)tui->allTeams->n - 1) {
         tui->allTeamsArea->selected += 1;
         fitToScreen(tui);
       }
@@ -134,63 +134,54 @@ void list_down(tuidb* tui) {
   }
 }
 
-void renameSelectedPlayer(tuidb* tui) {
+void renameSelectedListElem(tuidb* tui) {
   curShow();
-  player* p = tui->allPlayers->items[tui->allPlayersArea->selected];
-  const int max_len = 50;
-  int len = strlen(p->firstName);
-  char new[max_len + 1];
-  strcpy(new, p->firstName);
-  char c = 0;
-  while (1) {
-    curSet(tui->allPlayersArea->selected_term_row, tui->allPlayersArea->width - 1);
-    printf("\033[1K");
-    curSet(tui->allPlayersArea->selected_term_row, 1);
-    printf("|> %s", new);
-    fflush(stdout);
-    c = keyPress();
-    if (c == 27) {
-      break;
-    } else if (c == 13 || c == '\n') {
-      int r = renamePlayer(tui->db, p, new);
-      if (r) {
-        if (p->firstName) free(p->firstName);
-        p->firstName = strdup(new);
-      }
-      break;
-    } else if (c == 127 || c == 8) {
-      new[len - 1] = '\0';
-      len--;
-    } else if (len < max_len) {
-      strncat(new, &c, 1);
-      len++;
-    }
+  int width = 0;
+  int row = 0;
+  char* old_name = NULL;
+  if (tui->tab == PLAYERS_TAB) {
+    old_name = ((player *)tui->allPlayers->items[tui->allPlayersArea->selected])->firstName;
+    width = tui->allPlayersArea->width;
+    row = tui->allPlayersArea->selected_term_row;
+  } else if (tui->tab == TEAMS_TAB) {
+    old_name = ((team*)tui->allTeams->items[tui->allTeamsArea->selected])->name;
+    width = tui->allTeamsArea->width;
+    row = tui->allTeamsArea->selected_term_row;
   }
-  curHide();
-}
-
-void renameSelectedTeam(tuidb* tui) {
-  curShow();
-  team* t = tui->allTeams->items[tui->allTeamsArea->selected];
   const int max_len = 50;
-  int len = strlen(t->name);
+  int len = strlen(old_name);
   char new[max_len + 1];
-  strcpy(new, t->name);
+  strcpy(new, old_name);
   char c = 0;
   while (1) {
-    curSet(tui->allTeamsArea->selected_term_row, tui->allTeamsArea->width - 1);
+    curSet(row, width - 1);
     printf("\033[1K");
-    curSet(tui->allTeamsArea->selected_term_row, 1);
+    curSet(row, 1);
     printf("|> %s", new);
     fflush(stdout);
     c = keyPress();
     if (c == 27) {
       break;
     } else if (c == 13 || c == '\n') {
-      int r = renameTeam(tui->db, t, new);
-      if (r) {
-        if (t->name) free(t->name);
-        t->name = strdup(new);
+      switch (tui->tab) {
+        case PLAYERS_TAB: {
+          player* p = tui->allPlayers->items[tui->allPlayersArea->selected];
+          int r = renamePlayer(tui->db, p, new);
+          if (r) {
+            if (p->firstName) free(p->firstName);
+            p->firstName = strdup(new);
+          }
+          break;
+        }
+        case TEAMS_TAB: {
+          team* t = tui->allTeams->items[tui->allTeamsArea->selected];
+          int r = renameTeam(tui->db, t, new);
+          if (r) {
+            if (t->name) free(t->name);
+            t->name = strdup(new);
+          }
+        }
+        break;
       }
       break;
     } else if (c == 127 || c == 8) {
@@ -217,11 +208,7 @@ void handleKeyPress(tuidb* tui, char c) {
         tui->tab = (tui->tab == PLAYERS_TAB) ? TEAMS_TAB : PLAYERS_TAB;
         break;
       case 'r':
-        if (tui->tab == PLAYERS_TAB) {
-          renameSelectedPlayer(tui);
-        } else if (tui->tab == TEAMS_TAB) {
-          renameSelectedTeam(tui);
-        }
+        renameSelectedListElem(tui);
         break;
       case 'k': case 'w':
         list_up(tui);
@@ -305,8 +292,8 @@ void renderAllPlayersList(tuidb* tui) {
   int line = 2;
   for (int i = tui->allPlayersArea->firstInd;
        line <= tui->term->rows - 1 &&
-       i - tui->allPlayersArea->firstInd + 1 <= tui->allPlayersArea->maxShown &&
-       i < tui->allPlayers->n;
+       i - tui->allPlayersArea->firstInd + 1 <= (int)tui->allPlayersArea->maxShown &&
+       i < (int)tui->allPlayers->n;
        i++) {
     curSet(line, 0);
     if (tui->allPlayersArea->selected == i) {
@@ -333,8 +320,8 @@ void renderSelectedList(tuidb* tui) {
   int line = 2;
   for (int i = 0;
        line <= tui->term->rows - 1 &&
-       i + 1 <= tui->allPlayersArea->maxShown &&
-       i < tui->players->n;
+       i + 1 <= (int)tui->allPlayersArea->maxShown &&
+       i < (int)tui->players->n;
        i++) {
     curSet(line++, startCol);
     formatPlayerLine(tui->players->items[i]);
@@ -361,7 +348,7 @@ void renderPlayerInfo(tuidb* tui) {
   line += 2;
 
   dlist* player_ids = fetchFormerTeammates(tui->db, p);
-  for (int i = 0; i < player_ids->n && line < tui->term->rows - 2; i++) {
+  for (int i = 0; i < (int)player_ids->n && line < tui->term->rows - 2; i++) {
     int_tuple* t = player_ids->items[i];
     if (t->a == p->id) continue;
     int ind = playerInList(tui->allPlayers, t->a);
@@ -378,7 +365,7 @@ void renderPlayerInfo(tuidb* tui) {
   line += 2;
 
   dlist* not_player_ids = fetchNotTeammates(tui->db, p);
-  for (int i = 0; i < not_player_ids->n && line < tui->term->rows - 2; i++) {
+  for (int i = 0; i < (int)not_player_ids->n && line < tui->term->rows - 2; i++) {
     int_tuple* t = not_player_ids->items[i];
     if (t->a == p->id) continue;
     int ind = playerInList(tui->allPlayers, t->a);
@@ -388,12 +375,12 @@ void renderPlayerInfo(tuidb* tui) {
       printf("%s %s", p->firstName, p->surName ? p->surName : "");
     }
   }
-  for (int i = 0; i < not_player_ids->n; i++) {
+  for (int i = 0; i < (int)not_player_ids->n; i++) {
     free(not_player_ids->items[i]);
   }
   free_list(not_player_ids);
 
-  for (int i = 0; i < player_ids->n; i++) {
+  for (int i = 0; i < (int)player_ids->n; i++) {
     free(player_ids->items[i]);
   }
   free_list(player_ids);
@@ -406,8 +393,8 @@ void renderAllTeamsList(tuidb* tui) {
   int line = 2;
   for (int i = tui->allTeamsArea->firstInd;
        line <= tui->term->rows - 1 &&
-       i - tui->allTeamsArea->firstInd + 1 <= tui->allTeamsArea->maxShown &&
-       i < tui->allTeams->n;
+       i - tui->allTeamsArea->firstInd + 1 <= (int)tui->allTeamsArea->maxShown &&
+       i < (int)tui->allTeams->n;
        i++) {
     curSet(line, 0);
     if (tui->allTeamsArea->selected == i) {
@@ -432,7 +419,7 @@ void renderSelectedTeam(tuidb* tui) {
   line++;
 
   dlist* player_ids = fetchPlayersInTeam(tui->db, t);
-  for (int i = 0; i < player_ids->n && line < tui->term->rows - 2; i++) {
+  for (int i = 0; i < (int)player_ids->n && line < tui->term->rows - 2; i++) {
     int* id = player_ids->items[i];
     int ind = playerInList(tui->allPlayers, *id);
     if (ind >= 0) {
@@ -442,7 +429,7 @@ void renderSelectedTeam(tuidb* tui) {
     }
   }
 
-  for (int i = 0; i < player_ids->n; i++) {
+  for (int i = 0; i < (int)player_ids->n; i++) {
     free(player_ids->items[i]);
   }
   free_list(player_ids);

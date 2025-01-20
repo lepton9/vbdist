@@ -16,7 +16,7 @@ typedef enum {
 typedef struct {
   size_t maxShown;
   size_t width;
-  size_t firstInd;
+  int firstInd;
   int selected;
   int selected_term_row;
 } listArea;
@@ -45,6 +45,8 @@ void runTuiDB(tuidb* tui);
 int playerInList(dlist* list, int player_id);
 void selectPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui);
+
+void renameSelectedListElem(tuidb* tui);
 
 void list_up(tuidb* tui);
 void list_down(tuidb* tui);
