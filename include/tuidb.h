@@ -18,6 +18,7 @@ typedef struct {
   size_t width;
   size_t firstInd;
   int selected;
+  int selected_term_row;
 } listArea;
 
 typedef struct {

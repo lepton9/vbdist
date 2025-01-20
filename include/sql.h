@@ -31,6 +31,9 @@ dlist* fetchFormerTeammates(sqldb* db, player* player);
 dlist* fetchNotTeammates(sqldb* db, player* player);
 dlist* fetchPlayersInTeam(sqldb* db, team* team);
 
+int renamePlayer(sqldb* db, player* player, const char* name);
+int renameTeam(sqldb* db, team* team, const char* name);
+
 void insertTeam(sqldb* db, team* team);
 void insertPlayerTeam(sqldb* db, player* player, team* team);
 

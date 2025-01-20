@@ -206,6 +206,30 @@ dlist* fetchPlayersInTeam(sqldb* db, team* team) {
   return players;
 }
 
+int renamePlayer(sqldb* db, player* player, const char* name) {
+  char sql[100];
+  sprintf(sql, "UPDATE Player SET name = '%s' WHERE player_id = %d;", name, player->id);
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db->sqlite, sql, 0, 0, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+  return result == SQLITE_OK;
+}
+
+int renameTeam(sqldb* db, team* team, const char* name) {
+  char sql[100];
+  sprintf(sql, "UPDATE Team SET name = '%s' WHERE team_id = %d;", name, team->id);
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db->sqlite, sql, 0, 0, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
+  }
+  return result == SQLITE_OK;
+}
+
 void insertTeam(sqldb* db, team* team) {
   if (team->id < 0) team->id = randintRange(0, INT_MAX);
   char sql[100];

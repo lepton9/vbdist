@@ -504,7 +504,7 @@ int askUpdateParamNum(const char* query, int current) {
     }
     else if (c == 13 || c == '\n') {
       break;
-    } else if (c == 'q') {
+    } else if (c == 'q' || c == 27) {
       return current;
     }
   }
@@ -714,6 +714,7 @@ int main(int argc, char** argv) {
     freeTeam(teams[i]);
   }
 
+  freeTuiDB(tui);
   free(teams);
   free(pn);
   freeCombos(bannedCombos);

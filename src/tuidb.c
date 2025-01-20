@@ -2,6 +2,7 @@
 #include "../include/tui.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 tuidb* initTuiDB(int teams, int team_size) {
   tuidb* tui = malloc(sizeof(tuidb));
@@ -36,9 +37,14 @@ void freeTuiDB(tuidb* tui) {
   for (int i = 0; i < tui->allPlayers->n; i++) {
     freePlayer(tui->allPlayers->items[i]);
   }
-  free(tui->allPlayers);
-  free(tui->players);
+  for (int i = 0; i < tui->allTeams->n; i++) {
+    freePlayer(tui->allTeams->items[i]);
+  }
+  free_list(tui->players);
+  free_list(tui->allPlayers);
+  free_list(tui->allTeams);
   free(tui->allPlayersArea);
+  free(tui->allTeamsArea);
   free(tui->term);
   free(tui);
 }
@@ -128,6 +134,45 @@ void list_down(tuidb* tui) {
   }
 }
 
+void renameSelectedPlayer(tuidb* tui) {
+  curShow();
+  player* p = tui->allPlayers->items[tui->allPlayersArea->selected];
+  const int max_len = 50;
+  int len = strlen(p->firstName);
+  char new[max_len + 1];
+  strcpy(new, p->firstName);
+  char c = 0;
+  while (1) {
+    curSet(tui->allPlayersArea->selected_term_row, tui->allPlayersArea->width - 1);
+    printf("\033[1K");
+    curSet(tui->allPlayersArea->selected_term_row, 1);
+    printf("|> %s", new);
+    fflush(stdout);
+    c = keyPress();
+    if (c == 27) {
+      break;
+    } else if (c == 13 || c == '\n') {
+      int r = renamePlayer(tui->db, p, new);
+      if (r) {
+        if (p->firstName) free(p->firstName);
+        p->firstName = strdup(new);
+      }
+      break;
+    } else if (c == 127 || c == 8) {
+      new[len - 1] = '\0';
+      len--;
+    } else if (len < max_len) {
+      strncat(new, &c, 1);
+      len++;
+    }
+  }
+  curHide();
+}
+
+void renameSelectedTeam(tuidb* tui) {
+
+}
+
 void handleKeyPress(tuidb* tui, char c) {
     switch (c) {
       case 13: case '\n': case ' ':
@@ -139,6 +184,13 @@ void handleKeyPress(tuidb* tui, char c) {
       }
       case 9: // Tab
         tui->tab = (tui->tab == PLAYERS_TAB) ? TEAMS_TAB : PLAYERS_TAB;
+        break;
+      case 'r':
+        if (tui->tab == PLAYERS_TAB) {
+          renameSelectedPlayer(tui);
+        } else if (tui->tab == TEAMS_TAB) {
+          renameSelectedTeam(tui);
+        }
         break;
       case 'k': case 'w':
         list_up(tui);
@@ -226,7 +278,10 @@ void renderAllPlayersList(tuidb* tui) {
        i < tui->allPlayers->n;
        i++) {
     curSet(line, 0);
-    if (tui->allPlayersArea->selected == i) printf("\033[7m");
+    if (tui->allPlayersArea->selected == i) {
+      tui->allPlayersArea->selected_term_row = line;
+      printf("\033[7m");
+    }
     if (playerInList(tui->players, ((player*)tui->allPlayers->items[i])->id) >= 0) {
       printf(">");
     }
@@ -324,7 +379,10 @@ void renderAllTeamsList(tuidb* tui) {
        i < tui->allTeams->n;
        i++) {
     curSet(line, 0);
-    if (tui->allTeamsArea->selected == i) printf("\033[7m");
+    if (tui->allTeamsArea->selected == i) {
+      tui->allTeamsArea->selected_term_row = line;
+      printf("\033[7m");
+    }
     formatTeamLine(tui->allTeams->items[i]);
     if (tui->allTeamsArea->selected == i) printf("\033[27m");
     curSet(line, tui->allTeamsArea->width);
