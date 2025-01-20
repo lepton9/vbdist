@@ -23,6 +23,15 @@ void closeSqlDB(sqldb* db) {
   free(db);
 }
 
+int cb_teams(void* tList, int count, char **data, char **columns) {
+  assert(count == 2);
+  dlist* list = tList;
+  team* t = initTeam(data[1], 0);
+  t->id = atoi(data[0]);
+  list_add(list, t);
+  return 0;
+}
+
 int cb_players(void* pList, int count, char **data, char **columns) {
   dlist* list = pList;
   player* p = initPlayer();
@@ -96,6 +105,18 @@ dlist* fetchPlayers(sqldb* db) {
   }
   for (int i = 0; i < (int)list->n; i++) {
     fetchRating(db, list->items[i]);
+  }
+  return list;
+}
+
+dlist* fetchTeams(sqldb* db) {
+  char* sql = "SELECT team_id, name FROM Team;";
+  dlist* list = init_list(sizeof(team*));
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db->sqlite, sql, cb_teams, list, &err_msg);
+  if (err_msg) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);
   }
   return list;
 }

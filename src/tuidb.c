@@ -178,16 +178,25 @@ void runTuiDB(tuidb* tui) {
 
 void updateArea(tuidb* tui) {
   getTermSize(tui->term);
-  tui->allPlayersArea->width = tui->term->cols / 2;
-  tui->allPlayersArea->width =
-      (tui->term->rows < BASE_SECTION_WIDTH) ? tui->term->cols / 2 : BASE_SECTION_WIDTH;
   int maxRows = tui->term->rows - 2;
-  tui->allPlayersArea->maxShown = (maxRows < BASE_LIST_LEN) ? maxRows : BASE_LIST_LEN;
+  int baseWidth = (tui->term->rows < BASE_SECTION_WIDTH) ? tui->term->cols / 2
+                                                         : BASE_SECTION_WIDTH;
+  int maxShown = (maxRows < BASE_LIST_LEN) ? maxRows : BASE_LIST_LEN;
+
+  tui->allPlayersArea->width = baseWidth;
+  tui->allPlayersArea->maxShown = maxShown;
+
+  tui->allTeamsArea->width = baseWidth;
+  tui->allTeamsArea->maxShown = maxShown;
   fitToScreen(tui);
 }
 
 void formatPlayerLine(player* player) {
   printf(" %-20s %.2f", player->firstName, ovRating(player));
+}
+
+void formatTeamLine(team* team) {
+  printf(" %-20s", team->name);
 }
 
 void renderTuidb(tuidb* tui) {
@@ -306,7 +315,22 @@ void renderPlayerInfo(tuidb* tui) {
 }
 
 void renderAllTeamsList(tuidb* tui) {
-
+  curSet(1, 0);
+  printf("\033[4m %-20s %s\033[24m", "Name", "Rating");
+  int line = 2;
+  for (int i = tui->allTeamsArea->firstInd;
+       line <= tui->term->rows - 1 &&
+       i - tui->allTeamsArea->firstInd + 1 <= tui->allTeamsArea->maxShown &&
+       i < tui->allTeams->n;
+       i++) {
+    curSet(line, 0);
+    if (tui->allTeamsArea->selected == i) printf("\033[7m");
+    formatTeamLine(tui->allTeams->items[i]);
+    if (tui->allTeamsArea->selected == i) printf("\033[27m");
+    curSet(line, tui->allTeamsArea->width);
+    printf("|");
+    line++;
+  }
   fflush(stdout);
 }
 
