@@ -512,6 +512,63 @@ int askUpdateParamNum(const char* query, int current) {
   return (strcmp(new, "") == 0) ? current : atoi(new);
 }
 
+int runBeginTui(tuidb* tui, dlist* players, pCombos* bannedCombos, pCombos* prefCombos, char* err) {
+  char error_msg[500];
+  strcpy(error_msg, err);
+  char c = 0;
+  int loop = 1;
+  while (loop) {
+    cls(stdout);
+    curSet(1, 1);
+    printf("\n Players selected: %d/%d\n", (int)players->n, TEAMS_N * TEAM_SIZE);
+    printf("\n Banned combinations: %d\n", (int)bannedCombos->n);
+    printf(" Preferred combinations: %d\n", (int)prefCombos->n);
+    printf("\n");
+
+    printf(" [g] Generate teams\n");
+    if (SOURCE == DATABASE) printf(" [d] Database\n");
+    printf(" [t] Teams: %d\n", TEAMS_N);
+    printf(" [p] Team size: %d\n", TEAM_SIZE);
+    printf(" [q] Quit\n");
+
+    printf("\n\033[31m%s\033[0m\n", error_msg);
+    c = keyPress();
+    switch (c) {
+      case 'g':
+        if ((int)players->n != TEAMS_N * TEAM_SIZE) {
+          sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
+        } else {
+          loop = 0;
+        }
+        break;
+      case 27: // Esc
+        error_msg[0] = '\0';
+        break;
+      case 't':
+        TEAMS_N = askUpdateParamNum("Set new team amount", TEAMS_N);
+        break;
+      case 'p':
+        TEAM_SIZE = askUpdateParamNum("Set new team size", TEAM_SIZE);
+        break;
+      case 'q':
+        cls(stdout);
+        return 1;
+      case 'd':
+        if (SOURCE == DATABASE) {
+          error_msg[0] = '\0';
+          updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
+          runTuiDB(tui);
+        }
+        break;
+      default: {
+        break;
+      }
+    }
+  }
+  cls(stdout);
+  return 0;
+}
+
 int main(int argc, char** argv) {
 
 #ifdef _WIN32
@@ -545,11 +602,12 @@ int main(int argc, char** argv) {
   char* teamsOutFile = "teams.txt";
   int clustering = 1;
 
-  int valid_players = 0;
   pCombos* bannedCombos = initCombos();
   pCombos* prefCombos = initCombos();
   sqldb* db = NULL;
   dlist* players = NULL;
+  char* err_msg = malloc(1);
+  err_msg[0] = '\0';
 
   switch (SOURCE) {
     case DATABASE: {
@@ -560,23 +618,33 @@ int main(int argc, char** argv) {
       int r = createDB(db);
       if (r) printf("Created tables\n");
       players = readPlayers(params->fileName, bannedCombos, prefCombos);
-      valid_players = players->n;
       if (!players) {
-        printf("Can't find players\n");
+        char msg[100];
+        sprintf(msg, "Can't find players\n");
+        err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
+        strcat(err_msg, msg);
         exit(1);
       }
-      for (int i = 0; i < (int)players->n; i++) {
+      for (int i = 0; i < (int)players->n;) {
         int found = fetchPlayer(db, players->items[i]);
         if (!found) {
-          valid_players--;
-          printf("Player with id %d not found\n", ((player*)players->items[i])->id);
+          char msg[100];
+          sprintf(msg, "Player with id %d not found\n", ((player*)players->items[i])->id);
+          err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
+          strcat(err_msg, msg);
+          freePlayer(players->items[i]);
+          if (i != (int)players->n - 1) {
+            players->items[i] = players->items[players->n - 1];
+          }
+          players->n--;
+        } else {
+          i++;
         }
       }
       break;
     }
     case TEXT_FILE: {
       players = readPlayers(params->fileName, bannedCombos, prefCombos);
-      valid_players = players->n;
       break;
     }
     default:
@@ -597,72 +665,14 @@ int main(int argc, char** argv) {
   tui->allTeams = fetchTeams(db);
   tui->players = players;
 
-  char error_msg[100];
-  char c = 0;
-  int loop = 1;
-  while (loop) {
-    cls(stdout);
-    curSet(1, 1);
-    printf("\n Players selected: %d/%d\n", (int)players->n, TEAMS_N * TEAM_SIZE);
-    printf("\n Banned combinations: %d\n", (int)bannedCombos->n);
-    printf(" Preferred combinations: %d\n", (int)prefCombos->n);
-    printf("\n");
-
-    printf(" [g] Generate teams\n");
-    if (SOURCE == DATABASE) printf(" [d] Database\n");
-    printf(" [t] Teams: %d\n", TEAMS_N);
-    printf(" [p] Team size: %d\n", TEAM_SIZE);
-    printf(" [q] Quit\n");
-
-    printf("\n \033[31m%s\033[0m\n", error_msg);
-    c = keyPress();
-    switch (c) {
-      case 'g':
-        if ((int)players->n != TEAMS_N * TEAM_SIZE) {
-          sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
-        } else {
-          loop = 0;
-        }
-        break;
-      case 27: // Esc
-        error_msg[0] = '\0';
-        break;
-      case 't':
-        TEAMS_N = askUpdateParamNum("Set new team amount", TEAMS_N);
-        break;
-      case 'p':
-        TEAM_SIZE = askUpdateParamNum("Set new team size", TEAM_SIZE);
-        break;
-      case 'q':
-        cls(stdout);
-        return 0;
-      case 'd':
-        if (SOURCE == DATABASE) {
-          error_msg[0] = '\0';
-          updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
-          runTuiDB(tui);
-        }
-        break;
-      default: {
-        break;
-      }
-    }
+  int quit = runBeginTui(tui, players, bannedCombos, prefCombos, err_msg);
+  if (quit) {
+    exit(0);
   }
-  cls(stdout);
-
 
   if (params->printMode == PRINT_ALL) printPlayers(players);
   printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
   printf("Preferred combinations: %d\n", (int)prefCombos->n);
-
-  if ((int)players->n != TEAMS_N * TEAM_SIZE) {
-    printf("\nFile %s contains %d players, but %d was expected\n", params->fileName, (int)players->n, TEAMS_N * TEAM_SIZE);
-    exit(1);
-  }
-  if (valid_players != TEAMS_N * TEAM_SIZE) {
-    printf("\nFound %d valid players, but %d was expected\n", valid_players, TEAMS_N * TEAM_SIZE);
-    exit(1);
-  }
 
   team** teams = balanceTeamsRand(players);
 
@@ -705,6 +715,7 @@ int main(int argc, char** argv) {
     freeTeam(teams[i]);
   }
 
+  free(err_msg);
   freeTuiDB(tui);
   free(teams);
   free_list(players);
