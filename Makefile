@@ -43,9 +43,9 @@ $(BUILD): $(BIN)
 build: $(OBJECT_FILES) $(LIB)/sqlite3.o $(OBJS)/$(MAIN).o | $(BUILD)
 	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
 
-debug:
-	$(CC) $(INC) $(SRC)/*.c -pthread -g -o $(BIN)/db $(LINK)
-	gdb -tui $(BIN)/db
+debug: $(LIB)/sqlite3.o | $(BIN)
+	$(CC) $(INC) $^ $(SRC)/*.c -g -o $(BIN)/$@ $(LINK)
+	gdb -tui $(BIN)/debug
 
 SQLITE_VER := 3470200
 dep:

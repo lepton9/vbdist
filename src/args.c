@@ -35,9 +35,9 @@ args *parseArgs(int argc, char **argv) {
     char* arg = argv[optind];
 
     if (strcmp(arg, "-f") == 0 || strcmp(arg, "--file") == 0) {
-      params->fileName = argv[++optind];
+      params->fileName = strdup(argv[++optind]);
     } else if (strcmp(arg, "-d") == 0 || strcmp(arg, "--database") == 0) {
-      params->dbName = argv[++optind];
+      params->dbName = strdup(argv[++optind]);
     } else if (strcmp(arg, "-t") == 0 || strcmp(arg, "--teams") == 0) {
       params->teams = atoi(argv[++optind]);
     } else if (strcmp(arg, "-p") == 0 || strcmp(arg, "--players") == 0) {
@@ -58,3 +58,11 @@ args *parseArgs(int argc, char **argv) {
   }
   return params;
 }
+
+void freeArgs(args* args) {
+  if (!args) return;
+  if (args->dbName) free(args->dbName);
+  if (args->fileName) free(args->fileName);
+  free(args);
+}
+

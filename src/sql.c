@@ -18,6 +18,7 @@ sqldb* openSqlDB(const char* path) {
 }
 
 void closeSqlDB(sqldb* db) {
+  if (!db) return;
   sqlite3_close(db->sqlite);
   free(db->path);
   free(db);

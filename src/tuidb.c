@@ -34,6 +34,7 @@ listArea* initListArea() {
 }
 
 void freeTuiDB(tuidb* tui) {
+  if (!tui) return;
   for (int i = 0; i < (int)tui->allPlayers->n; i++) {
     freePlayer(tui->allPlayers->items[i]);
   }

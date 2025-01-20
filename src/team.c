@@ -13,7 +13,6 @@ team* initTeam(char* teamName, const size_t size) {
 
 void freeTeam(team* t) {
   if (!t) return;
-  for (int i = 0; i < (int)t->size; i++) freePlayer(t->players[i]);
   free(t->players);
   free(t->name);
   free(t);
