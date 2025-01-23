@@ -1,7 +1,4 @@
-
 #include "../include/tui.h"
-
-#include <stdio.h>
 
 void altBufferEnable() {
   printf("\033[?1049h");

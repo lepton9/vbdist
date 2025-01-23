@@ -538,12 +538,15 @@ void generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* pr
 
   if (PRINT_MODE != PRINT_MINIMAL) printTeams(stdout, teams, 30, 2, 1);
 
+  curShow();
   printf("\nManually change teams? [y/N] ");
   fflush(stdout);
   char ans = keyPress();
   printf("\033[2K\n");
   if (ans == 'y' || ans == 'Y') {
+    curHide();
     changeMode(teams, bannedCombos);
+    curShow();
   }
 
   printTeams(stdout, teams, 20, 3, 0);
@@ -565,6 +568,7 @@ void generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* pr
     freeTeam(teams[i]);
   }
   free(teams);
+  curHide();
 }
 
 void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos, char* err) {
@@ -587,6 +591,7 @@ void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos,
 
     printf("\n\033[31m%s\033[0m\n", error_msg);
     c = keyPress();
+    error_msg[0] = '\0';
     switch (c) {
       case 'g':
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
@@ -595,14 +600,15 @@ void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos,
           generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos);
         }
         break;
-      case 27: // Esc
-        error_msg[0] = '\0';
-        break;
       case 't':
+        curShow();
         TEAMS_N = askUpdateParamNum("Set new team amount", TEAMS_N);
+        curHide();
         break;
       case 'p':
+        curShow();
         TEAM_SIZE = askUpdateParamNum("Set new team size", TEAM_SIZE);
+        curHide();
         break;
       case 'q':
         cls(stdout);
@@ -642,8 +648,7 @@ int main(int argc, char** argv) {
        : (params->fileName)                 ? TEXT_FILE
                                             : NO_SOURCE;
 
-  // TODO: check correct file format
-  if (params->players <= 0 || params->teams <= 0 || SOURCE == NO_SOURCE) {
+  if (SOURCE == NO_SOURCE) {
     printUsage(stdout);
     exit(1);
   }
@@ -721,7 +726,9 @@ int main(int argc, char** argv) {
     tui->players = players;
   }
 
+  curHide();
   runBeginTui(tui, players, bannedCombos, prefCombos, err_msg);
+  curShow();
 
   for (int i = 0; i < (int)players->n; i++) {
     freePlayer(players->items[i]);

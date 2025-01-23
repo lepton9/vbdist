@@ -39,7 +39,7 @@ void freeTuiDB(tuidb* tui) {
     freePlayer(tui->allPlayers->items[i]);
   }
   for (int i = 0; i < (int)tui->allTeams->n; i++) {
-    freePlayer(tui->allTeams->items[i]);
+    freeTeam(tui->allTeams->items[i]);
   }
   free_list(tui->allPlayers);
   free_list(tui->allTeams);
@@ -232,7 +232,6 @@ void handleKeyPress(tuidb* tui, char c) {
 void runTuiDB(tuidb* tui) {
   altBufferEnable();
   curHide();
-
   char c = 0;
   while (c != 'q') {
     updateArea(tui);
@@ -240,8 +239,6 @@ void runTuiDB(tuidb* tui) {
     c = keyPress();
     handleKeyPress(tui, c);
   }
-
-  curShow();
   cls(stdout);
   altBufferDisable();
 }
