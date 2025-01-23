@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 #include "sqlite3.h"
-#include "../include/team.h"
-#include "../include/dlist.h"
+#include "team.h"
+#include "dlist.h"
 
 typedef struct {
   int a;
@@ -18,10 +18,11 @@ typedef struct {
 
 sqldb* openSqlDB(const char* path);
 void closeSqlDB(sqldb* db);
-int execSQL(sqlite3* db, const char* sql);
+
+int execQuery(sqlite3 *db, const char *sql,
+              int (*cb)(void *, int, char **, char **), void *p);
 
 int createDB(sqldb* db);
-
 int fetchPlayer(sqldb* db, player* player);
 int fetchRating(sqldb* db, player* player);
 dlist* fetchPlayers(sqldb* db);
