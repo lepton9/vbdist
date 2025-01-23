@@ -131,7 +131,11 @@ dlist* readPlayers(const char *fileName, pCombos* bpcs, pCombos* prefCombos) {
         case DATABASE: {
           player* p = initPlayer();
           p->id = atoi(line);
-          list_add(ps, p);
+          if (playerInList(ps, p->id) < 0) {
+            list_add(ps, p);
+          } else {
+            free(p);
+          }
           break;
         }
         case TEXT_FILE: {
