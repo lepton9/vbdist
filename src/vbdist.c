@@ -159,7 +159,8 @@ void printPlayers(dlist* players) {
   }
 }
 
-void printTeams(FILE* out, team** teams, const int printWidth, const int teamsOnLine, const char indent) {
+void printTeams(FILE *out, team **teams, const int printWidth,
+                const int teamsOnLine, const char indent) {
   char str[printWidth];
   for (int t = 0; t < TEAMS_N; t += teamsOnLine) {
     for (int i = t; i < t + teamsOnLine && i < TEAMS_N; i++) {
@@ -174,7 +175,9 @@ void printTeams(FILE* out, team** teams, const int printWidth, const int teamsOn
     for(int j = 0; j < TEAM_SIZE; j++) {
       for(int i = t; i < TEAMS_N && i - t < teamsOnLine; i++) {
         if (PRINT_MODE == PRINT_ALL) {
-          sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "", teams[i]->players[j]->firstName, ovRating(teams[i]->players[j]));
+          sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "",
+                  teams[i]->players[j]->firstName,
+                  ovRating(teams[i]->players[j]));
           fprintf(out, "%-*s", printWidth, str);
         } else {
           sprintf(str, "%s%-10s", (indent) ? "  " : "", teams[i]->players[j]->firstName);
@@ -412,7 +415,7 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
   struct tm tm = *localtime(&t);
   fprintf(fp, "%d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-  printTeams(fp, teams, 15, TEAMS_N, 0);
+  printTeams(fp, teams, 20, TEAMS_N, 0);
   fclose(fp);
 }
 
@@ -544,7 +547,7 @@ void generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* pr
     changeMode(teams, bannedCombos);
   }
 
-  printTeams(stdout, teams, 15, 3, 0);
+  printTeams(stdout, teams, 20, 3, 0);
 
   switch (SOURCE) {
     case TEXT_FILE: {

@@ -98,7 +98,7 @@ int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char
 dlist* fetchPlayers(sqldb* db) {
   char* sql = "SELECT * FROM Player;";
   dlist* list = init_list(sizeof(player*));
-  int result = execQuery(db->sqlite, sql, cb_players, list);
+  execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
     fetchRating(db, list->items[i]);
   }
@@ -108,7 +108,7 @@ dlist* fetchPlayers(sqldb* db) {
 dlist* fetchTeams(sqldb* db) {
   char* sql = "SELECT team_id, name FROM Team;";
   dlist* list = init_list(sizeof(team*));
-  int result = execQuery(db->sqlite, sql, cb_teams, list);
+  execQuery(db->sqlite, sql, cb_teams, list);
   return list;
 }
 
@@ -122,7 +122,7 @@ int fetchRating(sqldb* db, player* player) {
 int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name, rating_id FROM Player WHERE player_id = %d;", player->id);
-  int result = execQuery(db->sqlite, sql, cb_player, player);
+  execQuery(db->sqlite, sql, cb_player, player);
   fetchRating(db, player);
   return player->found;
 }
@@ -131,7 +131,7 @@ dlist* fetchPlayerTeams(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT team_id FROM PlayerTeam WHERE player_id = %d;", player->id);
   dlist* teams = init_list(sizeof(int*));
-  int result = execQuery(db->sqlite, sql, cb_add_id_list, teams);
+  execQuery(db->sqlite, sql, cb_add_id_list, teams);
   return teams;
 }
 
@@ -143,7 +143,7 @@ dlist* fetchFormerTeammates(sqldb* db, player* player) {
           "PlayerTeam WHERE team_id IN (SELECT team_id FROM PlayerTeam WHERE "
           "player_id = %d) GROUP BY player_id ORDER BY teammate_count DESC;",
           player->id);
-  int result = execQuery(db->sqlite, sql, cb_teammates, teammates);
+  execQuery(db->sqlite, sql, cb_teammates, teammates);
   return teammates;
 }
 
@@ -155,7 +155,7 @@ dlist* fetchNotTeammates(sqldb* db, player* player) {
           "PlayerTeam WHERE team_id IN (SELECT team_id FROM PlayerTeam WHERE "
           "player_id = %d) GROUP BY player_id);",
           player->id);
-  int result = execQuery(db->sqlite, sql, cb_not_teammates, no_teammates);
+  execQuery(db->sqlite, sql, cb_not_teammates, no_teammates);
   return no_teammates;
 }
 
@@ -163,7 +163,7 @@ dlist* fetchPlayersInTeam(sqldb* db, team* team) {
   char sql[100];
   sprintf(sql, "SELECT player_id FROM PlayerTeam WHERE team_id = %d;", team->id);
   dlist* players = init_list(sizeof(int*));
-  int result = execQuery(db->sqlite, sql, cb_add_id_list, players);
+  execQuery(db->sqlite, sql, cb_add_id_list, players);
   return players;
 }
 
@@ -171,14 +171,14 @@ int renamePlayer(sqldb* db, player* player, const char* name) {
   char sql[100];
   sprintf(sql, "UPDATE Player SET name = '%s' WHERE player_id = %d;", name, player->id);
   int result = execQuery(db->sqlite, sql, 0, 0);
-  return result == SQLITE_OK;
+  return result;
 }
 
 int renameTeam(sqldb* db, team* team, const char* name) {
   char sql[100];
   sprintf(sql, "UPDATE Team SET name = '%s' WHERE team_id = %d;", name, team->id);
   int result = execQuery(db->sqlite, sql, 0, 0);
-  return result == SQLITE_OK;
+  return result;
 }
 
 void insertTeam(sqldb* db, team* team) {
