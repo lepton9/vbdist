@@ -494,8 +494,8 @@ void askSaveToDB(sqldb* db, team** teams) {
 }
 
 int askUpdateParamNum(const char* query, int current) {
-  const int max_len = 5;
-  int len = 0;
+  const size_t max_len = 5;
+  size_t len = 0;
   char new[max_len + 1];
   new[0] = '\0';
   char c = 0;
@@ -508,9 +508,8 @@ int askUpdateParamNum(const char* query, int current) {
     if (isdigit(c) && len < max_len) {
       strncat(new, &c, 1);
       len++;
-    } else if (c == 127 || c == 8) {
-      new[len - 1] = '\0';
-      len--;
+    } else if (len > 0 && (c == 127 || c == 8)) {
+      new[--len] = '\0';
     }
     else if (c == 13 || c == '\n') {
       break;
