@@ -24,22 +24,33 @@ make dep
 make
 ```
 
-## Running the program
+## Usage
 ```
-./bin/vbdist playerFile.txt TEAMS TEAM_SIZE PRINT_MODE
+vbdist [options]
+
+  Options:
+    -f, --file <file>          Path to textfile
+    -d, --database <database>  Path to sqlite database
+    -t, --teams <int>          Set number of teams
+    -p, --players <int>        Set number of players in a team
+    -m, --mode <int>           Set print mode 0-2 (Optional, default minimal)
+    -h, --help                 Display help
 ```
-`TEAMS`:
-  - `N` amount of teams
-
-`TEAM_SIZE`:
-  - `M` players in a team
-
-`PRINT_MODE`: (optional)
-  - `0` (Minimal printing, default)
-  - `1` (Print without player ratings)
-  - `2` (Print all)
+If you are using a SQLite3 database, you will need both the database and player file.
+If only the player file is passed, the format shown below will be used.
 
 ## Player file format
+
+### Using a database
+List of players IDs in the database.
+```
+1000
+1001
+...
+1010
+```
+
+### Using only a text file
 ```
 # Line starting with '#' is a comment
 
@@ -52,23 +63,28 @@ nameN | 1 1 1 1 1 1
 ```
 
 ### Banning player combinations
-Ban player combinations using `!`. All the players with names on the same line are banned with the first player on the line.
+Ban player combinations using `!`.
+All the players with names on the same line are banned with the first player on 
+the line.
+Use IDs if using a database; otherwise, use names.
 ```
-!name1 - name2
-!name3 - name4 - name5
+!p1 - p2
+!p3 - p4 - p5
 ```
 
-Using `?`, you can ban all the player combinations on the line. Every player on 
-the line will be in different teams if possible.
+Using `?`, you can ban all the player combinations on the line.
+Every player on the line will be in different teams if possible.
 ```
-?name1 - name2 - name3
+?p1 - p2 - p3
 ```
 
 ### Forcing teammates
-You can force teammates to be on the same team using `+`. All the players connected are in the same team. Given `TEAM_SIZE` is the maximum amount of connected players.
+You can force teammates to be on the same team using `+`.
+All the players connected are in the same team. Given `TEAM_SIZE` is the maximum 
+amount of connected players.
 ```
-+name6 - name7
-+name7 - name8
-+name9 - name10 - name11
++p6 - p7
++p7 - p8
++p9 - p10 - p11
 ```
 
