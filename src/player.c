@@ -19,6 +19,14 @@ void freePlayer(player* p) {
   free(p);
 }
 
+player* copyPlayer(player* p) {
+  player* copy = initPlayer();
+  *copy = *p;
+  copy->firstName = strdup(p->firstName);
+  if (p->surName) copy->surName = strdup(p->surName);
+  return copy;
+}
+
 player* parsePlayer(char* pStr) {
   player* p = initPlayer();
   char* token = strtok(pStr, "|");

@@ -19,7 +19,7 @@ MAIN := vbdist
 TESTS := ./tests
 TEST_TARGETS := 
 
-OBJ := player team tuiSwitch combo mark args sql
+OBJ := player team tui tuiSwitch tuidb combo mark args sql dlist
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
 $(MAIN): $(OBJECT_FILES) $(LIB)/sqlite3.o | $(BIN)
@@ -28,7 +28,7 @@ $(MAIN): $(OBJECT_FILES) $(LIB)/sqlite3.o | $(BIN)
 $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
 	$(CC) $(FLAGS) -c $(INC) $< -o $@
 
-$(LIB)/sqlite3.o: ./lib/sqlite3.c
+$(LIB)/sqlite3.o: $(LIB)/sqlite3.c
 	$(CC) $(FLAGS) -c $(INC) $< -o $@
 
 $(OBJS):
@@ -40,12 +40,12 @@ $(BIN):
 $(BUILD): $(BIN)
 	mkdir $(BUILD)
 
-build: $(OBJECT_FILES) $(OBJS)/sqlite3.o $(OBJS)/$(MAIN).o | $(BUILD)
+build: $(OBJECT_FILES) $(LIB)/sqlite3.o $(OBJS)/$(MAIN).o | $(BUILD)
 	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
 
-debug:
-	$(CC) $(INC) $(SRC)/*.c -pthread -g -o $(BIN)/db $(LINK)
-	gdb -tui $(BIN)/db
+debug: $(LIB)/sqlite3.o | $(BIN)
+	$(CC) $(INC) $^ $(SRC)/*.c -g -o $(BIN)/$@ $(LINK)
+	gdb -tui $(BIN)/debug
 
 SQLITE_VER := 3470200
 dep:

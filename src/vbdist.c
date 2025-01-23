@@ -7,11 +7,14 @@
 #include <ctype.h>
 
 #include "../include/tuiSwitch.h"
+#include "../include/tuidb.h"
+#include "../include/tui.h"
 #include "../include/args.h"
 #include "../include/sql.h"
 
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
+#define TEAMS_FILE "teams.txt"
 
 typedef enum {
   PRINT_MINIMAL,
@@ -28,6 +31,7 @@ typedef enum {
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
 dataSource SOURCE = NO_SOURCE;
+printMode PRINT_MODE = PRINT_MINIMAL;
 
 
 char* trimWS(char* str) {
@@ -56,26 +60,27 @@ char** parseComboLine(char* line, int* n) {
   return tokens;
 }
 
-void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefCombos) {
+void parseCombos(char* line, dlist* players, pCombos* bpcs, pCombos* prefCombos) {
   char fc = line[0];
 
   int idA = -1;
   int n = 0;
   char** tokens = parseComboLine(line, &n);
   assert(n > 0);
-  for (int i = 0; i < *pn; i++) {
-    if ((SOURCE == TEXT_FILE && strcmp(ps[i]->firstName, tokens[0]) == 0)
-    || (SOURCE == DATABASE && ps[i]->id == atoi(tokens[0]))) {
-      idA = ps[i]->id;
+  for (int i = 0; i < (int)players->n; i++) {
+    if ((SOURCE == TEXT_FILE && strcmp(((player*)players->items[i])->firstName, tokens[0]) == 0)
+    || (SOURCE == DATABASE && ((player*)players->items[i])->id == atoi(tokens[0]))) {
+      idA = ((player*)players->items[i])->id;
       break;
     }
   }
   for (int i = 1; i < n; i++) {
     int idB = -1;
-    for (int j = 0; j < *pn; j++) {
-      if ((SOURCE == TEXT_FILE && strcmp(ps[j]->firstName, tokens[i]) == 0)
-      || (SOURCE == DATABASE && ps[j]->id == atoi(tokens[i]))) {
-        idB = ps[j]->id;
+    for (int j = 0; j < (int)players->n; j++) {
+      player* pj = ((player*)players->items[j]);
+      if ((SOURCE == TEXT_FILE && strcmp(pj->firstName, tokens[i]) == 0)
+      || (SOURCE == DATABASE && pj->id == atoi(tokens[i]))) {
+        idB = pj->id;
         break;
       }
     }
@@ -83,18 +88,20 @@ void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefC
       if (fc == '+') addCombo(prefCombos, idA, idB);
       else if (fc == '!') addCombo(bpcs, idA, idB);
       else if (fc == '?') {
-        for (int j = 0; j < *pn; j++) {
-          if ((SOURCE == TEXT_FILE && strcmp(ps[j]->firstName, tokens[i - 1]) == 0)
-            || (SOURCE == DATABASE && ps[j]->id == atoi(tokens[i - 1]))) {
-            idA = ps[j]->id;
+        for (int j = 0; j < (int)players->n; j++) {
+          player* pj = ((player*)players->items[j]);
+          if ((SOURCE == TEXT_FILE && strcmp(pj->firstName, tokens[i - 1]) == 0)
+            || (SOURCE == DATABASE && pj->id == atoi(tokens[i - 1]))) {
+            idA = pj->id;
             break;
           }
         }
         for (int j = i; j < n; j++) {
-          for (int k = 0; k < *pn; k++) {
-            if ((SOURCE == TEXT_FILE && strcmp(ps[k]->firstName, tokens[j]) == 0)
-              || (SOURCE == DATABASE && ps[k]->id == atoi(tokens[j]))) {
-              idB = ps[k]->id;
+          for (int k = 0; k < (int)players->n; k++) {
+            player* pk = ((player*)players->items[k]);
+            if ((SOURCE == TEXT_FILE && strcmp(pk->firstName, tokens[j]) == 0)
+              || (SOURCE == DATABASE && pk->id == atoi(tokens[j]))) {
+              idB = pk->id;
               addCombo(bpcs, idA, idB);
               break;
             }
@@ -107,9 +114,9 @@ void parseCombos(char* line, player** ps, int* pn, pCombos* bpcs, pCombos* prefC
   free(tokens);
 }
 
-player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* prefCombos) {
+dlist* readPlayers(const char *fileName, pCombos* bpcs, pCombos* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
-  player** ps = NULL;
+  dlist* ps = init_list(sizeof(player*));
   int pid = 0;
   if (fp == NULL) return NULL;
 
@@ -118,20 +125,23 @@ player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* pref
     line[strcspn(line, "\n")] = 0;
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
     if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
-      parseCombos(line, ps, pn, bpcs, prefCombos);
+      parseCombos(line, ps, bpcs, prefCombos);
     } else {
       switch (SOURCE) {
         case DATABASE: {
-          ps = realloc(ps, (*pn + 1) * sizeof(player*));
-          ps[*pn] = initPlayer();
-          ps[*pn]->id = atoi(line);
-          (*pn)++;
+          player* p = initPlayer();
+          p->id = atoi(line);
+          if (playerInList(ps, p->id) < 0) {
+            list_add(ps, p);
+          } else {
+            free(p);
+          }
           break;
         }
         case TEXT_FILE: {
-          ps = realloc(ps, (*pn + 1) * sizeof(player*));
-          ps[*pn] = parsePlayer(line);
-          ps[(*pn)++]->id = pid++;
+          player* p = parsePlayer(line);
+          p->id = pid++;
+          list_add(ps, p);
           break;
         }
         default:
@@ -139,22 +149,22 @@ player** readPlayers(const char *fileName, int *pn, pCombos* bpcs, pCombos* pref
       }
     }
   }
-
   fclose(fp);
   return ps;
 }
 
-void printPlayers(player** players, const int n) {
-  for (int i = 0; i < n; i++) {
-    printPlayer(stdout, players[i]);
+void printPlayers(dlist* players) {
+  for (int i = 0; i < (int)players->n; i++) {
+    printPlayer(stdout, players->items[i]);
   }
 }
 
-void printTeams(FILE* out, team** teams, const int printMode, const int printWidth, const int teamsOnLine, const char indent) {
+void printTeams(FILE *out, team **teams, const int printWidth,
+                const int teamsOnLine, const char indent) {
   char str[printWidth];
   for (int t = 0; t < TEAMS_N; t += teamsOnLine) {
     for (int i = t; i < t + teamsOnLine && i < TEAMS_N; i++) {
-      if (printMode == PRINT_MINIMAL) {
+      if (PRINT_MODE == PRINT_MINIMAL) {
         fprintf(out, "%-*s", printWidth, teams[i]->name);
       } else {
         sprintf(str, "%s | %.2f:", teams[i]->name, avgRating(teams[i]));
@@ -164,8 +174,10 @@ void printTeams(FILE* out, team** teams, const int printMode, const int printWid
     fprintf(out, "\n");
     for(int j = 0; j < TEAM_SIZE; j++) {
       for(int i = t; i < TEAMS_N && i - t < teamsOnLine; i++) {
-        if (printMode == PRINT_ALL) {
-          sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "", teams[i]->players[j]->firstName, ovRating(teams[i]->players[j]));
+        if (PRINT_MODE == PRINT_ALL) {
+          sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "",
+                  teams[i]->players[j]->firstName,
+                  ovRating(teams[i]->players[j]));
           fprintf(out, "%-*s", printWidth, str);
         } else {
           sprintf(str, "%s%-10s", (indent) ? "  " : "", teams[i]->players[j]->firstName);
@@ -349,7 +361,7 @@ int balancedClustering(team** teams, int oneSideValidation, pCombos* bpcs, pComb
   return swaps;
 }
 
-team** balanceTeamsRand(player** players, const int n) {
+team** balanceTeamsRand(dlist* players) {
   team** teams = malloc(sizeof(team*) * TEAMS_N);
   for (int i = 0; i < TEAMS_N; i++) {
     char tName[20];
@@ -357,7 +369,7 @@ team** balanceTeamsRand(player** players, const int n) {
     teams[i] = initTeam(tName, TEAM_SIZE);
   }
 
-  qsort(players, n, sizeof(player*), cmpPlayers);
+  qsort(players->items, players->n, sizeof(player*), cmpPlayers);
   srand(time(0));
 
   int group = 0;
@@ -368,19 +380,19 @@ team** balanceTeamsRand(player** players, const int n) {
   int teamCounters[TEAMS_N];
   for (int i = 0; i < TEAMS_N; i++) teamCounters[i] = 0;
 
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < (int)players->n; i++) {
     int ind = randintRange(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
     while(inTeam[ind]) ind = randintRange(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
     inTeam[ind] = 1;
 
-    teams[teamI]->players[teamCounters[teamI]++] = players[ind];
+    teams[teamI]->players[teamCounters[teamI]++] = players->items[ind];
     teamI = (teamI + 1) % TEAMS_N;
     if (teamI == 0) group++;
   }
   return teams;
 }
 
-team* balanceTeams(player** players, const int n) {
+team* balanceTeams(dlist* players, const int n) {
   team* teams = malloc(TEAMS_N * (sizeof(team)));
   qsort(players, n, sizeof(player*), cmpPlayers);
 
@@ -389,7 +401,7 @@ team* balanceTeams(player** players, const int n) {
   for (int i = 0; i < TEAMS_N; i++) teamCounters[i] = 0;
 
   for (int i = 0; i < n; i++) {
-    teams[teamI].players[teamCounters[teamI]++] = players[i];
+    teams[teamI].players[teamCounters[teamI]++] = players->items[i];
     teamI = (teamI + 1) % TEAMS_N;
   }
   return teams;
@@ -403,7 +415,7 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
   struct tm tm = *localtime(&t);
   fprintf(fp, "%d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-  printTeams(fp, teams, PRINT_MINIMAL, 15, TEAMS_N, 0);
+  printTeams(fp, teams, 20, TEAMS_N, 0);
   fclose(fp);
 }
 
@@ -428,20 +440,16 @@ void changeMode(team** teams, pCombos* bpcs) {
       case 27: // Esc
         unselect(tui->selected);
         break;
-      case 'k':
-      case 'w':
+      case 'k': case 'w':
         cur_up(tui);
         break;
-      case 'h':
-      case 'a':
+      case 'h': case 'a':
         cur_left(tui);
         break;
-      case 'l':
-      case 'd':
+      case 'l': case 'd':
         cur_right(tui);
         break;
-      case 'j':
-      case 's':
+      case 'j': case 's':
         cur_down(tui);
         break;
       default: {
@@ -485,6 +493,140 @@ void askSaveToDB(sqldb* db, team** teams) {
   }
 }
 
+int askUpdateParamNum(const char* query, int current) {
+  const size_t max_len = 5;
+  size_t len = 0;
+  char new[max_len + 1];
+  new[0] = '\0';
+  char c = 0;
+  while (1) {
+    cls(stdout);
+    printf("\n Current: %d\n", current);
+    printf(" %s: %s", query, new);
+    fflush(stdout);
+    c = keyPress();
+    if (isdigit(c) && len < max_len) {
+      strncat(new, &c, 1);
+      len++;
+    } else if (len > 0 && (c == 127 || c == 8)) {
+      new[--len] = '\0';
+    }
+    else if (c == 13 || c == '\n') {
+      break;
+    } else if (c == 'q' || c == 27) {
+      return current;
+    }
+  }
+  return (strcmp(new, "") == 0) ? current : atoi(new);
+}
+
+void generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* prefCombos) {
+  int clustering = 1;
+  cls(stdout);
+  if (PRINT_MODE == PRINT_ALL) printPlayers(players);
+  printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
+  printf("Preferred combinations: %d\n", (int)prefCombos->n);
+
+  team** teams = balanceTeamsRand(players);
+  setPreferredCombos(teams, prefCombos);
+
+  if (clustering) {
+    printf("\nBalancing teams..\n");
+    int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
+    printf("Total swaps: %d\n", swaps);
+  }
+
+  if (PRINT_MODE != PRINT_MINIMAL) printTeams(stdout, teams, 30, 2, 1);
+
+  curShow();
+  printf("\nManually change teams? [y/N] ");
+  fflush(stdout);
+  char ans = keyPress();
+  printf("\033[2K\n");
+  if (ans == 'y' || ans == 'Y') {
+    curHide();
+    changeMode(teams, bannedCombos);
+    curShow();
+  }
+
+  printTeams(stdout, teams, 20, 3, 0);
+
+  switch (SOURCE) {
+    case TEXT_FILE: {
+      askSaveToFile(TEAMS_FILE, teams);
+      break;
+    }
+    case DATABASE: {
+      askSaveToFile(TEAMS_FILE, teams);
+      askSaveToDB(db, teams);
+      break;
+    }
+    default:
+      break;
+  }
+  for (int i = 0; i < TEAMS_N; i++) {
+    freeTeam(teams[i]);
+  }
+  free(teams);
+  curHide();
+}
+
+void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos, char* err) {
+  char error_msg[1000];
+  strcpy(error_msg, err);
+  char c = 0;
+  while (1) {
+    cls(stdout);
+    curSet(1, 1);
+    printf("\n Players selected: %d/%d\n", (int)players->n, TEAMS_N * TEAM_SIZE);
+    printf("\n Banned combinations: %d\n", (int)bpcs->n);
+    printf(" Preferred combinations: %d\n", (int)prefCombos->n);
+    printf("\n");
+
+    printf(" [g] Generate teams\n");
+    if (SOURCE == DATABASE) printf(" [d] Database\n");
+    printf(" [t] Teams: %d\n", TEAMS_N);
+    printf(" [p] Team size: %d\n", TEAM_SIZE);
+    printf(" [q] Quit\n");
+
+    printf("\n\033[31m%s\033[0m\n", error_msg);
+    c = keyPress();
+    error_msg[0] = '\0';
+    switch (c) {
+      case 'g':
+        if ((int)players->n != TEAMS_N * TEAM_SIZE) {
+          sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
+        } else {
+          generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos);
+        }
+        break;
+      case 't':
+        curShow();
+        TEAMS_N = askUpdateParamNum("Set new team amount", TEAMS_N);
+        curHide();
+        break;
+      case 'p':
+        curShow();
+        TEAM_SIZE = askUpdateParamNum("Set new team size", TEAM_SIZE);
+        curHide();
+        break;
+      case 'q':
+        cls(stdout);
+        return;
+      case 'd':
+        if (SOURCE == DATABASE) {
+          error_msg[0] = '\0';
+          updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
+          runTuiDB(tui);
+        }
+        break;
+      default: {
+        break;
+      }
+    }
+  }
+}
+
 int main(int argc, char** argv) {
 
 #ifdef _WIN32
@@ -506,25 +648,21 @@ int main(int argc, char** argv) {
        : (params->fileName)                 ? TEXT_FILE
                                             : NO_SOURCE;
 
-  // TODO: check correct file format
-  if (params->players <= 0 || params->teams <= 0 || SOURCE == NO_SOURCE) {
+  if (SOURCE == NO_SOURCE) {
     printUsage(stdout);
     exit(1);
   }
 
   TEAMS_N = params->teams;
   TEAM_SIZE = params->players;
+  PRINT_MODE = params->printMode;
 
-  char* teamsOutFile = "teams.txt";
-  int clustering = 1;
-
-  int* pn = malloc(sizeof(int));
-  *pn = 0;
-  int valid_players = 0;
   pCombos* bannedCombos = initCombos();
   pCombos* prefCombos = initCombos();
   sqldb* db = NULL;
-  player** players = NULL;
+  dlist* players = NULL;
+  char* err_msg = malloc(1);
+  err_msg[0] = '\0';
 
   switch (SOURCE) {
     case DATABASE: {
@@ -534,24 +672,34 @@ int main(int argc, char** argv) {
       }
       int r = createDB(db);
       if (r) printf("Created tables\n");
-      players = readPlayers(params->fileName, pn, bannedCombos, prefCombos);
-      valid_players = *pn;
+      players = readPlayers(params->fileName, bannedCombos, prefCombos);
       if (!players) {
-        printf("Can't find players\n");
+        char msg[100];
+        sprintf(msg, "Can't find players\n");
+        err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
+        strcat(err_msg, msg);
         exit(1);
       }
-      for (int i = 0; i < *pn; i++) {
-        int found = fetchPlayer(db, players[i]);
+      for (int i = 0; i < (int)players->n;) {
+        int found = fetchPlayer(db, players->items[i]);
         if (!found) {
-          valid_players--;
-          printf("Player with id %d not found\n", players[i]->id);
+          char msg[100];
+          sprintf(msg, "Player with id %d not found\n", ((player*)players->items[i])->id);
+          err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
+          strcat(err_msg, msg);
+          freePlayer(players->items[i]);
+          if (i != (int)players->n - 1) {
+            players->items[i] = players->items[players->n - 1];
+          }
+          players->n--;
+        } else {
+          i++;
         }
       }
       break;
     }
     case TEXT_FILE: {
-      players = readPlayers(params->fileName, pn, bannedCombos, prefCombos);
-      valid_players = *pn;
+      players = readPlayers(params->fileName, bannedCombos, prefCombos);
       break;
     }
     default:
@@ -560,68 +708,36 @@ int main(int argc, char** argv) {
 
   int maxSize = maxTeamFromPrefCombos(prefCombos);
   if (maxSize > TEAM_SIZE) {
-    printf("Trying to put %d players into the same team, but team size is %d\n", maxSize, TEAM_SIZE);
-    exit(1);
+    // TODO: handle somehow
+    char msg[100];
+    sprintf(msg, "Trying to put %d players into the same team, but team size is %d\n", maxSize, TEAM_SIZE);
+    err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
+    strcat(err_msg, msg);
   }
 
-  qsort(players, *pn, sizeof(player*), cmpPlayers);
+  qsort(players->items, players->n, sizeof(player*), cmpPlayers);
 
-  if (params->printMode == PRINT_ALL) printPlayers(players, *pn);
-  printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
-  printf("Preferred combinations: %d\n", (int)prefCombos->n);
-
-  if (*pn != TEAMS_N * TEAM_SIZE) {
-    printf("\nFile %s contains %d players, but %d was expected\n", params->fileName, *pn, TEAMS_N * TEAM_SIZE);
-    exit(1);
-  }
-  if (valid_players != TEAMS_N * TEAM_SIZE) {
-    printf("\nFound %d valid players, but %d was expected\n", valid_players, TEAMS_N * TEAM_SIZE);
-    exit(1);
+  tuidb* tui = NULL;
+  if (SOURCE == DATABASE) {
+    tui = initTuiDB(TEAMS_N, TEAM_SIZE);
+    tui->db = db;
+    tui->allPlayers = fetchPlayers(db);
+    tui->allTeams = fetchTeams(db);
+    tui->players = players;
   }
 
-  team** teams = balanceTeamsRand(players, *pn);
+  curHide();
+  runBeginTui(tui, players, bannedCombos, prefCombos, err_msg);
+  curShow();
 
-  setPreferredCombos(teams, prefCombos);
-
-  if (clustering) {
-    printf("\nBalancing teams..\n");
-    int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
-    printf("Total swaps: %d\n", swaps);
+  for (int i = 0; i < (int)players->n; i++) {
+    freePlayer(players->items[i]);
   }
-
-  if (params->printMode != PRINT_MINIMAL) printTeams(stdout, teams, params->printMode, 30, 2, 1);
-
-  printf("\nManually change teams? [y/N] ");
-  fflush(stdout);
-  char ans = keyPress();
-  printf("\033[2K\n");
-  if (ans == 'y' || ans == 'Y') {
-    changeMode(teams, bannedCombos);
-  }
-
-  printTeams(stdout, teams, PRINT_MINIMAL, 15, 3, 0);
-
-  switch (SOURCE) {
-    case TEXT_FILE: {
-      askSaveToFile(teamsOutFile, teams);
-      break;
-    }
-    case DATABASE: {
-      askSaveToFile(teamsOutFile, teams);
-      askSaveToDB(db, teams);
-      closeSqlDB(db);
-      break;
-    }
-    default:
-      break;
-  }
-
-  for (int i = 0; i < TEAMS_N; i++) {
-    freeTeam(teams[i]);
-  }
-
-  free(teams);
-  free(pn);
+  free_list(players);
+  freeArgs(params);
+  free(err_msg);
+  closeSqlDB(db);
+  freeTuiDB(tui);
   freeCombos(bannedCombos);
   freeCombos(prefCombos);
 

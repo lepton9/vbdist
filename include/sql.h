@@ -3,7 +3,13 @@
 
 #include <stdio.h>
 #include "sqlite3.h"
-#include "../include/team.h"
+#include "team.h"
+#include "dlist.h"
+
+typedef struct {
+  int a;
+  int b;
+} int_tuple;
 
 typedef struct {
   sqlite3* sqlite;
@@ -12,11 +18,22 @@ typedef struct {
 
 sqldb* openSqlDB(const char* path);
 void closeSqlDB(sqldb* db);
-int execSQL(sqlite3* db, const char* sql);
+
+int execQuery(sqlite3 *db, const char *sql,
+              int (*cb)(void *, int, char **, char **), void *p);
 
 int createDB(sqldb* db);
-
 int fetchPlayer(sqldb* db, player* player);
+int fetchRating(sqldb* db, player* player);
+dlist* fetchPlayers(sqldb* db);
+dlist* fetchTeams(sqldb* db);
+dlist* fetchPlayerTeams(sqldb* db, player* player);
+dlist* fetchFormerTeammates(sqldb* db, player* player);
+dlist* fetchNotTeammates(sqldb* db, player* player);
+dlist* fetchPlayersInTeam(sqldb* db, team* team);
+
+int renamePlayer(sqldb* db, player* player, const char* name);
+int renameTeam(sqldb* db, team* team, const char* name);
 
 void insertTeam(sqldb* db, team* team);
 void insertPlayerTeam(sqldb* db, player* player, team* team);

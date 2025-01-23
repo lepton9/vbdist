@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libncurses5-dev libncursesw5-dev libsqlite3-dev
+          sudo apt-get install -y libncurses5-dev libncursesw5-dev
 
       - name: Build with make
         run: |

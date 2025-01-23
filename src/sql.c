@@ -18,9 +18,29 @@ sqldb* openSqlDB(const char* path) {
 }
 
 void closeSqlDB(sqldb* db) {
+  if (!db) return;
   sqlite3_close(db->sqlite);
   free(db->path);
   free(db);
+}
+
+int cb_teams(void* tList, int count, char **data, char **columns) {
+  assert(count == 2);
+  dlist* list = tList;
+  team* t = initTeam(data[1], 0);
+  t->id = atoi(data[0]);
+  list_add(list, t);
+  return 0;
+}
+
+int cb_players(void* pList, int count, char **data, char **columns) {
+  dlist* list = pList;
+  player* p = initPlayer();
+  p->id = atoi(data[0]);
+  p->ratings_id = atoi(data[1]);
+  p->firstName = strdup(data[2]);
+  list_add(list, p);
+  return 0;
 }
 
 int cb_player(void* p, int argc, char **argv, char **colName) {
@@ -40,9 +60,34 @@ int cb_rating(void* p, int argc, char **argv, char **colName) {
   return 0;
 }
 
-int execSQL(sqlite3* db, const char* sql) {
+int cb_teammates(void* teammates, int count, char **data, char **columns) {
+  assert(count == 2);
+  int_tuple* tuple = malloc(sizeof(int_tuple));
+  tuple->a = atoi(data[0]);
+  tuple->b = atoi(data[1]);
+  list_add(teammates, tuple);
+  return 0;
+}
+
+int cb_not_teammates(void* not_teammates, int count, char **data, char **columns) {
+  assert(count == 1);
+  int* id = malloc(sizeof(int));
+  *id = atoi(data[0]);
+  list_add(not_teammates, id);
+  return 0;
+}
+
+int cb_add_id_list(void* list, int count, char **data, char **columns) {
+  assert(count == 1);
+  int* id = malloc(sizeof(int));
+  *id = atoi(data[0]);
+  list_add(list, id);
+  return 0;
+}
+
+int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char **), void* p) {
   char* err_msg = NULL;
-  int result = sqlite3_exec(db, sql, NULL, NULL, &err_msg);
+  int result = sqlite3_exec(db, sql, cb, p, &err_msg);
   if (err_msg) {
     fprintf(stderr, "SQL error: %s\n", err_msg);
     sqlite3_free(err_msg);
@@ -50,33 +95,97 @@ int execSQL(sqlite3* db, const char* sql) {
   return result == SQLITE_OK;
 }
 
+dlist* fetchPlayers(sqldb* db) {
+  char* sql = "SELECT * FROM Player;";
+  dlist* list = init_list(sizeof(player*));
+  execQuery(db->sqlite, sql, cb_players, list);
+  for (int i = 0; i < (int)list->n; i++) {
+    fetchRating(db, list->items[i]);
+  }
+  return list;
+}
+
+dlist* fetchTeams(sqldb* db) {
+  char* sql = "SELECT team_id, name FROM Team;";
+  dlist* list = init_list(sizeof(team*));
+  execQuery(db->sqlite, sql, cb_teams, list);
+  return list;
+}
+
+int fetchRating(sqldb* db, player* player) {
+  char sql_rating[100];
+  sprintf(sql_rating, "SELECT * FROM Rating WHERE rating_id = %d;", player->ratings_id);
+  int result = execQuery(db->sqlite, sql_rating, cb_rating, player);
+  return result;
+}
+
 int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name, rating_id FROM Player WHERE player_id = %d;", player->id);
-
-  char* err_msg = NULL;
-  int result = sqlite3_exec(db->sqlite, sql, cb_player, player, &err_msg);
-  if (err_msg) {
-    fprintf(stderr, "SQL error: %s\n", err_msg);
-    sqlite3_free(err_msg);
-  }
-
-  char sql_rating[100];
-  sprintf(sql_rating, "SELECT * FROM Rating WHERE rating_id = %d;", player->ratings_id);
-
-  result = sqlite3_exec(db->sqlite, sql_rating, cb_rating, player, &err_msg);
-  if (err_msg) {
-    fprintf(stderr, "SQL error: %s\n", err_msg);
-    sqlite3_free(err_msg);
-  }
+  execQuery(db->sqlite, sql, cb_player, player);
+  fetchRating(db, player);
   return player->found;
+}
+
+dlist* fetchPlayerTeams(sqldb* db, player* player) {
+  char sql[100];
+  sprintf(sql, "SELECT team_id FROM PlayerTeam WHERE player_id = %d;", player->id);
+  dlist* teams = init_list(sizeof(int*));
+  execQuery(db->sqlite, sql, cb_add_id_list, teams);
+  return teams;
+}
+
+dlist* fetchFormerTeammates(sqldb* db, player* player) {
+  dlist* teammates = init_list(sizeof(int_tuple*));
+  char sql[200];
+  sprintf(sql,
+          "SELECT player_id, COUNT(player_id) as teammate_count FROM "
+          "PlayerTeam WHERE team_id IN (SELECT team_id FROM PlayerTeam WHERE "
+          "player_id = %d) GROUP BY player_id ORDER BY teammate_count DESC;",
+          player->id);
+  execQuery(db->sqlite, sql, cb_teammates, teammates);
+  return teammates;
+}
+
+dlist* fetchNotTeammates(sqldb* db, player* player) {
+  dlist* no_teammates = init_list(sizeof(int*));
+  char sql[200];
+  sprintf(sql,
+          "SELECT player_id FROM Player WHERE player_id NOT IN (SELECT player_id FROM "
+          "PlayerTeam WHERE team_id IN (SELECT team_id FROM PlayerTeam WHERE "
+          "player_id = %d) GROUP BY player_id);",
+          player->id);
+  execQuery(db->sqlite, sql, cb_not_teammates, no_teammates);
+  return no_teammates;
+}
+
+dlist* fetchPlayersInTeam(sqldb* db, team* team) {
+  char sql[100];
+  sprintf(sql, "SELECT player_id FROM PlayerTeam WHERE team_id = %d;", team->id);
+  dlist* players = init_list(sizeof(int*));
+  execQuery(db->sqlite, sql, cb_add_id_list, players);
+  return players;
+}
+
+int renamePlayer(sqldb* db, player* player, const char* name) {
+  char sql[100];
+  sprintf(sql, "UPDATE Player SET name = '%s' WHERE player_id = %d;", name, player->id);
+  int result = execQuery(db->sqlite, sql, 0, 0);
+  return result;
+}
+
+int renameTeam(sqldb* db, team* team, const char* name) {
+  char sql[100];
+  sprintf(sql, "UPDATE Team SET name = '%s' WHERE team_id = %d;", name, team->id);
+  int result = execQuery(db->sqlite, sql, 0, 0);
+  return result;
 }
 
 void insertTeam(sqldb* db, team* team) {
   if (team->id < 0) team->id = randintRange(0, INT_MAX);
   char sql[100];
   sprintf(sql, "INSERT INTO Team (team_id, name) VALUES (%d, '%s');", team->id, team->name);
-  if (execSQL(db->sqlite, sql)) {
+  if (execQuery(db->sqlite, sql, 0, 0)) {
     // TODO: maybe log to a file
   }
 }
@@ -84,7 +193,7 @@ void insertTeam(sqldb* db, team* team) {
 void insertPlayerTeam(sqldb* db, player* player, team* team) {
   char sql[100];
   sprintf(sql, "INSERT INTO PlayerTeam (player_id, team_id) VALUES (%d, %d);", player->id, team->id);
-  if (execSQL(db->sqlite, sql)) {
+  if (execQuery(db->sqlite, sql, 0, 0)) {
     // TODO: log
   }
 }
@@ -129,6 +238,6 @@ int createDB(sqldb* db) {
       "  PRIMARY KEY (team_id)"
       ");";
 
-  return execSQL(db->sqlite, sql);
+  return execQuery(db->sqlite, sql, 0, 0);
 }
 

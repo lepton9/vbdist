@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "../include/mark.h"
+#include "../include/dlist.h"
 
 #define DIFRATINGS 6
 
@@ -18,6 +19,7 @@ typedef struct {
 
 player* initPlayer();
 void freePlayer(player* p);
+player* copyPlayer(player* p);
 player* parsePlayer(char* pStr);
 int cmpPlayers(const void* a, const void* b);
 void swapPlayers(player* a, player* b);

@@ -3,16 +3,6 @@
 
 #include "../include/combo.h"
 
-#ifdef __linux__
-//#include <unistd.h>
-#include <ncurses.h>
-#endif
-#ifdef _WIN32
-#include <windows.h>
-//#include <wchar.h>
-#include <conio.h>
-#endif
-
 #define MAX_HOR_TEAMS 3
 
 typedef struct {
@@ -41,10 +31,5 @@ void cur_left(tui* t);
 void cur_right(tui* t);
 char highlight(const tui* tui, const int team, const int player);
 void updateTUI(FILE* out, tui* tui, team** teams, pCombos* bpcs);
-
-void cls(FILE* s);
-char keyPress();
-void initScreen();
-char initScreenWin();
 
 #endif
