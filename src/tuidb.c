@@ -135,19 +135,21 @@ void list_down(tuidb* tui) {
 }
 
 void renameSelectedListElem(tuidb* tui) {
-  curShow();
   int width = 0;
   int row = 0;
   char* old_name = NULL;
   if (tui->tab == PLAYERS_TAB) {
+    if (tui->allPlayers->n == 0) return;
     old_name = ((player *)tui->allPlayers->items[tui->allPlayersArea->selected])->firstName;
     width = tui->allPlayersArea->width;
     row = tui->allPlayersArea->selected_term_row;
   } else if (tui->tab == TEAMS_TAB) {
+    if (tui->allTeams->n == 0) return;
     old_name = ((team*)tui->allTeams->items[tui->allTeamsArea->selected])->name;
     width = tui->allTeamsArea->width;
     row = tui->allTeamsArea->selected_term_row;
   }
+  curShow();
   const int max_len = 50;
   int len = strlen((old_name) ? old_name : 0);
   char new[max_len + 1];
