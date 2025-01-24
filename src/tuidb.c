@@ -408,6 +408,7 @@ void renderAllTeamsList(tuidb* tui) {
 }
 
 void renderSelectedTeam(tuidb* tui) {
+  if (tui->allTeams->n == 0) return;
   team* t = tui->allTeams->items[tui->allTeamsArea->selected];
   int startCol = tui->allTeamsArea->width + 5;
   int line = 1;
