@@ -365,7 +365,8 @@ void renderTuidb(tuidb* tui) {
 
 void renderAllPlayersList(tuidb* tui) {
   curSet(1, 0);
-  printf("\033[4m %-20s %s\033[24m", "Name", "Rating");
+  printf("\033[4m %-20s %-10s %d/%d\033[24m", "Name", "Rating",
+         tui->allPlayersArea->selected + 1, (int)tui->allPlayers->n);
   if (tui->allPlayers->n > 0) {
     int line = 2;
     for (int i = tui->allPlayersArea->firstInd;
