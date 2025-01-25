@@ -6,7 +6,7 @@
 #include <time.h>
 #include <ctype.h>
 
-#include "../include/tuiSwitch.h"
+#include "../include/tuiswap.h"
 #include "../include/tuidb.h"
 #include "../include/tui.h"
 #include "../include/args.h"
@@ -423,7 +423,7 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
 }
 
 void changeMode(team** teams, pCombos* bpcs) {
-  tui* tui = initTui(TEAM_SIZE, TEAMS_N);
+  tuiswap* tui = initTui(TEAM_SIZE, TEAMS_N);
   char c = 0;
 
   cls(stdout);
