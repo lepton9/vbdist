@@ -62,7 +62,6 @@ char** parseComboLine(char* line, int* n) {
 
 void parseCombos(char* line, dlist* players, pCombos* bpcs, pCombos* prefCombos) {
   char fc = line[0];
-
   int idA = -1;
   int n = 0;
   char** tokens = parseComboLine(line, &n);
@@ -118,7 +117,10 @@ dlist* readPlayers(const char *fileName, pCombos* bpcs, pCombos* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
   dlist* ps = init_list(sizeof(player*));
   int pid = 0;
-  if (fp == NULL) return NULL;
+  if (fp == NULL) {
+    free_list(ps);
+    return NULL;
+  }
 
   char line[256];
   while (fgets(line, sizeof(line), fp)) {
@@ -644,9 +646,9 @@ int main(int argc, char** argv) {
     exit(0);
   }
 
-  SOURCE = (params->fileName && params->dbName) ? DATABASE
-       : (params->fileName)                 ? TEXT_FILE
-                                            : NO_SOURCE;
+  SOURCE = (params->dbName)     ? DATABASE
+           : (params->fileName) ? TEXT_FILE
+                                : NO_SOURCE;
 
   if (SOURCE == NO_SOURCE) {
     printUsage(stdout);
@@ -672,7 +674,9 @@ int main(int argc, char** argv) {
       }
       int r = createDB(db);
       if (r) printf("Created tables\n");
-      players = readPlayers(params->fileName, bannedCombos, prefCombos);
+      players = (params->fileName)
+                    ? readPlayers(params->fileName, bannedCombos, prefCombos)
+                    : init_list(sizeof(player *));
       if (!players) {
         char msg[100];
         sprintf(msg, "Can't find players\n");
