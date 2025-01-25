@@ -314,7 +314,10 @@ void renderAllPlayersList(tuidb* tui) {
 void renderSelectedList(tuidb* tui) {
   int startCol = tui->allPlayersArea->width + 5;
   curSet(1, startCol);
-  printf("Selected %d/%d", (int)tui->players->n, tui->teams_n * tui->team_size);
+  const int total_size = tui->teams_n * tui->team_size;
+  printf("Selected %s%d/%d%s",
+         ((int)tui->players->n > total_size) ? "\033[31m" : "",
+         (int)tui->players->n, total_size, "\033[0m");
 
   int line = 2;
   for (int i = 0;
