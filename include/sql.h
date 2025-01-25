@@ -34,6 +34,8 @@ dlist* fetchPlayersInTeam(sqldb* db, team* team);
 
 int renamePlayer(sqldb* db, player* player, const char* name);
 int renameTeam(sqldb* db, team* team, const char* name);
+int deletePlayer(sqldb* db, player* player);
+int deleteTeam(sqldb* db, team* team);
 
 void insertTeam(sqldb* db, team* team);
 void insertPlayerTeam(sqldb* db, player* player, team* team);

@@ -181,6 +181,18 @@ int renameTeam(sqldb* db, team* team, const char* name) {
   return result;
 }
 
+int deletePlayer(sqldb* db, player* player) {
+  char sql[100];
+  sprintf(sql, "DELETE FROM Player WHERE player_id = %d;", player->id);
+  return execQuery(db->sqlite, sql, 0, 0);
+}
+
+int deleteTeam(sqldb* db, team* team) {
+  char sql[100];
+  sprintf(sql, "DELETE FROM Team WHERE team_id = %d;", team->id);
+  return execQuery(db->sqlite, sql, 0, 0);
+}
+
 void insertTeam(sqldb* db, team* team) {
   if (team->id < 0) team->id = randintRange(0, INT_MAX);
   char sql[100];
@@ -227,9 +239,8 @@ int createDB(sqldb* db) {
       "  player_id INTEGER NOT NULL,"
       "  team_id INTEGER NOT NULL,"
       "  PRIMARY KEY (player_id, team_id),"
-      "  FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE "
-      "  RESTRICT,"
-      "FOREIGN KEY (team_id) REFERENCES Team (team_id) ON DELETE RESTRICT"
+      "  FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE RESTRICT,"
+      "  FOREIGN KEY (team_id) REFERENCES Team (team_id) ON DELETE CASCADE"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS Team ("
