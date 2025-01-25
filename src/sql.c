@@ -37,6 +37,7 @@ int cb_teams(void* tList, int count, char **data, char **columns) {
 }
 
 int cb_players(void* pList, int count, char **data, char **columns) {
+  assert(count == 3);
   dlist* list = pList;
   player* p = initPlayer();
   p->id = atoi(data[0]);

@@ -23,7 +23,7 @@ struct tm* get_timeinfo() {
 }
 
 char *timef(struct tm *tm) {
-  char *time_f = malloc(20);
+  char *time_f = malloc(100);
   sprintf(time_f, "%d-%02d-%02d %02d:%02d:%02d", tm->tm_year + 1900,
           tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
   return time_f;

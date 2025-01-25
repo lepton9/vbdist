@@ -5,7 +5,7 @@ INCLUDE := ./include
 BUILD := $(BIN)/build
 OBJS := ./objs
 INC := -I$(INCLUDE) -I$(LIB)
-FLAGS := -O3 -Wextra -Wall
+FLAGS := -O3 -Wextra -Wall -Wno-unused-parameter
 LINK := -L$(LIB)
 
 PLATFORM := $(shell uname)
