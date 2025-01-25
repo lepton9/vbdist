@@ -1,6 +1,8 @@
-/teams
-/players
 /bin
 /objs
 /lib
+/teams
+/players
+/sql
 teams.txt
+log_vbdist.txt
