@@ -1,6 +1,6 @@
 #include "../include/sql.h"
+#include "../include/log.h"
 #include <assert.h>
-#include <time.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,16 +11,18 @@ sqldb* openSqlDB(const char* path) {
   db->path = strdup(path);
   int r = sqlite3_open(db->path, &db->sqlite);
   if (r != SQLITE_OK) {
-    fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db->sqlite));
+    log_sql_error("Failed to open db (%s)", sqlite3_errmsg(db->sqlite));
     db->sqlite = NULL;
   }
   enableForeignKey(db);
+  log_sql("Opened database '%s'", path);
   return db;
 }
 
 void closeSqlDB(sqldb* db) {
   if (!db) return;
   sqlite3_close(db->sqlite);
+  log_sql("Closed database '%s'", db->path);
   free(db->path);
   free(db);
 }
@@ -90,16 +92,7 @@ int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char
   char* err_msg = NULL;
   int result = sqlite3_exec(db, sql, cb, p, &err_msg);
   if (err_msg) {
-    // TODO: proper logging
-    FILE *log_file = fopen("log_vbdist.txt", "a");
-    if (log_file) {
-      time_t rawtime;
-      struct tm *timeinfo;
-      time(&rawtime);
-      timeinfo = localtime(&rawtime);
-      fprintf(log_file, "%s | SQL error: %s\n", asctime(timeinfo), err_msg);
-      fclose(log_file);
-    }
+    log_sql_error("%s", err_msg);
     sqlite3_free(err_msg);
   }
   return result == SQLITE_OK;
@@ -185,44 +178,62 @@ dlist* fetchPlayersInTeam(sqldb* db, team* team) {
 int renamePlayer(sqldb* db, player* player, const char* name) {
   char sql[100];
   sprintf(sql, "UPDATE Player SET name = '%s' WHERE player_id = %d;", name, player->id);
-  int result = execQuery(db->sqlite, sql, 0, 0);
-  return result;
+  int r = execQuery(db->sqlite, sql, 0, 0);
+  if (r) {
+    log_sql("Renamed Player (%d) '%s' -> '%s'", player->id, player->firstName, name);
+  }
+  return r;
 }
 
 int renameTeam(sqldb* db, team* team, const char* name) {
   char sql[100];
   sprintf(sql, "UPDATE Team SET name = '%s' WHERE team_id = %d;", name, team->id);
-  int result = execQuery(db->sqlite, sql, 0, 0);
-  return result;
+  int r = execQuery(db->sqlite, sql, 0, 0);
+  if (r) {
+    log_sql("Renamed Team (%d) '%s' -> '%s'", team->id, team->name, name);
+  }
+  return r;
 }
 
 int deletePlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "DELETE FROM Player WHERE player_id = %d;", player->id);
-  return execQuery(db->sqlite, sql, 0, 0);
+  int r = execQuery(db->sqlite, sql, 0, 0);
+  if (r) {
+    log_sql("Deleted Player (%d) '%s'", player->id, player->firstName);
+  }
+  return r;
 }
 
 int deleteTeam(sqldb* db, team* team) {
   char sql[100];
   sprintf(sql, "DELETE FROM Team WHERE team_id = %d;", team->id);
-  return execQuery(db->sqlite, sql, 0, 0);
+  int r = execQuery(db->sqlite, sql, 0, 0);
+  if (r) {
+    log_sql("Deleted Team (%d) '%s'", team->id, team->name);
+  }
+  return r;
 }
 
-void insertTeam(sqldb* db, team* team) {
+int insertTeam(sqldb* db, team* team) {
   if (team->id < 0) team->id = randintRange(0, INT_MAX);
   char sql[100];
   sprintf(sql, "INSERT INTO Team (team_id, name) VALUES (%d, '%s');", team->id, team->name);
-  if (execQuery(db->sqlite, sql, 0, 0)) {
-    // TODO: maybe log to a file
+  int r = execQuery(db->sqlite, sql, 0, 0);
+  if (r) {
+    log_sql("Inserted Team (%d) '%s'", team->id, team->name);
   }
+  return r;
 }
 
-void insertPlayerTeam(sqldb* db, player* player, team* team) {
+int insertPlayerTeam(sqldb* db, player* player, team* team) {
   char sql[100];
   sprintf(sql, "INSERT INTO PlayerTeam (player_id, team_id) VALUES (%d, %d);", player->id, team->id);
-  if (execQuery(db->sqlite, sql, 0, 0)) {
-    // TODO: log
+  int r = execQuery(db->sqlite, sql, 0, 0);
+  if (r) {
+    log_sql("Inserted Player (%d) '%s' to Team (%d) '%s'", player->id, player->firstName, team->id, team->name);
   }
+  return r;
 }
 
 int randintRange(const int min, const int max) {
@@ -265,18 +276,18 @@ int createDB(sqldb* db) {
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS Position ("
-      "position_id INTEGER NOT NULL,"
-      "positionName TEXT,"
-      "PRIMARY KEY (position_id),"
+      "  position_id INTEGER NOT NULL,"
+      "  positionName TEXT,"
+      "  PRIMARY KEY (position_id)"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS PlayerPosition ("
-      "player_id INTEGER NOT NULL,"
-      "position_id INTEGER NOT NULL,"
-      "priority_value INTEGER NOT NULL,"
-      "PRIMARY KEY (player_id, position_id),"
-      "FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE CASCADE,"
-      "FOREIGN KEY (position_id) REFERENCES Position (position_id) ON DELETE CASCADE"
+      "  player_id INTEGER NOT NULL,"
+      "  position_id INTEGER NOT NULL,"
+      "  priority_value INTEGER NOT NULL,"
+      "  PRIMARY KEY (player_id, position_id),"
+      "  FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE CASCADE,"
+      "  FOREIGN KEY (position_id) REFERENCES Position (position_id) ON DELETE CASCADE"
       ");";
 
   return execQuery(db->sqlite, sql, 0, 0);
