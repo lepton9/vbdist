@@ -12,7 +12,11 @@ typedef struct {
 
 dlist* init_list(size_t item_size);
 void free_list(dlist* list);
+int shrink_list(dlist* list);
 void list_add(dlist* list, void* item);
 dlist* list_from(void** items, int item_size, int n);
+
+// The caller is responsible for freeing the element
+void* pop_elem(dlist* list, size_t index);
 
 #endif
