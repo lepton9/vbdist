@@ -1,7 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "../include/log.h"
 
+void log_with_prefix(const char *prefix, const char *fmt, ...) {
+    char msg[256];
+    va_list args;
+
+    va_start(args, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, args);
+    va_end(args);
+
+    char full_msg[300];
+    snprintf(full_msg, sizeof(full_msg), "%s: %s", prefix, msg);
+    log(full_msg);
+}
 
 struct tm* get_timeinfo() {
   time_t t = time(NULL);
@@ -25,11 +38,5 @@ void log(const char* msg) {
     fclose(log_file);
   }
   free(tf);
-}
-
-void log_sql_error(const char* err_msg) {
-  char msg[100];
-  sprintf(msg, "SQL_ERROR: %s", err_msg);
-  log(msg);
 }
 
