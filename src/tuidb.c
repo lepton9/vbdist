@@ -61,9 +61,21 @@ int playerInList(dlist* list, int player_id) {
   return -1;
 }
 
+player* selectedPlayer(tuidb *tui) {
+  if (tui->allPlayers->n == 0 || tui->allPlayersArea->selected < 0)
+    return NULL;
+  return (player *)tui->allPlayers->items[tui->allPlayersArea->selected];
+}
+
+team* selectedTeam(tuidb *tui) {
+  if (tui->allTeams->n == 0 || tui->allTeamsArea->selected < 0)
+    return NULL;
+  return (team *)tui->allTeams->items[tui->allTeamsArea->selected];
+}
+
 void selectPlayer(tuidb* tui) {
   if (tui->allPlayersArea->selected < 0 || tui->allPlayers->n <= 0) return;
-  player* selected = tui->allPlayers->items[tui->allPlayersArea->selected];
+  player* selected = selectedPlayer(tui);
   if (playerInList(tui->players, selected->id) >= 0) {
     unselectPlayer(tui);
     return;
@@ -72,7 +84,7 @@ void selectPlayer(tuidb* tui) {
 }
 
 void unselectPlayer(tuidb* tui) {
-  player* selected = tui->allPlayers->items[tui->allPlayersArea->selected];
+  player* selected = selectedPlayer(tui);
   int i = playerInList(tui->players, selected->id);
   if (i < 0) return;
   freePlayer(tui->players->items[i]);
@@ -139,13 +151,15 @@ void renameSelectedListElem(tuidb* tui) {
   int row = 0;
   char* old_name = NULL;
   if (tui->tab == PLAYERS_TAB) {
-    if (tui->allPlayers->n == 0) return;
-    old_name = ((player *)tui->allPlayers->items[tui->allPlayersArea->selected])->firstName;
+    player* p = selectedPlayer(tui);
+    if (!p) return;
+    old_name = p->firstName;
     width = tui->allPlayersArea->width;
     row = tui->allPlayersArea->selected_term_row;
   } else if (tui->tab == TEAMS_TAB) {
-    if (tui->allTeams->n == 0) return;
-    old_name = ((team*)tui->allTeams->items[tui->allTeamsArea->selected])->name;
+    team* t = selectedTeam(tui);
+    if (!t) return;
+    old_name = t->name;
     width = tui->allTeamsArea->width;
     row = tui->allTeamsArea->selected_term_row;
   }
@@ -167,7 +181,7 @@ void renameSelectedListElem(tuidb* tui) {
     } else if (c == 13 || c == '\n') {
       switch (tui->tab) {
         case PLAYERS_TAB: {
-          player* p = tui->allPlayers->items[tui->allPlayersArea->selected];
+          player* p = selectedPlayer(tui);
           int r = renamePlayer(tui->db, p, new);
           if (r) {
             if (p->firstName) free(p->firstName);
@@ -176,7 +190,7 @@ void renameSelectedListElem(tuidb* tui) {
           break;
         }
         case TEAMS_TAB: {
-          team* t = tui->allTeams->items[tui->allTeamsArea->selected];
+          team* t = selectedTeam(tui);
           int r = renameTeam(tui->db, t, new);
           if (r) {
             if (t->name) free(t->name);
@@ -200,7 +214,9 @@ void renameSelectedListElem(tuidb* tui) {
 void handleKeyPress(tuidb* tui, char c) {
     switch (c) {
       case 13: case '\n': case ' ':
-        if (tui->tab == PLAYERS_TAB) selectPlayer(tui);
+        if (tui->tab == PLAYERS_TAB) {
+          selectPlayer(tui);
+        }
         break;
       case 27: {  // Esc
         tui->show_player_info = 0;
@@ -232,7 +248,6 @@ void handleKeyPress(tuidb* tui, char c) {
 }
 
 void runTuiDB(tuidb* tui) {
-  altBufferEnable();
   curHide();
   char c = 0;
   while (c != 'q') {
@@ -242,7 +257,6 @@ void runTuiDB(tuidb* tui) {
     handleKeyPress(tui, c);
   }
   cls(stdout);
-  altBufferDisable();
 }
 
 void updateArea(tuidb* tui) {
@@ -332,7 +346,8 @@ void renderSelectedList(tuidb* tui) {
 }
 
 void renderPlayerInfo(tuidb* tui) {
-  player* p = tui->allPlayers->items[tui->allPlayersArea->selected];
+  player* p = selectedPlayer(tui);
+  if (!p) return;
   int startCol = tui->allPlayersArea->width + 5;
   int line = 1;
   curSet(line++, startCol);
@@ -413,8 +428,8 @@ void renderAllTeamsList(tuidb* tui) {
 }
 
 void renderSelectedTeam(tuidb* tui) {
-  if (tui->allTeams->n == 0) return;
-  team* t = tui->allTeams->items[tui->allTeamsArea->selected];
+  team* t = selectedTeam(tui);
+  if (!t) return;
   int startCol = tui->allTeamsArea->width + 5;
   int line = 1;
   curSet(line++, startCol);

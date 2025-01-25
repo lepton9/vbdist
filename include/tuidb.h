@@ -49,7 +49,11 @@ int playerInList(dlist* list, int player_id);
 void selectPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui);
 
+player* selectedPlayer(tuidb* tui);
+team* selectedTeam(tuidb* tui);
+
 void renameSelectedListElem(tuidb* tui);
+void deleteSelectedListElem(tuidb* tui);
 
 void list_up(tuidb* tui);
 void list_down(tuidb* tui);

@@ -630,7 +630,6 @@ void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos,
 }
 
 int main(int argc, char** argv) {
-
 #ifdef _WIN32
   char ret = initScreenWin();
   if (ret <= 0) {
@@ -731,7 +730,9 @@ int main(int argc, char** argv) {
   }
 
   curHide();
+  altBufferEnable();
   runBeginTui(tui, players, bannedCombos, prefCombos, err_msg);
+  altBufferDisable();
   curShow();
 
   for (int i = 0; i < (int)players->n; i++) {
