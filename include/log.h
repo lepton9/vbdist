@@ -8,6 +8,12 @@
 #define log_with_custom_prefix(prefix, fmt, ...) \
     log_with_prefix(prefix, fmt, __VA_ARGS__)
 
+#define log_log(fmt, ...) \
+    log_with_custom_prefix("LOG", fmt, __VA_ARGS__)
+
+#define log_error(fmt, ...) \
+    log_with_custom_prefix("ERROR", fmt, __VA_ARGS__)
+
 #define log_sql(fmt, ...) \
     log_with_custom_prefix("SQL", fmt, __VA_ARGS__)
 
@@ -15,7 +21,7 @@
     log_with_custom_prefix("SQL_ERROR", fmt, __VA_ARGS__)
 
 void log_with_prefix(const char *prefix, const char *fmt, ...);
-void log(const char* msg);
+void log_msg(const char* msg);
 
 struct tm* get_timeinfo();
 char* timef(struct tm* timeinfo);

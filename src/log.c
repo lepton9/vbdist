@@ -13,7 +13,7 @@ void log_with_prefix(const char *prefix, const char *fmt, ...) {
 
     char full_msg[300];
     snprintf(full_msg, sizeof(full_msg), "%s: %s", prefix, msg);
-    log(full_msg);
+    log_msg(full_msg);
 }
 
 struct tm* get_timeinfo() {
@@ -29,7 +29,7 @@ char *timef(struct tm *tm) {
   return time_f;
 }
 
-void log(const char* msg) {
+void log_msg(const char* msg) {
   struct tm* timeinfo = get_timeinfo();
   char* tf = timef(timeinfo);
   FILE *log_file = fopen(LOG_FILE, "a");

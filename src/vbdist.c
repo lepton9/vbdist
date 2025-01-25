@@ -11,6 +11,7 @@
 #include "../include/tui.h"
 #include "../include/args.h"
 #include "../include/sql.h"
+#include "../include/log.h"
 
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
@@ -476,6 +477,7 @@ void askSaveToFile(char* fileName, team** teams) {
     writeTeamsToFile(teams, fileName);
     printf("\033[2K");
     printf("Saved to %s\n", fileName);
+    log_log("Saved %d teams of %d players to file '%s'", TEAMS_N, TEAM_SIZE, fileName);
   }
 }
 
@@ -492,6 +494,7 @@ void askSaveToDB(sqldb* db, team** teams) {
       }
     }
     printf("Saved to %s\n", db->path);
+    log_log("Saved %d teams of %d players to database '%s'", TEAMS_N, TEAM_SIZE, db->path);
   }
 }
 
@@ -551,6 +554,7 @@ void generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* pr
     curShow();
   }
 
+  log_log("Generated %d teams of %d players", TEAMS_N, TEAM_SIZE);
   printTeams(stdout, teams, 20, 3, 0);
 
   switch (SOURCE) {
@@ -677,10 +681,7 @@ int main(int argc, char** argv) {
                     ? readPlayers(params->fileName, bannedCombos, prefCombos)
                     : init_list(sizeof(player *));
       if (!players) {
-        char msg[100];
-        sprintf(msg, "Can't find players\n");
-        err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
-        strcat(err_msg, msg);
+        log_error("%s", "Can't read players");
         exit(1);
       }
       for (int i = 0; i < (int)players->n;) {
