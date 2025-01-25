@@ -15,6 +15,9 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->allPlayersArea = initListArea();
   tui->allTeamsArea = initListArea();
 
+  tui->allPlayersArea->selected = -1;
+  tui->allTeamsArea->selected = -1;
+
   tui->tab = PLAYERS_TAB;
   tui->show_player_info = 0;
 
@@ -87,11 +90,17 @@ void unselectPlayer(tuidb* tui) {
   player* selected = selectedPlayer(tui);
   int i = playerInList(tui->players, selected->id);
   if (i < 0) return;
-  freePlayer(tui->players->items[i]);
-  if (i != (int)tui->players->n - 1) {
-    tui->players->items[i] = tui->players->items[tui->players->n - 1];
+  player* p = pop_elem(tui->players, i);
+  freePlayer(p);
+}
+
+void initSelectedInd(tuidb* tui) {
+  if (tui->allPlayersArea->selected < 0 && tui->allPlayers->n > 0) {
+    tui->allPlayersArea->selected = 0;
   }
-  tui->players->n--;
+  if (tui->allTeamsArea->selected < 0 && tui->allTeams->n > 0) {
+    tui->allTeamsArea->selected = 0;
+  }
 }
 
 void fitToScreen(tuidb* tui) {
@@ -211,6 +220,57 @@ void renameSelectedListElem(tuidb* tui) {
   curHide();
 }
 
+void deleteSelectedListElem(tuidb* tui) {
+  int width = 0;
+  int row = 0;
+  char* name = NULL;
+  if (tui->tab == PLAYERS_TAB) {
+    player* p = selectedPlayer(tui);
+    if (!p) return;
+    name = p->firstName;
+    width = tui->allPlayersArea->width;
+    row = tui->allPlayersArea->selected_term_row;
+  } else if (tui->tab == TEAMS_TAB) {
+    team* t = selectedTeam(tui);
+    if (!t) return;
+    name = t->name;
+    width = tui->allTeamsArea->width;
+    row = tui->allTeamsArea->selected_term_row;
+  }
+
+  curShow();
+  curSet(row, width - 1);
+  printf("\033[1K");
+  curSet(row, 1);
+  printf("|> Delete %s? [y/N]", name);
+  fflush(stdout);
+  char c = keyPress();
+  if (c == 'y') {
+    if (tui->tab == PLAYERS_TAB) {
+      int r = deletePlayer(tui->db, selectedPlayer(tui));
+      if (r) {
+        player* p = pop_elem(tui->allPlayers, tui->allPlayersArea->selected);
+        if (p) freePlayer(p);
+        int maxSelected = tui->allPlayers->n - 1;
+        if (tui->allPlayersArea->selected > maxSelected) {
+          tui->allPlayersArea->selected = maxSelected;
+        }
+      }
+    } else if (tui->tab == TEAMS_TAB) {
+      int r = deleteTeam(tui->db, selectedTeam(tui));
+      if (r) {
+        team* t = pop_elem(tui->allTeams, tui->allTeamsArea->selected);
+        if (t) freeTeam(t);
+        int maxSelected = tui->allTeams->n - 1;
+        if (tui->allTeamsArea->selected > maxSelected) {
+          tui->allTeamsArea->selected = maxSelected;
+        }
+      }
+    }
+  }
+  curHide();
+}
+
 void handleKeyPress(tuidb* tui, char c) {
     switch (c) {
       case 13: case '\n': case ' ':
@@ -227,6 +287,9 @@ void handleKeyPress(tuidb* tui, char c) {
         break;
       case 'r':
         renameSelectedListElem(tui);
+        break;
+      case 'x':
+        deleteSelectedListElem(tui);
         break;
       case 'k': case 'w':
         list_up(tui);
@@ -251,6 +314,7 @@ void runTuiDB(tuidb* tui) {
   curHide();
   char c = 0;
   while (c != 'q') {
+    initSelectedInd(tui);
     updateArea(tui);
     renderTuidb(tui);
     c = keyPress();
@@ -302,25 +366,27 @@ void renderTuidb(tuidb* tui) {
 void renderAllPlayersList(tuidb* tui) {
   curSet(1, 0);
   printf("\033[4m %-20s %s\033[24m", "Name", "Rating");
-  int line = 2;
-  for (int i = tui->allPlayersArea->firstInd;
-       line <= tui->term->rows - 1 &&
-       i - tui->allPlayersArea->firstInd + 1 <= (int)tui->allPlayersArea->maxShown &&
-       i < (int)tui->allPlayers->n;
-       i++) {
-    curSet(line, 0);
-    if (tui->allPlayersArea->selected == i) {
-      tui->allPlayersArea->selected_term_row = line;
-      printf("\033[7m");
+  if (tui->allPlayers->n > 0) {
+    int line = 2;
+    for (int i = tui->allPlayersArea->firstInd;
+    line <= tui->term->rows - 1 &&
+    i - tui->allPlayersArea->firstInd + 1 <= (int)tui->allPlayersArea->maxShown &&
+    i < (int)tui->allPlayers->n;
+    i++) {
+      curSet(line, 0);
+      if (tui->allPlayersArea->selected == i) {
+        tui->allPlayersArea->selected_term_row = line;
+        printf("\033[7m");
+      }
+      if (playerInList(tui->players, ((player*)tui->allPlayers->items[i])->id) >= 0) {
+        printf(">");
+      }
+      formatPlayerLine(tui->allPlayers->items[i]);
+      if (tui->allPlayersArea->selected == i) printf("\033[27m");
+      curSet(line, tui->allPlayersArea->width);
+      printf("|");
+      line++;
     }
-    if (playerInList(tui->players, ((player*)tui->allPlayers->items[i])->id) >= 0) {
-      printf(">");
-    }
-    formatPlayerLine(tui->allPlayers->items[i]);
-    if (tui->allPlayersArea->selected == i) printf("\033[27m");
-    curSet(line, tui->allPlayersArea->width);
-    printf("|");
-    line++;
   }
   fflush(stdout);
 }
@@ -406,23 +472,26 @@ void renderPlayerInfo(tuidb* tui) {
 
 void renderAllTeamsList(tuidb* tui) {
   curSet(1, 0);
-  printf("\033[4m %-20s\033[24m", "Name");
-  int line = 2;
-  for (int i = tui->allTeamsArea->firstInd;
-       line <= tui->term->rows - 1 &&
-       i - tui->allTeamsArea->firstInd + 1 <= (int)tui->allTeamsArea->maxShown &&
-       i < (int)tui->allTeams->n;
-       i++) {
-    curSet(line, 0);
-    if (tui->allTeamsArea->selected == i) {
-      tui->allTeamsArea->selected_term_row = line;
-      printf("\033[7m");
+  printf("\033[4m %-20s%d/%d\033[24m", "Name", tui->allTeamsArea->selected + 1,
+         (int)tui->allTeams->n);
+  if (tui->allTeams->n > 0) {
+    int line = 2;
+    for (int i = tui->allTeamsArea->firstInd;
+    line <= tui->term->rows - 1 &&
+    i - tui->allTeamsArea->firstInd + 1 <= (int)tui->allTeamsArea->maxShown &&
+    i < (int)tui->allTeams->n;
+    i++) {
+      curSet(line, 0);
+      if (tui->allTeamsArea->selected == i) {
+        tui->allTeamsArea->selected_term_row = line;
+        printf("\033[7m");
+      }
+      formatTeamLine(tui->allTeams->items[i]);
+      if (tui->allTeamsArea->selected == i) printf("\033[27m");
+      curSet(line, tui->allTeamsArea->width);
+      printf("|");
+      line++;
     }
-    formatTeamLine(tui->allTeams->items[i]);
-    if (tui->allTeamsArea->selected == i) printf("\033[27m");
-    curSet(line, tui->allTeamsArea->width);
-    printf("|");
-    line++;
   }
   fflush(stdout);
 }

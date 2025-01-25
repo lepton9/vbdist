@@ -36,7 +36,7 @@ int shrink_list(dlist* list) {
 }
 
 void* pop_elem(dlist* list, size_t index) {
-  if (index >= list->n) return NULL;
+  if (list->n == 0 || index >= list->n) return NULL;
   void* e = list->items[index];
   for (size_t i = index; i < list->n - 1; i++) {
     list->items[i] = list->items[i + 1];

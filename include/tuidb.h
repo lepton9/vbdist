@@ -48,6 +48,7 @@ void runTuiDB(tuidb* tui);
 int playerInList(dlist* list, int player_id);
 void selectPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui);
+void initSelectedInd(tuidb* tui);
 
 player* selectedPlayer(tuidb* tui);
 team* selectedTeam(tuidb* tui);
