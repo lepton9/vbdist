@@ -16,14 +16,8 @@ void printUsage(FILE *out) {
                "which option is set.\n");
 }
 
-void printUsageVerbose(FILE *out) {
-  printUsage(out);
-  fprintf(out, "\nExample usage:\n"
-               "  Using a text file:\n"
-               "    vbdist -f players.txt -t 4 -p 6 -m 1\n"
-               "  Using a database:\n"
-               "    vbdist -d sql.db -f players.txt -t 4 -p 6 -m 1\n"
-               "");
+int checkForOption(const char *arg, const char *shortOpt, const char *longOpt) {
+  return (strcmp(arg, shortOpt) == 0) || (strcmp(arg, longOpt) == 0);
 }
 
 args *parseArgs(int argc, char **argv) {
@@ -33,26 +27,30 @@ args *parseArgs(int argc, char **argv) {
   int optind;
   for (optind = 1; optind < argc; optind++) {
     char* arg = argv[optind];
-
-    if (strcmp(arg, "-f") == 0 || strcmp(arg, "--file") == 0) {
-      params->fileName = strdup(argv[++optind]);
-    } else if (strcmp(arg, "-d") == 0 || strcmp(arg, "--database") == 0) {
-      params->dbName = strdup(argv[++optind]);
-    } else if (strcmp(arg, "-t") == 0 || strcmp(arg, "--teams") == 0) {
-      params->teams = atoi(argv[++optind]);
-    } else if (strcmp(arg, "-p") == 0 || strcmp(arg, "--players") == 0) {
-      params->players = atoi(argv[++optind]);
-    } else if (strcmp(arg, "-m") == 0 || strcmp(arg, "--mode") == 0) {
-      params->printMode = atoi(argv[++optind]);
-    } else if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
+    if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
       free(params);
-      printUsageVerbose(stdout);
+      printUsage(stdout);
       return NULL;
+    }
+    if (checkForOption(arg, "-f", "--file")) {
+      if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
+      params->fileName = strdup(argv[++optind]);
+    } else if (checkForOption(arg, "-d", "--database")) {
+      if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
+      params->dbName = strdup(argv[++optind]);
+    } else if (checkForOption(arg, "-t", "--teams")) {
+      if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
+      params->teams = atoi(argv[++optind]);
+    } else if (checkForOption(arg, "-p", "--players")) {
+      if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
+      params->players = atoi(argv[++optind]);
+    } else if (checkForOption(arg, "-m", "--mode")) {
+      if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
+      params->printMode = atoi(argv[++optind]);
     } else {
-      free(params);
       printf("Invalid option `%s`\n", arg);
       printf("See `vbdist --help` for more.\n\n");
-      printUsage(stdout);
+      freeArgs(params);
       return NULL;
     }
   }
