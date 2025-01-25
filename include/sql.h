@@ -22,6 +22,7 @@ void closeSqlDB(sqldb* db);
 int execQuery(sqlite3 *db, const char *sql,
               int (*cb)(void *, int, char **, char **), void *p);
 
+int enableForeignKey(sqldb* db);
 int createDB(sqldb* db);
 int fetchPlayer(sqldb* db, player* player);
 int fetchRating(sqldb* db, player* player);

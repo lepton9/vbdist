@@ -1,5 +1,6 @@
 #include "../include/sql.h"
 #include <assert.h>
+#include <time.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,11 +10,11 @@ sqldb* openSqlDB(const char* path) {
   sqldb* db = malloc(sizeof(sqldb));
   db->path = strdup(path);
   int r = sqlite3_open(db->path, &db->sqlite);
-
   if (r != SQLITE_OK) {
     fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db->sqlite));
     db->sqlite = NULL;
   }
+  enableForeignKey(db);
   return db;
 }
 
@@ -89,10 +90,24 @@ int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char
   char* err_msg = NULL;
   int result = sqlite3_exec(db, sql, cb, p, &err_msg);
   if (err_msg) {
-    fprintf(stderr, "SQL error: %s\n", err_msg);
+    // TODO: proper logging
+    FILE *log_file = fopen("log_vbdist.txt", "a");
+    if (log_file) {
+      time_t rawtime;
+      struct tm *timeinfo;
+      time(&rawtime);
+      timeinfo = localtime(&rawtime);
+      fprintf(log_file, "%s | SQL error: %s\n", asctime(timeinfo), err_msg);
+      fclose(log_file);
+    }
     sqlite3_free(err_msg);
   }
   return result == SQLITE_OK;
+}
+
+int enableForeignKey(sqldb* db) {
+  char* sql = "PRAGMA foreign_keys = ON;";
+  return execQuery(db->sqlite, sql, 0, 0);
 }
 
 dlist* fetchPlayers(sqldb* db) {
@@ -247,6 +262,21 @@ int createDB(sqldb* db) {
       "  team_id INTEGER NOT NULL UNIQUE,"
       "  name TEXT,"
       "  PRIMARY KEY (team_id)"
+      ");"
+      ""
+      "CREATE TABLE IF NOT EXISTS Position ("
+      "position_id INTEGER NOT NULL,"
+      "positionName TEXT,"
+      "PRIMARY KEY (position_id),"
+      ");"
+      ""
+      "CREATE TABLE IF NOT EXISTS PlayerPosition ("
+      "player_id INTEGER NOT NULL,"
+      "position_id INTEGER NOT NULL,"
+      "priority_value INTEGER NOT NULL,"
+      "PRIMARY KEY (player_id, position_id),"
+      "FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE CASCADE,"
+      "FOREIGN KEY (position_id) REFERENCES Position (position_id) ON DELETE CASCADE"
       ");";
 
   return execQuery(db->sqlite, sql, 0, 0);
