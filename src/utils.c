@@ -6,11 +6,17 @@
 #endif
 
 int isBackspace(int c) {
-    return c == 127 || c == 8 || (__linux__ && c == KEY_BACKSPACE);
+#ifdef __linux__
+  return c == 127 || c == 8 || c == KEY_BACKSPACE;
+#endif
+  return c == 127 || c == 8;
 }
 
 int isEnter(int c) {
-  return c == 13 || c == '\n' || (__linux__ && c == KEY_ENTER);
+#ifdef __linux__
+  return c == 13 || c == '\n' || c == KEY_ENTER;
+#endif
+  return c == 13 || c == '\n';
 }
 
 void strcatc(char* str, size_t* len, char c) {
