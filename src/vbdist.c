@@ -529,7 +529,8 @@ int askUpdateParamNum(const char* query, int current) {
   return (strcmp(new, "") == 0) ? current : atoi(new);
 }
 
-team** generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* prefCombos) {
+int generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* prefCombos) {
+  int saved = 0;
   int clustering = 1;
   cls(stdout);
   if (PRINT_MODE == PRINT_ALL) printPlayers(players);
@@ -568,10 +569,7 @@ team** generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* 
     }
     case DATABASE: {
       askSaveToFile(TEAMS_FILE, teams);
-      int saved = askSaveToDB(db, teams);
-      if (saved) {
-        return teams;
-      }
+      saved = askSaveToDB(db, teams);
       break;
     }
     default:
@@ -582,10 +580,11 @@ team** generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* 
   }
   free(teams);
   curHide();
-  return NULL;
+  return saved;
 }
 
 void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos, char* err) {
+  int teams_added = 0;
   char error_msg[1000];
   strcpy(error_msg, err);
   char c = 0;
@@ -611,18 +610,7 @@ void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos,
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
           sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
         } else {
-          team** teams = generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos);
-          if (teams) {
-            for (int i = 0; i < TEAMS_N; i++) {
-              if (tui) {
-                team* t = initTeam(teams[i]->name, TEAM_SIZE);
-                t->id = teams[i]->id;
-                list_add(tui->allTeams, t);
-              }
-              freeTeam(teams[i]);
-            }
-            free(teams);
-          }
+          teams_added = generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos);
         }
         break;
       case 't':
@@ -640,7 +628,9 @@ void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos,
         return;
       case 'd':
         if (SOURCE == DATABASE) {
-          error_msg[0] = '\0';
+          if (teams_added) {
+            updateAllTeams(tui);
+          }
           updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
           runTuiDB(tui);
         }

@@ -41,6 +41,7 @@ void freeTuiDB(tuidb* tui);
 
 listArea* initListArea();
 
+void updateAllTeams(tuidb* tui);
 void updateTeamSize(tuidb* tui, int team_n, int team_size);
 
 void runTuiDB(tuidb* tui);

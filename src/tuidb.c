@@ -52,6 +52,14 @@ void freeTuiDB(tuidb* tui) {
   free(tui);
 }
 
+void updateAllTeams(tuidb* tui) {
+  for (int i = 0; i < (int)tui->allTeams->n; i++) {
+    freeTeam(tui->allTeams->items[i]);
+  }
+  free_list(tui->allTeams);
+  tui->allTeams = fetchTeams(tui->db);
+}
+
 void updateTeamSize(tuidb* tui, int team_n, int team_size) {
   tui->teams_n = team_n;
   tui->team_size = team_size;

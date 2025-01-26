@@ -116,7 +116,7 @@ dlist* fetchPlayers(sqldb* db) {
 }
 
 dlist* fetchTeams(sqldb* db) {
-  char* sql = "SELECT team_id, name FROM Team;";
+  char* sql = "SELECT team_id, name FROM Team ORDER BY team_id DESC;";
   dlist* list = init_list(sizeof(team*));
   execQuery(db->sqlite, sql, cb_teams, list);
   return list;
