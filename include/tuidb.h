@@ -70,6 +70,6 @@ void renderPlayerInfo(tuidb* tui);
 void renderAllTeamsList(tuidb* tui);
 void renderSelectedTeam(tuidb* tui);
 
-void handleKeyPress(tuidb* tui, char c);
+void handleKeyPress(tuidb* tui, int c);
 
 #endif

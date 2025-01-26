@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
@@ -12,6 +11,7 @@
 #include "../include/args.h"
 #include "../include/sql.h"
 #include "../include/log.h"
+#include "../include/utils.h"
 
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
@@ -34,16 +34,6 @@ int TEAM_SIZE = 0;
 dataSource SOURCE = NO_SOURCE;
 printMode PRINT_MODE = PRINT_MINIMAL;
 
-
-char* trimWS(char* str) {
-  while(isspace(*str)) str++;
-  if (*str) {
-    char* end = str + strlen(str) - 1;
-    while(end > str && isspace(*end)) end--;
-    *(end + 1) = '\0';
-  }
-  return str;
-}
 
 char** parseComboLine(char* line, int* n) {
   if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
@@ -507,7 +497,7 @@ int askUpdateParamNum(const char* query, int current) {
   size_t len = 0;
   char new[max_len + 1];
   new[0] = '\0';
-  char c = 0;
+  int c = 0;
   while (1) {
     cls(stdout);
     printf("\n Current: %d\n", current);
@@ -515,12 +505,11 @@ int askUpdateParamNum(const char* query, int current) {
     fflush(stdout);
     c = keyPress();
     if (isdigit(c) && len < max_len) {
-      strncat(new, &c, 1);
-      len++;
-    } else if (len > 0 && (c == 127 || c == 8)) {
+      strcatc(new, &len, c);
+    } else if (len > 0 && isBackspace(c)) {
       new[--len] = '\0';
     }
-    else if (c == 13 || c == '\n') {
+    else if (isEnter(c)) {
       break;
     } else if (c == 'q' || c == 27) {
       return current;

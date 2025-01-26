@@ -23,7 +23,7 @@ void curSet(int row, int col);
 void curHide();
 void curShow();
 void cls(FILE* s);
-char keyPress();
+int keyPress();
 void initScreen();
 char initScreenWin();
 void getTermSize(term_size* term);

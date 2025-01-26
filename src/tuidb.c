@@ -1,5 +1,6 @@
 #include "../include/tuidb.h"
 #include "../include/tui.h"
+#include "../include/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -181,11 +182,11 @@ void renameSelectedListElem(tuidb* tui) {
     row = tui->allTeamsArea->selected_term_row;
   }
   curShow();
-  const int max_len = 50;
-  int len = strlen((old_name) ? old_name : 0);
+  const size_t max_len = 50;
+  size_t len = strlen((old_name) ? old_name : 0);
   char new[max_len + 1];
   strcpy(new, (old_name) ? old_name : "");
-  char c = 0;
+  int c = 0;
   while (1) {
     curSet(row, width - 1);
     printf("\033[1K");
@@ -195,7 +196,7 @@ void renameSelectedListElem(tuidb* tui) {
     c = keyPress();
     if (c == 27) {
       break;
-    } else if (c == 13 || c == '\n') {
+    } else if (isEnter(c)) {
       switch (tui->tab) {
         case PLAYERS_TAB: {
           player* p = selectedPlayer(tui);
@@ -217,12 +218,13 @@ void renameSelectedListElem(tuidb* tui) {
         break;
       }
       break;
-    } else if (c == 127 || c == 8) {
+    } else if (len > 0 && isBackspace(c)) {
       new[len - 1] = '\0';
       len--;
     } else if (len < max_len) {
-      strncat(new, &c, 1);
-      len++;
+      if (c >= 32 && c <= 126) {
+        strcatc(new, &len, c);
+      }
     }
   }
   curHide();
@@ -279,48 +281,57 @@ void deleteSelectedListElem(tuidb* tui) {
   curHide();
 }
 
-void handleKeyPress(tuidb* tui, char c) {
-    switch (c) {
-      case 13: case '\n': case ' ':
-        if (tui->tab == PLAYERS_TAB) {
-          selectPlayer(tui);
-        }
-        break;
-      case 27: {  // Esc
-        tui->show_player_info = 0;
-        break;
-      }
-      case 9: // Tab
-        tui->tab = (tui->tab == PLAYERS_TAB) ? TEAMS_TAB : PLAYERS_TAB;
-        break;
-      case 'r':
-        renameSelectedListElem(tui);
-        break;
-      case 'x':
-        deleteSelectedListElem(tui);
-        break;
-      case 'k': case 'w':
-        list_up(tui);
-        break;
-      case 'j': case 's':
-        list_down(tui);
-        break;
-      case 'h': case 'a':
-        break;
-      case 'l': case 'd':
-        break;
-      case 'i': // Player info
-        if (tui->tab == PLAYERS_TAB) tui->show_player_info ^= 1;
-        break;
-      default: {
-        break;
-      }
+void handleKeyPress(tuidb* tui, int c) {
+  switch (c) {
+    case 13: case '\n': case ' ':
+#ifdef __linux__
+    case KEY_ENTER:
+#endif
+    if (tui->tab == PLAYERS_TAB) {
+      selectPlayer(tui);
     }
+    break;
+    case 27: {  // Esc
+      tui->show_player_info = 0;
+      break;
+    }
+    case 9: // Tab
+      tui->tab = (tui->tab == PLAYERS_TAB) ? TEAMS_TAB : PLAYERS_TAB;
+      break;
+    case 'r':
+      renameSelectedListElem(tui);
+      break;
+    case 'x':
+      deleteSelectedListElem(tui);
+      break;
+    case 'k': case 'w':
+#ifdef __linux__
+    case KEY_UP:
+#endif
+      list_up(tui);
+      break;
+    case 'j': case 's':
+#ifdef __linux__
+    case KEY_DOWN:
+#endif
+      list_down(tui);
+      break;
+    case 'h': case 'a':
+      break;
+    case 'l': case 'd':
+      break;
+    case 'i': // Player info
+      if (tui->tab == PLAYERS_TAB) tui->show_player_info ^= 1;
+      break;
+    default: {
+      break;
+    }
+  }
 }
 
 void runTuiDB(tuidb* tui) {
   curHide();
-  char c = 0;
+  int c = 0;
   while (c != 'q') {
     initSelectedInd(tui);
     updateArea(tui);
