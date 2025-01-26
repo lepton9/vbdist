@@ -469,7 +469,7 @@ void changeMode(team** teams, pCombos* bpcs) {
   freeTui(tui);
 }
 
-void askSaveToFile(char* fileName, team** teams) {
+int askSaveToFile(char* fileName, team** teams) {
   printf("\nSave teams to a file? [y/N] ");
   fflush(stdout);
   char ans = keyPress();
@@ -478,10 +478,12 @@ void askSaveToFile(char* fileName, team** teams) {
     printf("\033[2K");
     printf("Saved to %s\n", fileName);
     log_log("Saved %d teams of %d players to file '%s'", TEAMS_N, TEAM_SIZE, fileName);
+    return 1;
   }
+  return 0;
 }
 
-void askSaveToDB(sqldb* db, team** teams) {
+int askSaveToDB(sqldb* db, team** teams) {
   printf("Save teams to the database? [y/N] ");
   fflush(stdout);
   char ans = keyPress();
@@ -495,7 +497,9 @@ void askSaveToDB(sqldb* db, team** teams) {
     }
     printf("Saved to %s\n", db->path);
     log_log("Saved %d teams of %d players to database '%s'", TEAMS_N, TEAM_SIZE, db->path);
+    return 1;
   }
+  return 0;
 }
 
 int askUpdateParamNum(const char* query, int current) {
@@ -525,7 +529,7 @@ int askUpdateParamNum(const char* query, int current) {
   return (strcmp(new, "") == 0) ? current : atoi(new);
 }
 
-void generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* prefCombos) {
+team** generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* prefCombos) {
   int clustering = 1;
   cls(stdout);
   if (PRINT_MODE == PRINT_ALL) printPlayers(players);
@@ -564,7 +568,10 @@ void generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* pr
     }
     case DATABASE: {
       askSaveToFile(TEAMS_FILE, teams);
-      askSaveToDB(db, teams);
+      int saved = askSaveToDB(db, teams);
+      if (saved) {
+        return teams;
+      }
       break;
     }
     default:
@@ -575,6 +582,7 @@ void generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* pr
   }
   free(teams);
   curHide();
+  return NULL;
 }
 
 void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos, char* err) {
@@ -603,7 +611,18 @@ void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos,
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
           sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
         } else {
-          generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos);
+          team** teams = generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos);
+          if (teams) {
+            for (int i = 0; i < TEAMS_N; i++) {
+              if (tui) {
+                team* t = initTeam(teams[i]->name, TEAM_SIZE);
+                t->id = teams[i]->id;
+                list_add(tui->allTeams, t);
+              }
+              freeTeam(teams[i]);
+            }
+            free(teams);
+          }
         }
         break;
       case 't':
