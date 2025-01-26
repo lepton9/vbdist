@@ -2,6 +2,7 @@
 #include "../include/log.h"
 #include <assert.h>
 #include <limits.h>
+#include <sqlite3.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -217,10 +218,11 @@ int deleteTeam(sqldb* db, team* team) {
 }
 
 int insertTeam(sqldb* db, team* team) {
-  if (team->id < 0) team->id = randintRange(0, INT_MAX);
   char sql[100];
-  sprintf(sql, "INSERT INTO Team (team_id, name) VALUES (%d, '%s');", team->id, team->name);
+  sprintf(sql, "INSERT INTO Team (name) VALUES ('%s');", team->name);
   int r = execQuery(db->sqlite, sql, 0, 0);
+  int id = sqlite3_last_insert_rowid(db->sqlite);
+  team->id = id;
   if (r) {
     log_sql("Inserted Team (%d) '%s'", team->id, team->name);
   }
@@ -244,22 +246,20 @@ int randintRange(const int min, const int max) {
 int createDB(sqldb* db) {
   const char *sql =
       "CREATE TABLE IF NOT EXISTS Player ("
-      "  player_id INTEGER NOT NULL UNIQUE,"
+      "  player_id INTEGER PRIMARY KEY AUTOINCREMENT,"
       "  rating_id INTEGER NOT NULL,"
       "  name TEXT,"
-      "  PRIMARY KEY (player_id)"
       "  FOREIGN KEY (rating_id) REFERENCES Rating (rating_id) ON DELETE RESTRICT"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS Rating ("
-      "  rating_id INTEGER NOT NULL UNIQUE,"
+      "  rating_id INTEGER PRIMARY KEY AUTOINCREMENT,"
       "  defence REAL NOT NULL,"
       "  spike REAL NOT NULL,"
       "  serve REAL NOT NULL,"
       "  setting REAL NOT NULL,"
       "  saving REAL NOT NULL,"
-      "  consistency REAL NOT NULL,"
-      "  PRIMARY KEY (rating_id)"
+      "  consistency REAL NOT NULL"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS PlayerTeam ("
@@ -271,15 +271,13 @@ int createDB(sqldb* db) {
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS Team ("
-      "  team_id INTEGER NOT NULL UNIQUE,"
-      "  name TEXT,"
-      "  PRIMARY KEY (team_id)"
+      "  team_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+      "  name TEXT"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS Position ("
-      "  position_id INTEGER NOT NULL,"
-      "  positionName TEXT,"
-      "  PRIMARY KEY (position_id)"
+      "  position_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+      "  name TEXT"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS PlayerPosition ("
