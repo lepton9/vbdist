@@ -414,7 +414,7 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
 
 void changeMode(team** teams, pCombos* bpcs) {
   tuiswap* tui = initTui(TEAM_SIZE, TEAMS_N);
-  char c = 0;
+  int c = 0;
 
   cls(stdout);
   updateTUI(stdout, tui, teams, bpcs);
@@ -422,9 +422,10 @@ void changeMode(team** teams, pCombos* bpcs) {
   while (c != 'q') {
     c = keyPress();
     switch (c) {
-      case 13: // On windows
-      case '\n':
-      case ' ':
+      case 13: case '\n': case ' ':
+#ifdef __linux__
+      case KEY_ENTER:
+#endif
         if (selectCur(tui)) {
           switchPos(tui, teams);
           unselect(tui->selected);
@@ -434,16 +435,28 @@ void changeMode(team** teams, pCombos* bpcs) {
         unselect(tui->selected);
         break;
       case 'k': case 'w':
+#ifdef __linux__
+      case KEY_UP:
+#endif
         cur_up(tui);
         break;
+      case 'j': case 's':
+#ifdef __linux__
+      case KEY_DOWN:
+#endif
+        cur_down(tui);
+        break;
       case 'h': case 'a':
+#ifdef __linux__
+      case KEY_LEFT:
+#endif
         cur_left(tui);
         break;
       case 'l': case 'd':
+#ifdef __linux__
+      case KEY_RIGHT:
+#endif
         cur_right(tui);
-        break;
-      case 'j': case 's':
-        cur_down(tui);
         break;
       default: {
         if (isdigit(c)) {
