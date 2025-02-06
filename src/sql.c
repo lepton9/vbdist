@@ -16,6 +16,7 @@ sqldb* openSqlDB(const char* path) {
     db->sqlite = NULL;
   }
   enableForeignKey(db);
+  makePlayerList(db);
   log_sql("Opened database '%s'", path);
   return db;
 }
@@ -103,6 +104,45 @@ int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char
 int enableForeignKey(sqldb* db) {
   char* sql = "PRAGMA foreign_keys = ON;";
   return execQuery(db->sqlite, sql, 0, 0);
+}
+
+int makePlayerList(sqldb* db) {
+  char* sql = "INSERT INTO PlayerList (playerlist_id, name) "
+              "SELECT 1, 'Generate teams list' "
+              "WHERE NOT EXISTS (SELECT 1 FROM PlayerList WHERE playerlist_id = 1);";
+  return execQuery(db->sqlite, sql, 0, 0);
+}
+
+int clearPlayerList(sqldb* db) {
+  char* sql = "DELETE FROM InPlayerList;";
+  return execQuery(db->sqlite, sql, 0, 0);
+}
+
+int insertToPlayerList(sqldb* db, player* p) {
+  char sql[150];
+  sprintf(sql, "INSERT OR IGNORE INTO InPlayerList (player_id, playerlist_id) VALUES (%d, %d);", p->id, 1);
+  return execQuery(db->sqlite, sql, 0, 0);
+}
+
+int saveToPlayerList(sqldb* db, dlist* players) {
+  int r = 0;
+  clearPlayerList(db);
+  for (int i = 0; i < (int)players->n; i++) {
+    r += insertToPlayerList(db, players->items[i]);
+  }
+  log_sql("Saved player list with %d players", r);
+  return r;
+}
+
+dlist* fetchPlayerList(sqldb* db) {
+  char* sql = "SELECT * FROM Player WHERE player_id IN (SELECT player_id FROM InPlayerList WHERE playerlist_id = 1);";
+  dlist* list = init_list(sizeof(player*));
+  execQuery(db->sqlite, sql, cb_players, list);
+  for (int i = 0; i < (int)list->n; i++) {
+    fetchRating(db, list->items[i]);
+  }
+  log_sql("Found player list with %d players", list->n);
+  return list;
 }
 
 dlist* fetchPlayers(sqldb* db) {
@@ -303,7 +343,7 @@ int createDB(sqldb* db) {
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS PlayerList ("
-      "  playerlist_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+      "  playerlist_id INTEGER PRIMARY KEY,"
       "  name TEXT"
       ");"
       ""

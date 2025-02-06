@@ -24,6 +24,13 @@ int execQuery(sqlite3 *db, const char *sql,
 
 int enableForeignKey(sqldb* db);
 int createDB(sqldb* db);
+
+int makePlayerList(sqldb* db);
+int clearPlayerList(sqldb* db);
+int insertToPlayerList(sqldb* db, player* p);
+int saveToPlayerList(sqldb* db, dlist* players);
+dlist* fetchPlayerList(sqldb* db);
+
 int fetchPlayer(sqldb* db, player* player);
 int fetchRating(sqldb* db, player* player);
 dlist* fetchPlayers(sqldb* db);

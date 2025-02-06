@@ -585,6 +585,13 @@ int generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* pre
   return saved;
 }
 
+void saveToDB(sqldb* db, dlist* players, pCombos* bpcs, pCombos* prefCombos) {
+  if (SOURCE != DATABASE) return;
+  if (players->n > 0) {
+    saveToPlayerList(db, players);
+  }
+}
+
 void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos, char* err) {
   int teams_added = 0;
   char error_msg[1000];
@@ -626,6 +633,7 @@ void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos,
         curHide();
         break;
       case 'q':
+        saveToDB(tui->db, players, bpcs, prefCombos);
         cls(stdout);
         return;
       case 'd':
@@ -690,11 +698,7 @@ int main(int argc, char** argv) {
       if (r) printf("Created tables\n");
       players = (params->fileName)
                     ? readPlayers(params->fileName, bannedCombos, prefCombos)
-                    : init_list(sizeof(player *));
-      if (!players) {
-        log_error("%s", "Can't read players");
-        exit(1);
-      }
+                    : fetchPlayerList(db);
       for (int i = 0; i < (int)players->n;) {
         int found = fetchPlayer(db, players->items[i]);
         if (!found) {
