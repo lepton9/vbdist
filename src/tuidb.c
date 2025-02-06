@@ -73,6 +73,14 @@ int playerInList(dlist* list, int player_id) {
   return -1;
 }
 
+player* getPlayerInList(dlist* list, int player_id) {
+  int i = playerInList(list, player_id);
+  if (i >= 0) {
+    return list->items[i];
+  }
+  return NULL;
+}
+
 player* selectedPlayer(tuidb *tui) {
   if (tui->allPlayers->n == 0 || tui->allPlayersArea->selected < 0)
     return NULL;
@@ -204,6 +212,11 @@ void renameSelectedListElem(tuidb* tui) {
           if (r) {
             if (p->firstName) free(p->firstName);
             p->firstName = strdup(new);
+            player* pSel = getPlayerInList(tui->players, p->id);
+            if (pSel) {
+              if (pSel->firstName) free(pSel->firstName);
+              pSel->firstName = strdup(new);
+            }
           }
           break;
         }

@@ -47,6 +47,7 @@ void updateTeamSize(tuidb* tui, int team_n, int team_size);
 void runTuiDB(tuidb* tui);
 
 int playerInList(dlist* list, int player_id);
+player* getPlayerInList(dlist* list, int player_id);
 void selectPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui);
 void initSelectedInd(tuidb* tui);
