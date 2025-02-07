@@ -75,8 +75,8 @@ void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
       }
     }
     if (idA >= 0 && idB >= 0) {
-      if (fc == '+') addCombo(prefCombos, idA, idB);
-      else if (fc == '!') addCombo(bpcs, idA, idB);
+      if (fc == '+') addCombo(prefCombos, PAIR, idA, idB);
+      else if (fc == '!') addCombo(bpcs, BAN, idA, idB);
       else if (fc == '?') {
         for (int j = 0; j < (int)players->n; j++) {
           player* pj = ((player*)players->items[j]);
@@ -92,7 +92,7 @@ void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
             if ((SOURCE == TEXT_FILE && strcmp(pk->firstName, tokens[j]) == 0)
               || (SOURCE == DATABASE && pk->id == atoi(tokens[j]))) {
               idB = pk->id;
-              addCombo(bpcs, idA, idB);
+              addCombo(bpcs, BAN, idA, idB);
               break;
             }
           }
@@ -684,8 +684,8 @@ int main(int argc, char** argv) {
   TEAM_SIZE = params->players;
   PRINT_MODE = params->printMode;
 
-  dlist* bannedCombos = init_list(sizeof(pCombo));
-  dlist* prefCombos = init_list(sizeof(pCombo));
+  dlist* bannedCombos = init_list(sizeof(pCombo*));
+  dlist* prefCombos = init_list(sizeof(pCombo*));
   sqldb* db = NULL;
   dlist* players = NULL;
   char* err_msg = malloc(1);

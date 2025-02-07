@@ -1,5 +1,24 @@
 #include "../include/combo.h"
 #include <stdlib.h>
+#include <string.h>
+
+const char* comboTypeString(comboType type) {
+  switch (type) {
+    case BAN: return "BAN";
+    case PAIR: return "PAIR";
+    default: return "DEFAULT";
+  }
+}
+
+comboType toComboType(const char* type) {
+  if (strcmp(type, "BAN") == 0) {
+    return BAN;
+  } else if (strcmp(type, "PAIR") == 0) {
+    return PAIR;
+  } else {
+    return DEFAULT;
+  }
+}
 
 void freeCombos(dlist *combos) {
   for (int i = 0; i < (int)combos->n; i++) {
@@ -8,10 +27,11 @@ void freeCombos(dlist *combos) {
   free_list(combos);
 }
 
-void addCombo(dlist* combos, int a, int b) {
+void addCombo(dlist* combos, comboType type, int a, int b) {
   pCombo* combo = malloc(sizeof(pCombo));
   combo->pidA = a;
   combo->pidB = b;
+  combo->type = type;
   list_add(combos, combo);
 }
 
