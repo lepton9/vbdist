@@ -51,7 +51,7 @@ char** parseComboLine(char* line, int* n) {
   return tokens;
 }
 
-void parseCombos(char* line, dlist* players, pCombos* bpcs, pCombos* prefCombos) {
+void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
   char fc = line[0];
   int idA = -1;
   int n = 0;
@@ -104,7 +104,7 @@ void parseCombos(char* line, dlist* players, pCombos* bpcs, pCombos* prefCombos)
   free(tokens);
 }
 
-dlist* readPlayers(const char *fileName, pCombos* bpcs, pCombos* prefCombos) {
+dlist* readPlayers(const char *fileName, dlist* bpcs, dlist* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
   dlist* ps = init_list(sizeof(player*));
   int pid = 0;
@@ -183,7 +183,7 @@ void printTeams(FILE *out, team **teams, const int printWidth,
   }
 }
 
-double averageRating(team** teams, pCombos* prefCombos) {
+double averageRating(team** teams, dlist* prefCombos) {
   int n = TEAMS_N * TEAM_SIZE;
   if (teams == NULL) return 0.0;
   double sumRating = 0.0;
@@ -206,27 +206,29 @@ int validateSwap(double a, double b, double aNew, double bNew, double avg, int o
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
 }
 
-int maxTeamFromPrefCombos(pCombos* prefCombos) {
+int maxTeamFromPrefCombos(dlist* prefCombos) {
   int maxSize = 0;
   int nTeams = 1;
   int* ns = calloc(nTeams, sizeof(int));
   int** presetTeams = malloc(sizeof(int*));
   *presetTeams = calloc(2, sizeof(int));
+  pCombo* prefCombo = NULL;
 
   for (int i = 0; i < (int)prefCombos->n; i++) {
     char comboSet = 0;
     if (nTeams == 1 && ns[0] == 0) {
-      presetTeams[0][ns[0]++] = prefCombos->combos[i].pidA;
-      presetTeams[0][ns[0]++] = prefCombos->combos[i].pidB;
+      prefCombo = prefCombos->items[i];
+      presetTeams[0][ns[0]++] = prefCombo->pidA;
+      presetTeams[0][ns[0]++] = prefCombo->pidB;
       maxSize = ns[0];
       continue;
     }
     for (int j = 0; j < nTeams; j++) {
       for (int k = 0; k < ns[j]; k++) {
-        int id = (presetTeams[j][k] == prefCombos->combos[i].pidA)
-                     ? prefCombos->combos[i].pidB
-                 : (presetTeams[j][k] == prefCombos->combos[i].pidB)
-                     ? prefCombos->combos[i].pidA
+        int id = (presetTeams[j][k] == prefCombo->pidA)
+                     ? prefCombo->pidB
+                 : (presetTeams[j][k] == prefCombo->pidB)
+                     ? prefCombo->pidA
                      : -1;
         if (id >= 0) {
           char inTeam = 0;
@@ -249,8 +251,8 @@ int maxTeamFromPrefCombos(pCombos* prefCombos) {
       ns = realloc(ns, (nTeams + 1) * sizeof(int));
       ns[nTeams] = 0;
       presetTeams[nTeams] = calloc(2, sizeof(int));
-      presetTeams[nTeams][ns[nTeams]++] = prefCombos->combos[i].pidA;
-      presetTeams[nTeams][ns[nTeams]++] = prefCombos->combos[i].pidB;
+      presetTeams[nTeams][ns[nTeams]++] = prefCombo->pidA;
+      presetTeams[nTeams][ns[nTeams]++] = prefCombo->pidB;
       nTeams++;
     }
   }
@@ -263,21 +265,22 @@ int maxTeamFromPrefCombos(pCombos* prefCombos) {
   return maxSize;
 }
 
-void setPreferredCombos(team** teams, pCombos* prefCombos) {
+void setPreferredCombos(team** teams, dlist* prefCombos) {
   for (int c = 0; c < (int)prefCombos->n; c++) {
     int t1 = -1;
     int t2 = -1;
     player* p1 = NULL;
     player* p2 = NULL;
     player* pToSwap = NULL;
+    pCombo* combo = prefCombos->items[c];
     // Finds the players in the combo and their teams
     for (int i = 0; i < TEAMS_N; i++) {
       for (int j = 0; j < TEAM_SIZE; j++) {
-        if (teams[i]->players[j]->id == prefCombos->combos[c].pidA) {
+        if (teams[i]->players[j]->id == combo->pidA) {
           p1 = teams[i]->players[j];
           t1 = i;
         }
-        else if (teams[i]->players[j]->id == prefCombos->combos[c].pidB) {
+        else if (teams[i]->players[j]->id == combo->pidB) {
           p2 = teams[i]->players[j];
           t2 = i;
         }
@@ -304,7 +307,7 @@ void setPreferredCombos(team** teams, pCombos* prefCombos) {
   }
 }
 
-int balancedClustering(team** teams, int oneSideValidation, pCombos* bpcs, pCombos* prefCombos) {
+int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* prefCombos) {
   double avgR = averageRating(teams, prefCombos);
   int swaps = 0;
   int failures = 0;
@@ -412,7 +415,7 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
   fclose(fp);
 }
 
-void changeMode(team** teams, pCombos* bpcs) {
+void changeMode(team** teams, dlist* bpcs) {
   tuiswap* tui = initTui(TEAM_SIZE, TEAMS_N);
   int c = 0;
 
@@ -531,7 +534,7 @@ int askUpdateParamNum(const char* query, int current) {
   return (strcmp(new, "") == 0) ? current : atoi(new);
 }
 
-int generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* prefCombos) {
+int generateTeams(sqldb* db, dlist* players, dlist* bannedCombos, dlist* prefCombos) {
   int saved = 0;
   int clustering = 1;
   cls(stdout);
@@ -585,14 +588,14 @@ int generateTeams(sqldb* db, dlist* players, pCombos* bannedCombos, pCombos* pre
   return saved;
 }
 
-void saveToDB(sqldb* db, dlist* players, pCombos* bpcs, pCombos* prefCombos) {
+void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   if (SOURCE != DATABASE) return;
   if (players->n > 0) {
     saveToPlayerList(db, players);
   }
 }
 
-void runBeginTui(tuidb* tui, dlist* players, pCombos* bpcs, pCombos* prefCombos, char* err) {
+void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, char* err) {
   int teams_added = 0;
   char error_msg[1000];
   strcpy(error_msg, err);
@@ -681,8 +684,8 @@ int main(int argc, char** argv) {
   TEAM_SIZE = params->players;
   PRINT_MODE = params->printMode;
 
-  pCombos* bannedCombos = initCombos();
-  pCombos* prefCombos = initCombos();
+  dlist* bannedCombos = init_list(sizeof(pCombo));
+  dlist* prefCombos = init_list(sizeof(pCombo));
   sqldb* db = NULL;
   dlist* players = NULL;
   char* err_msg = malloc(1);

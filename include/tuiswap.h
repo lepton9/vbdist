@@ -30,6 +30,6 @@ void cur_down(tuiswap* t);
 void cur_left(tuiswap* t);
 void cur_right(tuiswap* t);
 char highlight(const tuiswap* tui, const int team, const int player);
-void updateTUI(FILE* out, tuiswap* tui, team** teams, pCombos* bpcs);
+void updateTUI(FILE* out, tuiswap* tui, team** teams, dlist* bpcs);
 
 #endif

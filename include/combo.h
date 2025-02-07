@@ -3,22 +3,17 @@
 
 #include <stdlib.h>
 #include "../include/team.h"
+#include "dlist.h"
 
 typedef struct {
   int pidA;
   int pidB;
 } pCombo;
 
-typedef struct {
-  pCombo* combos;
-  size_t n;
-} pCombos;
-
-pCombos* initCombos();
-void addCombo(pCombos* combos, int a, int b);
-void freeCombos(pCombos* combos);
-int isInCombo(pCombos* combos, player* a);
-char isCombo(pCombos* combos, player* a, player* b);
-char comboInTeam(pCombos* combos, team* t, player* p);
+void freeCombos(dlist* combos);
+void addCombo(dlist* combos, int a, int b);
+int isInCombo(dlist* combos, player* a);
+char isCombo(dlist* combos, player* a, player* b);
+char comboInTeam(dlist* combos, team* t, player* p);
 
 #endif

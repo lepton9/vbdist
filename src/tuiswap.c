@@ -96,7 +96,7 @@ void printTuiMan(FILE* out) {
   fprintf(out, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q\n\n");
 }
 
-void updateTUI(FILE* out, tuiswap* tui, team** teams, pCombos* bpcs) {
+void updateTUI(FILE* out, tuiswap* tui, team** teams, dlist* bpcs) {
   printf("\033[H");
   printTuiMan(out);
   int width = 15;
