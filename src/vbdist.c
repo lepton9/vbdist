@@ -730,7 +730,10 @@ int main(int argc, char** argv) {
       if (r) printf("Created tables\n");
       players = (params->fileName)
                     ? readPlayers(params->fileName, bannedCombos, prefCombos)
-                    : fetchPlayerList(db);
+                    : NULL;
+      if (!players) {
+        players = fetchPlayerList(db);
+      }
       if (bannedCombos->n == 0) {
         free_list(bannedCombos);
         bannedCombos = fetchCombos(db, BAN);
@@ -763,6 +766,10 @@ int main(int argc, char** argv) {
     }
     case TEXT_FILE: {
       players = readPlayers(params->fileName, bannedCombos, prefCombos);
+      if (!players) {
+        printf("File %s not found\n", params->fileName);
+        exit(1);
+      }
       break;
     }
     default:
