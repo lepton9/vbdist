@@ -1,6 +1,7 @@
 #ifndef TUIDB_H
 #define TUIDB_H
 
+#include "render.h"
 #include "sql.h"
 #include "player.h"
 #include "tui.h"
@@ -29,6 +30,7 @@ typedef struct {
   listArea* allPlayersArea;
   listArea* allTeamsArea;
   term_size* term;
+  renderer* render;
   int teams_n;
   int team_size;
   TuiTab tab;

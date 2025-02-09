@@ -1,6 +1,5 @@
 #include "../include/render.h"
 #include "../include/tui.h"
-#include <stdlib.h>
 #include <string.h>
 
 
@@ -73,13 +72,23 @@ void resize_screen(renderer* r, size_t new_w, size_t new_h) {
 int updateSize(renderer* r) {
   term_size term = {.rows = r->height, .cols = r->width};
   getTermSize(&term);
-  if (term.rows != (int)r->height || term.cols != (int)r->width) {
-    resize_screen(r, term.cols, term.rows);
-    // r->width = term.cols;
-    // r->height = term.rows;
+  return setSize(r, term.cols, term.rows);
+}
+
+int setSize(renderer* r, size_t new_w, size_t new_h) {
+  if (new_w != r->width || new_h != r->height) {
+    resize_screen(r, new_w, new_h);
     return 1;
   }
   return 0;
+}
+
+int addLine(renderer* r, size_t row, const char* line) {
+  if (row > r->height) return 0;
+  size_t len = strnlen(line, r->width);
+  memcpy(r->screen[row], line, len);
+  r->screen[row - 1][len] = '\0';
+  return 1;
 }
 
 void render(renderer* r, FILE* out) {

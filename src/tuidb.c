@@ -24,6 +24,7 @@ tuidb* initTuiDB(int teams, int team_size) {
 
   tui->term = malloc(sizeof(term_size));
   getTermSize(tui->term);
+  tui->render = init_renderer(tui->term->cols, tui->term->rows);
 
   return tui;
 }
@@ -368,6 +369,7 @@ void updateArea(tuidb* tui) {
   tui->allTeamsArea->width = baseWidth;
   tui->allTeamsArea->maxShown = maxShown;
   fitToScreen(tui);
+  setSize(tui->render, tui->term->cols, tui->term->rows);
 }
 
 void formatPlayerLine(player* player) {
