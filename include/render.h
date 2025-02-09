@@ -15,6 +15,7 @@ renderer* init_renderer(size_t w, size_t h);
 void free_renderer(renderer* r);
 
 int updateSize(renderer* r);
+void resize_screen(renderer* r, size_t new_w, size_t new_h);
 
 void render(renderer* r, FILE* out);
 

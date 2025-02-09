@@ -27,12 +27,56 @@ void free_renderer(renderer* r) {
   free(r);
 }
 
+void resize_screen(renderer* r, size_t new_w, size_t new_h) {
+  char** new_screen = malloc(new_h * sizeof(char*));
+  char** new_last_screen = malloc(new_h * sizeof(char*));
+
+  for (size_t i = 0; i < new_h; i++) {
+    new_screen[i] = calloc(new_w + 1, sizeof(char));
+    new_last_screen[i] = calloc(new_w + 1, sizeof(char));
+
+    if (i < r->height) {
+      int len = (new_w < r->width ? new_w : r->width);
+      strncpy(new_screen[i], r->screen[i], len);
+      strncpy(new_last_screen[i], r->last_screen[i], len);
+    }
+
+    if (i < r->height) {
+      strncpy(new_screen[i], r->screen[i], new_w); 
+      strncpy(new_last_screen[i], r->last_screen[i], new_w);
+      if (new_w > r->width) {
+        memset(new_screen[i] + r->width, ' ', new_w - r->width);
+        memset(new_last_screen[i] + r->width, ' ', new_w - r->width);
+      }
+    } else {
+      memset(new_screen[i], ' ', new_w);
+      memset(new_last_screen[i], ' ', new_w);
+    }
+
+    new_screen[i][new_w] = '\0';
+    new_last_screen[i][new_w] = '\0';
+  }
+
+  for (size_t i = 0; i < r->height; i++) {
+    free(r->screen[i]);
+    free(r->last_screen[i]);
+  }
+  free(r->screen);
+  free(r->last_screen);
+
+  r->screen = new_screen;
+  r->last_screen = new_last_screen;
+  r->width = new_w;
+  r->height = new_h;
+}
+
 int updateSize(renderer* r) {
   term_size term = {.rows = r->height, .cols = r->width};
   getTermSize(&term);
-  if (term.rows != r->height || term.cols != r->width) {
-    r->width = term.cols;
-    r->height = term.rows;
+  if (term.rows != (int)r->height || term.cols != (int)r->width) {
+    resize_screen(r, term.cols, term.rows);
+    // r->width = term.cols;
+    // r->height = term.rows;
     return 1;
   }
   return 0;
@@ -40,7 +84,7 @@ int updateSize(renderer* r) {
 
 void render(renderer* r, FILE* out) {
   updateSize(r);
-  for (int y = 0; y < r->height; y++) {
+  for (int y = 0; y < (int)r->height; y++) {
     if (memcmp(r->screen[y], r->last_screen[y], r->width) != 0) {
       // TODO: only print r->width amount
       fprintf(out, "\033[%d;1H%s\033[0K", y + 1, r->screen[y]);
