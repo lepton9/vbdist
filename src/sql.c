@@ -91,6 +91,33 @@ int cb_add_id_list(void* list, int count, char **data, char **columns) {
   return 0;
 }
 
+int cb_combos(void* combos, int count, char **data, char **columns) {
+  assert(count == 2);
+  dlist* cs = combos;
+  pCombo* c = malloc(sizeof(pCombo));
+  c->combo_id = atoi(data[0]);
+  c->type = toComboType(data[1]);
+  c->pidA = -1;
+  c->pidB = -1;
+  list_add(cs, c);
+  return 0;
+}
+
+int cb_combo(void* combo, int count, char **data, char **columns) {
+  assert(count == 1);
+  pCombo* c = combo;
+  if (c->pidA < 0) c->pidA = atoi(data[0]);
+  else if (c->pidB < 0) c->pidB = atoi(data[0]);
+  return 0;
+}
+
+int cb_found(void* flag, int count, char **data, char **columns) {
+  assert(count == 1);
+  int* f = flag;
+  *f = 1;
+  return 0;
+}
+
 int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char **), void* p) {
   char* err_msg = NULL;
   int result = sqlite3_exec(db, sql, cb, p, &err_msg);
@@ -120,7 +147,7 @@ int clearPlayerList(sqldb* db) {
 
 int insertToPlayerList(sqldb* db, player* p) {
   char sql[150];
-  sprintf(sql, "INSERT OR IGNORE INTO InPlayerList (player_id, playerlist_id) VALUES (%d, %d);", p->id, 1);
+  sprintf(sql, "INSERT OR IGNORE INTO InPlayerList (playerlist_id, player_id) VALUES (%d, %d);", 1, p->id);
   return execQuery(db->sqlite, sql, 0, 0);
 }
 
@@ -143,6 +170,69 @@ dlist* fetchPlayerList(sqldb* db) {
   }
   log_sql("Found player list with %d players", list->n);
   return list;
+}
+
+int insertCombo(sqldb* db, pCombo* combo) {
+  if (comboExists(db, combo)) {
+    return 0;
+  }
+  char sql[100];
+  sprintf(sql, "INSERT INTO Combo (combo_type) VALUES ('%s');",
+          comboTypeString(combo->type));
+  if (execQuery(db->sqlite, sql, NULL, NULL)) {
+    int combo_id = sqlite3_last_insert_rowid(db->sqlite);
+    sprintf(
+        sql,
+        "INSERT INTO InCombo (combo_id, player_id) VALUES (%d, %d), (%d, %d);",
+        combo_id, combo->pidA, combo_id, combo->pidB);
+    if (execQuery(db->sqlite, sql, NULL, NULL)) {
+      log_sql("Inserted Combo %s (%d, %d)", comboTypeString(combo->type), combo->pidA, combo->pidB);
+    }
+  }
+  return 0;
+}
+
+int insertCombos(sqldb* db, dlist* combos) {
+  int r = 0;
+  for (int i = 0; i < (int)combos->n; i++) {
+    r += insertCombo(db, combos->items[i]);
+  }
+  return r;
+}
+
+int comboExists(sqldb* db, pCombo* combo) {
+  char sql[300];
+  sprintf(sql, "SELECT player_id FROM InCombo WHERE combo_id = %d;", combo->combo_id);
+  sprintf(sql,
+          "SELECT combo_id FROM Combo "
+          "WHERE combo_type = '%s' "
+          "AND combo_id IN ("
+          "    SELECT combo_id FROM InCombo "
+          "    WHERE player_id IN (%d, %d) "
+          "    GROUP BY combo_id "
+          "    HAVING COUNT(DISTINCT player_id) = 2"
+          ");",
+          comboTypeString(combo->type), combo->pidA, combo->pidB);
+  int found = 0;
+  execQuery(db->sqlite, sql, cb_found, &found);
+  return found;
+}
+
+int fetchCombo(sqldb* db, pCombo* combo) {
+  char sql[100];
+  sprintf(sql, "SELECT player_id FROM InCombo WHERE combo_id = %d;", combo->combo_id);
+  return execQuery(db->sqlite, sql, cb_combo, combo);
+}
+
+dlist* fetchCombos(sqldb* db, comboType type) {
+  dlist* combos = init_list(sizeof(pCombo*));
+  char sql[100];
+  sprintf(sql, "SELECT combo_id, combo_type FROM Combo WHERE combo_type = '%s';", comboTypeString(type));
+  execQuery(db->sqlite, sql, cb_combos, combos);
+  for (int i = 0; i < (int)combos->n; i++) {
+    fetchCombo(db, combos->items[i]);
+  }
+  return combos;
 }
 
 dlist* fetchPlayers(sqldb* db) {
@@ -335,9 +425,9 @@ int createDB(sqldb* db) {
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS InCombo ("
-      "  player_id INTEGER NOT NULL,"
       "  combo_id INTEGER NOT NULL,"
-      "  PRIMARY KEY (player_id, combo_id),"
+      "  player_id INTEGER NOT NULL,"
+      "  PRIMARY KEY (combo_id, player_id),"
       "  FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE CASCADE,"
       "  FOREIGN KEY (combo_id) REFERENCES Combo (combo_id) ON DELETE CASCADE"
       ");"
@@ -348,10 +438,10 @@ int createDB(sqldb* db) {
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS InPlayerList ("
-      "  player_id INTEGER NOT NULL,"
       "  playerlist_id INTEGER NOT NULL,"
+      "  player_id INTEGER NOT NULL,"
       "  PRIMARY KEY (playerlist_id, player_id),"
-      "  FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE CASCADE"
+      "  FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE CASCADE,"
       "  FOREIGN KEY (playerlist_id) REFERENCES PlayerList (playerlist_id) ON DELETE CASCADE"
       ");";
 

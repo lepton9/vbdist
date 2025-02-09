@@ -35,6 +35,32 @@ dataSource SOURCE = NO_SOURCE;
 printMode PRINT_MODE = PRINT_MINIMAL;
 
 
+int comboRelevant(dlist* players, pCombo* combo) {
+  int match = 0;
+  for (int i = 0; i < (int)players->n; i++) {
+    player* p = players->items[i];
+    if (p->id == combo->pidA || p->id == combo->pidB) {
+      match++;
+    }
+  }
+  return match == 2;
+}
+
+void updateCombos(sqldb* db, dlist* players, dlist** combos, comboType combo_type) {
+  freeCombos(*combos);
+  *combos = fetchCombos(db, combo_type);
+  for (int i = (*combos)->n - 1; i >= 0; i--) {
+    if (!comboRelevant(players, (*combos)->items[i])) {
+      free(pop_elem(*combos, i));
+    }
+  }
+}
+
+void updatePlayerCombos(sqldb* db, dlist* players, dlist** bannedCombos, dlist** prefCombos) {
+  updateCombos(db, players, bannedCombos, BAN);
+  updateCombos(db, players, prefCombos, PAIR);
+}
+
 char** parseComboLine(char* line, int* n) {
   if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
    line++;
@@ -593,6 +619,8 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   if (players->n > 0) {
     saveToPlayerList(db, players);
   }
+  insertCombos(db, bpcs);
+  insertCombos(db, prefCombos);
 }
 
 void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, char* err) {
@@ -646,6 +674,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, cha
           }
           updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
           runTuiDB(tui);
+          updatePlayerCombos(tui->db, players, &bpcs, &prefCombos);
         }
         break;
       default: {
@@ -702,6 +731,18 @@ int main(int argc, char** argv) {
       players = (params->fileName)
                     ? readPlayers(params->fileName, bannedCombos, prefCombos)
                     : fetchPlayerList(db);
+      if (bannedCombos->n == 0) {
+        free_list(bannedCombos);
+        bannedCombos = fetchCombos(db, BAN);
+      } else {
+        insertCombos(db, bannedCombos);
+      }
+      if (prefCombos->n == 0) {
+        free_list(prefCombos);
+        prefCombos = fetchCombos(db, PAIR);
+      } else {
+        insertCombos(db, prefCombos);
+      }
       for (int i = 0; i < (int)players->n;) {
         int found = fetchPlayer(db, players->items[i]);
         if (!found) {

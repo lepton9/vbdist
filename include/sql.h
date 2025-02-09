@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "sqlite3.h"
 #include "team.h"
+#include "combo.h"
 #include "dlist.h"
 
 typedef struct {
@@ -39,6 +40,12 @@ dlist* fetchPlayerTeams(sqldb* db, player* player);
 dlist* fetchFormerTeammates(sqldb* db, player* player);
 dlist* fetchNotTeammates(sqldb* db, player* player);
 dlist* fetchPlayersInTeam(sqldb* db, team* team);
+
+int insertCombo(sqldb* db, pCombo* combo);
+int insertCombos(sqldb* db, dlist* combos);
+int fetchCombo(sqldb* db, pCombo* combo);
+dlist* fetchCombos(sqldb* db, comboType type);
+int comboExists(sqldb* db, pCombo* combo);
 
 int renamePlayer(sqldb* db, player* player, const char* name);
 int renameTeam(sqldb* db, team* team, const char* name);
