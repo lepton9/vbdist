@@ -162,7 +162,7 @@ int saveToPlayerList(sqldb* db, dlist* players) {
 
 dlist* fetchPlayerList(sqldb* db) {
   char* sql = "SELECT * FROM Player WHERE player_id IN (SELECT player_id FROM InPlayerList WHERE playerlist_id = 1);";
-  dlist* list = init_list(sizeof(player*));
+  dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
     fetchRating(db, list->items[i]);
@@ -224,7 +224,7 @@ int fetchCombo(sqldb* db, pCombo* combo) {
 }
 
 dlist* fetchCombos(sqldb* db, comboType type) {
-  dlist* combos = init_list(sizeof(pCombo*));
+  dlist* combos = init_list();
   char sql[100];
   sprintf(sql, "SELECT combo_id, combo_type FROM Combo WHERE combo_type = '%s';", comboTypeString(type));
   execQuery(db->sqlite, sql, cb_combos, combos);
@@ -236,7 +236,7 @@ dlist* fetchCombos(sqldb* db, comboType type) {
 
 dlist* fetchPlayers(sqldb* db) {
   char* sql = "SELECT * FROM Player;";
-  dlist* list = init_list(sizeof(player*));
+  dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
     fetchRating(db, list->items[i]);
@@ -246,7 +246,7 @@ dlist* fetchPlayers(sqldb* db) {
 
 dlist* fetchTeams(sqldb* db) {
   char* sql = "SELECT team_id, name FROM Team ORDER BY team_id DESC;";
-  dlist* list = init_list(sizeof(team*));
+  dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_teams, list);
   return list;
 }
@@ -269,13 +269,13 @@ int fetchPlayer(sqldb* db, player* player) {
 dlist* fetchPlayerTeams(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT team_id FROM PlayerTeam WHERE player_id = %d;", player->id);
-  dlist* teams = init_list(sizeof(int*));
+  dlist* teams = init_list();
   execQuery(db->sqlite, sql, cb_add_id_list, teams);
   return teams;
 }
 
 dlist* fetchFormerTeammates(sqldb* db, player* player) {
-  dlist* teammates = init_list(sizeof(int_tuple*));
+  dlist* teammates = init_list();
   char sql[200];
   sprintf(sql,
           "SELECT player_id, COUNT(player_id) as teammate_count FROM "
@@ -287,7 +287,7 @@ dlist* fetchFormerTeammates(sqldb* db, player* player) {
 }
 
 dlist* fetchNotTeammates(sqldb* db, player* player) {
-  dlist* no_teammates = init_list(sizeof(int*));
+  dlist* no_teammates = init_list();
   char sql[200];
   sprintf(sql,
           "SELECT player_id FROM Player WHERE player_id NOT IN (SELECT player_id FROM "
@@ -301,7 +301,7 @@ dlist* fetchNotTeammates(sqldb* db, player* player) {
 dlist* fetchPlayersInTeam(sqldb* db, team* team) {
   char sql[100];
   sprintf(sql, "SELECT player_id FROM PlayerTeam WHERE team_id = %d;", team->id);
-  dlist* players = init_list(sizeof(int*));
+  dlist* players = init_list();
   execQuery(db->sqlite, sql, cb_add_id_list, players);
   return players;
 }

@@ -1,6 +1,11 @@
 #include "../include/dlist.h"
 
-dlist *init_list(size_t item_size) {
+dlist *init_list() {
+  dlist *list = init_list_size(sizeof(void*));
+  return list;
+}
+
+dlist *init_list_size(size_t item_size) {
   dlist *list = malloc(sizeof(dlist));
   list->n = 0;
   list->size = 1;
@@ -47,7 +52,7 @@ void* pop_elem(dlist* list, size_t index) {
 }
 
 dlist *list_from(void **items, int item_size, int n) {
-  dlist *list = init_list(item_size);
+  dlist *list = init_list_size(item_size);
   free(list->items);
   list->n = n;
   list->size = n;

@@ -151,7 +151,7 @@ void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
 
 dlist* readPlayers(const char *fileName, dlist* bpcs, dlist* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
-  dlist* ps = init_list(sizeof(player*));
+  dlist* ps = init_list();
   int pid = 0;
   if (fp == NULL) {
     free_list(ps);
@@ -730,8 +730,8 @@ int main(int argc, char** argv) {
   TEAM_SIZE = params->players;
   PRINT_MODE = params->printMode;
 
-  dlist* bannedCombos = init_list(sizeof(pCombo*));
-  dlist* prefCombos = init_list(sizeof(pCombo*));
+  dlist* bannedCombos = init_list();
+  dlist* prefCombos = init_list();
   sqldb* db = NULL;
   dlist* players = NULL;
   char* err_msg = malloc(1);

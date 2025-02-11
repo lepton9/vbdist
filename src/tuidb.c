@@ -10,8 +10,8 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->teams_n = teams;
   tui->team_size = team_size;
 
-  tui->allPlayers = init_list(sizeof(player*));
-  tui->allTeams = init_list(sizeof(team*));
+  tui->allPlayers = init_list();
+  tui->allTeams = init_list();
 
   tui->allPlayersArea = initListArea();
   tui->allTeamsArea = initListArea();

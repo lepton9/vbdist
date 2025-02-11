@@ -10,7 +10,8 @@ typedef struct {
   size_t item_size;
 } dlist;
 
-dlist* init_list(size_t item_size);
+dlist* init_list_size(size_t item_size);
+dlist* init_list();
 void free_list(dlist* list);
 int shrink_list(dlist* list);
 void list_add(dlist* list, void* item);
