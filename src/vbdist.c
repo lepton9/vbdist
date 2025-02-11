@@ -46,17 +46,36 @@ int comboRelevant(dlist* players, pCombo* combo) {
   return match == 2;
 }
 
-void updateCombos(sqldb* db, dlist* players, dlist** combos, comboType combo_type) {
-  freeCombos(*combos);
-  *combos = fetchCombos(db, combo_type);
-  for (int i = (*combos)->n - 1; i >= 0; i--) {
-    if (!comboRelevant(players, (*combos)->items[i])) {
-      free(pop_elem(*combos, i));
+void updateCombos(sqldb* db, dlist* players, dlist* combos, comboType combo_type) {
+  for (int i = 0; i < (int)combos->n; i++) {
+    free(combos->items[i]);
+    combos->items[i] = NULL;
+  }
+  combos->n = 0;
+
+  dlist* new_combos = fetchCombos(db, combo_type);
+
+  if (combos->size < new_combos->n) {
+    void** resized_items = realloc(combos->items, new_combos->size * sizeof(pCombo*));
+    combos->items = resized_items;
+    combos->size = new_combos->size;
+  }
+
+  for (int i = 0; i < (int)new_combos->n; i++) {
+    combos->items[i] = new_combos->items[i];
+  }
+  combos->n = new_combos->n;
+
+  free_list(new_combos);
+
+  for (int i = combos->n - 1; i >= 0; i--) {
+    if (!comboRelevant(players, combos->items[i])) {
+      free(pop_elem(combos, i));
     }
   }
 }
 
-void updatePlayerCombos(sqldb* db, dlist* players, dlist** bannedCombos, dlist** prefCombos) {
+void updatePlayerCombos(sqldb* db, dlist* players, dlist* bannedCombos, dlist* prefCombos) {
   updateCombos(db, players, bannedCombos, BAN);
   updateCombos(db, players, prefCombos, PAIR);
 }
@@ -616,9 +635,7 @@ int generateTeams(sqldb* db, dlist* players, dlist* bannedCombos, dlist* prefCom
 
 void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   if (SOURCE != DATABASE) return;
-  if (players->n > 0) {
-    saveToPlayerList(db, players);
-  }
+  saveToPlayerList(db, players);
   insertCombos(db, bpcs);
   insertCombos(db, prefCombos);
 }
@@ -674,7 +691,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, cha
           }
           updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
           runTuiDB(tui);
-          updatePlayerCombos(tui->db, players, &bpcs, &prefCombos);
+          updatePlayerCombos(tui->db, players, bpcs, prefCombos);
         }
         break;
       default: {
@@ -735,14 +752,12 @@ int main(int argc, char** argv) {
         players = fetchPlayerList(db);
       }
       if (bannedCombos->n == 0) {
-        free_list(bannedCombos);
-        bannedCombos = fetchCombos(db, BAN);
+        updateCombos(db, players, bannedCombos, BAN);
       } else {
         insertCombos(db, bannedCombos);
       }
       if (prefCombos->n == 0) {
-        free_list(prefCombos);
-        prefCombos = fetchCombos(db, PAIR);
+        updateCombos(db, players, prefCombos, PAIR);
       } else {
         insertCombos(db, prefCombos);
       }

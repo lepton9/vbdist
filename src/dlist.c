@@ -27,7 +27,7 @@ void list_add(dlist *list, void *item) {
 int shrink_list(dlist* list) {
   if (list->n < list->size / 4 && list->size > 4) {
     size_t new_size = (list->n > 0) ? list->n * 2 : 4;
-    void** new_items = realloc(list->items, new_size * sizeof(void*));
+    void** new_items = realloc(list->items, new_size * list->item_size);
     if (new_items == NULL) return -1;
     list->items = new_items;
     list->size = new_size;
@@ -36,7 +36,7 @@ int shrink_list(dlist* list) {
 }
 
 void* pop_elem(dlist* list, size_t index) {
-  if (list->n == 0 || index >= list->n) return NULL;
+  if (!list || list->n == 0 || index >= list->n) return NULL;
   void* e = list->items[index];
   for (size_t i = index; i < list->n - 1; i++) {
     list->items[i] = list->items[i + 1];

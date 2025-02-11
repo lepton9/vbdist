@@ -93,13 +93,12 @@ int cb_add_id_list(void* list, int count, char **data, char **columns) {
 
 int cb_combos(void* combos, int count, char **data, char **columns) {
   assert(count == 2);
-  dlist* cs = combos;
   pCombo* c = malloc(sizeof(pCombo));
   c->combo_id = atoi(data[0]);
   c->type = toComboType(data[1]);
   c->pidA = -1;
   c->pidB = -1;
-  list_add(cs, c);
+  list_add(combos, c);
   return 0;
 }
 
