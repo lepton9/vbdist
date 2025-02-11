@@ -206,6 +206,9 @@ void renameSelectedListElem(tuidb* tui) {
     if (c == 27) {
       break;
     } else if (isEnter(c)) {
+      if (*new == '\0') {
+        break;
+      }
       switch (tui->tab) {
         case PLAYERS_TAB: {
           player* p = selectedPlayer(tui);
