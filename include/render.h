@@ -28,6 +28,8 @@ void put_text(renderer* r, size_t row, size_t col, const char *fmt, ...);
 void append_line(renderer* r, size_t row, const char *fmt, ...);
 void render(renderer* r, FILE* out);
 
+
+size_t shift_esc_seq(char* line, size_t line_len, size_t print_ind, size_t section_len);
 int is_escape_end(char c);
 const char* skip_escape(const char* str);
 size_t printable_length(const char *str);

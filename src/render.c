@@ -191,6 +191,8 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
     print_len = available_space;
   }
 
+  size_t shifted = shift_esc_seq(r->screen[row], r->real_width, print_col, len);
+
   if (cut) {
     memcpy(r->screen[row] + real_col, cut, len);
     free(cut);
@@ -207,6 +209,37 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
     : r->line_len[row];
   return 1;
 }
+
+
+// TODO: multiple shifts in a row needed
+size_t shift_esc_seq(char* line, size_t line_len, size_t print_ind, size_t section_len) {
+  size_t real_ind = real_index(line, print_ind);
+  int in_escape = 0;
+  int esc_start = -1;
+  int esc_len = 0;
+
+  for (size_t i = real_ind; (i < real_ind + section_len || in_escape) && i < line_len; i++) {
+    if (in_escape) {
+      esc_len++;
+      if (is_escape_end(line[i])) {
+        in_escape = 0;
+      }
+    } else {
+      if (line[i] == ESC && i + 1 < line_len && line[i + 1] == '[') {
+        in_escape = 1;
+        esc_start = i;
+        esc_len = 1;
+      }
+    }
+  }
+  if (esc_start >= 0) {
+    size_t shift = section_len - (esc_start - real_ind);
+    memmove(line + esc_start + shift, line + esc_start, esc_len);
+    return shift;
+  }
+  return 0;
+}
+
 
 void put_text(renderer* r, size_t row, size_t col, const char *fmt, ...) {
   char line[r->width + 1];
