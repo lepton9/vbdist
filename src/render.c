@@ -179,8 +179,8 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
     r->print_line_len[row] += space_count;
   }
 
-  int real_col = (print_col == 0 && r->line_len[row] == 0)
-                     ? 0
+  int real_col = (print_col == r->print_line_len[row])
+                     ? r->line_len[row]
                      : real_index(r->screen[row], print_col);
   if (real_col < 0) return 0;
 
