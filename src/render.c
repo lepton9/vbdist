@@ -28,6 +28,8 @@ renderer* init_renderer(size_t w, size_t h) {
 void free_renderer(renderer* r) {
   free(r->screen);
   free(r->last_screen);
+  free(r->line_len);
+  free(r->print_line_len);
   free(r);
 }
 
@@ -103,6 +105,23 @@ size_t printable_length(const char *str) {
   return length;
 }
 
+int real_index(const char *str, size_t printable_ind) {
+  size_t print_count = 0;
+  const char *start = str;
+
+  while (*str) {
+    str = skip_escape(str);
+
+    if (*str) {
+      if (print_count == printable_ind) return str - start;
+      print_count++;
+      str++;
+    }
+  }
+  return -1;
+  // return str - start;
+}
+
 const char* find_printable_start(const char* str, size_t start) {
   size_t print_count = 0;
   while (*str) {
@@ -157,19 +176,35 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
     memset(r->screen[row] + r->line_len[row], ' ', space_count);
     available_space -= space_count;
     r->line_len[row] += space_count;
+    r->print_line_len[row] += space_count;
   }
 
+  int real_col = (print_col == 0 && r->line_len[row] == 0)
+                     ? 0
+                     : real_index(r->screen[row], print_col);
+  if (real_col < 0) return 0;
+
+  char* cut = NULL;
   if (print_len > available_space) {
-    char* cut = printable_substr(line, 0, available_space);
-    memcpy(r->screen[row] + r->line_len[row], cut, available_space);
-    r->line_len[row] += strlen(cut);
-    r->print_line_len[row] = print_col + available_space;
+    cut = printable_substr(line, 0, available_space);
+    len = strlen(cut);
+    print_len = available_space;
+  }
+
+  if (cut) {
+    memcpy(r->screen[row] + real_col, cut, len);
     free(cut);
   } else {
-    memcpy(r->screen[row] + r->line_len[row], line, len);
-    r->line_len[row] += len;
-    r->print_line_len[row] = print_col + print_len;
+    memcpy(r->screen[row] + real_col, line, len);
   }
+
+  r->print_line_len[row] = (print_col + print_len > r->print_line_len[row])
+    ? (print_col + print_len)
+    : r->print_line_len[row];
+
+  r->line_len[row] = (real_col + len > r->line_len[row])
+    ? (real_col + len)
+    : r->line_len[row];
   return 1;
 }
 
@@ -194,7 +229,8 @@ void append_line(renderer* r, size_t row, const char *fmt, ...) {
 void render(renderer* r, FILE* out) {
   int resize = updateSize(r);
   for (int y = 0; y < (int)r->height; y++) {
-    if (resize || memcmp(r->screen[y], r->last_screen[y], r->width) != 0) {
+    char* line = r->screen[y];
+    if (resize || memcmp(r->screen[y], r->last_screen[y], r->line_len[y]) != 0) {
       fprintf(out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->line_len[y], r->screen[y]);
       memcpy(r->last_screen[y], r->screen[y], r->real_width);
     }
