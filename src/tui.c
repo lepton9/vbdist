@@ -32,7 +32,6 @@ int keyPress() {
 #else
   cbreak();
   c = getch();
-  refresh();
   endwin();
 #endif
   return c;

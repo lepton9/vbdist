@@ -531,11 +531,12 @@ int askSaveToFile(char* fileName, team** teams) {
   char ans = keyPress();
   if (ans == 'y' || ans == 'Y') {
     writeTeamsToFile(teams, fileName);
-    printf("\033[2K");
+    printf("\033[2K\r");
     printf("Saved to %s\n", fileName);
     log_log("Saved %d teams of %d players to file '%s'", TEAMS_N, TEAM_SIZE, fileName);
     return 1;
   }
+  printf("\r");
   return 0;
 }
 
@@ -544,7 +545,7 @@ int askSaveToDB(sqldb* db, team** teams) {
   fflush(stdout);
   char ans = keyPress();
   if (ans == 'y' || ans == 'Y') {
-    printf("\033[2K");
+    printf("\033[2K\r");
     for (int i = 0; i < TEAMS_N; i++) {
       insertTeam(db, teams[i]);
       for (int j = 0; j < TEAM_SIZE; j++) {
@@ -555,6 +556,7 @@ int askSaveToDB(sqldb* db, team** teams) {
     log_log("Saved %d teams of %d players to database '%s'", TEAMS_N, TEAM_SIZE, db->path);
     return 1;
   }
+  printf("\r");
   return 0;
 }
 

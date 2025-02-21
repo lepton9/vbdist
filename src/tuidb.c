@@ -514,7 +514,7 @@ void renderAllTeamsList(tuidb* tui) {
     i < (int)tui->allTeams->n;
     i++) {
       if (tui->allTeamsArea->selected == i) {
-        tui->allTeamsArea->selected_term_row = line;
+        tui->allTeamsArea->selected_term_row = line + 1;
         append_line(tui->render, line, "\033[7m");
       }
       append_line(tui->render, line, " %-20s", ((team*)tui->allTeams->items[i])->name);
