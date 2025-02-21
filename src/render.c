@@ -10,26 +10,31 @@ renderer* init_renderer(size_t w, size_t h) {
   r->width = w;
   r->height = h;
   r->real_width = 2 * w;
-  r->screen = malloc(h * sizeof(char*));
-  r->last_screen = malloc(h * sizeof(char*));
+  r->screen.s = malloc(h * sizeof(char*));
+  r->last_screen.s = malloc(h * sizeof(char*));
+
   for (size_t i = 0; i < h; i++) {
-    r->screen[i] = calloc(r->real_width + 1, sizeof(char));
-    r->last_screen[i] = calloc(r->real_width + 1, sizeof(char));
-    memset(r->screen[i], ' ', r->real_width);
-    memset(r->last_screen[i], ' ', r->real_width);
-    r->screen[i][r->real_width] = '\0';
-    r->last_screen[i][r->real_width] = '\0';
+    r->screen.s[i] = calloc(r->real_width + 1, sizeof(char));
+    r->last_screen.s[i] = calloc(r->real_width + 1, sizeof(char));
+    memset(r->screen.s[i], ' ', r->real_width);
+    memset(r->last_screen.s[i], ' ', r->real_width);
+    r->screen.s[i][r->real_width] = '\0';
+    r->last_screen.s[i][r->real_width] = '\0';
   }
-  r->line_len = calloc(h, sizeof(size_t));
-  r->print_line_len = calloc(h, sizeof(size_t));
+  r->screen.line_len = calloc(h, sizeof(size_t));
+  r->screen.print_line_len = calloc(h, sizeof(size_t));
+  r->last_screen.line_len = calloc(h, sizeof(size_t));
+  r->last_screen.print_line_len = calloc(h, sizeof(size_t));
   return r;
 }
 
 void free_renderer(renderer* r) {
-  free(r->screen);
-  free(r->last_screen);
-  free(r->line_len);
-  free(r->print_line_len);
+  free(r->screen.s);
+  free(r->last_screen.s);
+  free(r->screen.line_len);
+  free(r->screen.print_line_len);
+  free(r->last_screen.line_len);
+  free(r->last_screen.print_line_len);
   free(r);
 }
 
@@ -38,8 +43,13 @@ void resize_screen(renderer* r, size_t new_w, size_t new_h) {
   char** new_screen = malloc(new_h * sizeof(char*));
   char** new_last_screen = malloc(new_h * sizeof(char*));
 
-  r->line_len = realloc(r->line_len, new_h * sizeof(size_t));
-  r->print_line_len = realloc(r->print_line_len, new_h * sizeof(size_t));
+  r->screen.line_len = realloc(r->screen.line_len, new_h * sizeof(size_t));
+  r->screen.print_line_len =
+      realloc(r->screen.print_line_len, new_h * sizeof(size_t));
+  r->last_screen.line_len =
+      realloc(r->last_screen.line_len, new_h * sizeof(size_t));
+  r->last_screen.print_line_len =
+      realloc(r->last_screen.print_line_len, new_h * sizeof(size_t));
 
   for (size_t i = 0; i < new_h; i++) {
     new_screen[i] = calloc(new_rw + 1, sizeof(char));
@@ -47,20 +57,20 @@ void resize_screen(renderer* r, size_t new_w, size_t new_h) {
 
     if (i < r->height) {
       int len = (new_rw < r->real_width ? new_rw : r->width);
-      strncpy(new_screen[i], r->screen[i], len);
-      strncpy(new_last_screen[i], r->last_screen[i], len);
+      strncpy(new_screen[i], r->screen.s[i], len);
+      strncpy(new_last_screen[i], r->last_screen.s[i], len);
     }
   }
 
   for (size_t i = 0; i < r->height; i++) {
-    free(r->screen[i]);
-    free(r->last_screen[i]);
+    free(r->screen.s[i]);
+    free(r->last_screen.s[i]);
   }
-  free(r->screen);
-  free(r->last_screen);
+  free(r->screen.s);
+  free(r->last_screen.s);
 
-  r->screen = new_screen;
-  r->last_screen = new_last_screen;
+  r->screen.s = new_screen;
+  r->last_screen.s = new_last_screen;
   r->width = new_w;
   r->height = new_h;
   r->real_width = new_rw;
@@ -164,24 +174,24 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
 
   size_t len = strlen(line);
   size_t print_len = printable_length(line);
-  size_t line_print_len = r->print_line_len[row];
+  size_t line_print_len = r->screen.print_line_len[row];
   size_t available_space = r->width - line_print_len;
 
-  if (r->line_len[row] + len > r->real_width) return 0;
+  if (r->screen.line_len[row] + len > r->real_width) return 0;
 
   if (print_col > line_print_len) {
     size_t space_count = print_col - line_print_len;
     if (available_space < space_count) return 0;
 
-    memset(r->screen[row] + r->line_len[row], ' ', space_count);
+    memset(r->screen.s[row] + r->screen.line_len[row], ' ', space_count);
     available_space -= space_count;
-    r->line_len[row] += space_count;
-    r->print_line_len[row] += space_count;
+    r->screen.line_len[row] += space_count;
+    r->screen.print_line_len[row] += space_count;
   }
 
-  int real_col = (print_col == r->print_line_len[row])
-                     ? r->line_len[row]
-                     : real_index(r->screen[row], print_col);
+  int real_col = (print_col == r->screen.print_line_len[row])
+                     ? r->screen.line_len[row]
+                     : real_index(r->screen.s[row], print_col);
   if (real_col < 0) return 0;
 
   char* cut = NULL;
@@ -191,22 +201,22 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
     print_len = available_space;
   }
 
-  size_t shifted = shift_esc_seq(r->screen[row], r->real_width, print_col, len);
+  size_t shifted = shift_esc_seq(r->screen.s[row], r->real_width, print_col, len);
 
   if (cut) {
-    memcpy(r->screen[row] + real_col, cut, len);
+    memcpy(r->screen.s[row] + real_col, cut, len);
     free(cut);
   } else {
-    memcpy(r->screen[row] + real_col, line, len);
+    memcpy(r->screen.s[row] + real_col, line, len);
   }
 
-  r->print_line_len[row] = (print_col + print_len > r->print_line_len[row])
+  r->screen.print_line_len[row] = (print_col + print_len > r->screen.print_line_len[row])
     ? (print_col + print_len)
-    : r->print_line_len[row];
+    : r->screen.print_line_len[row];
 
-  r->line_len[row] = (real_col + len > r->line_len[row])
+  r->screen.line_len[row] = (real_col + len > r->screen.line_len[row])
     ? (real_col + len)
-    : r->line_len[row];
+    : r->screen.line_len[row];
   return 1;
 }
 
@@ -256,19 +266,20 @@ void append_line(renderer* r, size_t row, const char *fmt, ...) {
   va_start(args, fmt);
   vsnprintf(line, sizeof(line), fmt, args);
   va_end(args);
-  setText(r, row, r->print_line_len[row], line);
+  setText(r, row, r->screen.print_line_len[row], line);
 }
 
 void render(renderer* r, FILE* out) {
   int resize = updateSize(r);
   for (int y = 0; y < (int)r->height; y++) {
-    char* line = r->screen[y];
-    if (resize || memcmp(r->screen[y], r->last_screen[y], r->line_len[y]) != 0) {
-      fprintf(out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->line_len[y], r->screen[y]);
-      memcpy(r->last_screen[y], r->screen[y], r->real_width);
+    if (resize || memcmp(r->screen.s[y], r->last_screen.s[y], r->screen.line_len[y]) != 0) {
+      fprintf(out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
+      memcpy(r->last_screen.s[y], r->screen.s[y], r->real_width);
+      r->last_screen.line_len[y] = r->screen.line_len[y];
+      r->last_screen.print_line_len[y] = r->screen.print_line_len[y];
     }
-    r->line_len[y] = 0;
-    r->print_line_len[y] = 0;
+    r->screen.line_len[y] = 0;
+    r->screen.print_line_len[y] = 0;
   }
   fflush(out);
 }

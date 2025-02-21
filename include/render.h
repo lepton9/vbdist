@@ -7,13 +7,16 @@
 #define ESC '\033'
 
 typedef struct {
-  char** screen;
-  char** last_screen;
-  size_t* line_len;
-  size_t* print_line_len;
   size_t real_width;
   size_t width;
   size_t height;
+
+  struct {
+    char** s;
+    size_t* line_len;
+    size_t* print_line_len;
+  } screen, last_screen;
+
 } renderer;
 
 renderer* init_renderer(size_t w, size_t h);
