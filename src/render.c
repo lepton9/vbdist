@@ -5,8 +5,9 @@
 #include <string.h>
 
 
-renderer* init_renderer(size_t w, size_t h) {
+renderer* init_renderer(FILE* out, size_t w, size_t h) {
   renderer* r = malloc(sizeof(renderer));
+  r->out = out;
   r->width = w;
   r->height = h;
   r->real_width = 2 * w;
@@ -250,6 +251,43 @@ size_t shift_esc_seq(char* line, size_t line_len, size_t print_ind, size_t secti
   return 0;
 }
 
+// TODO: useless
+char* make_str(size_t width, const char *fmt, ...) {
+  char *line = malloc(width + 1);
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(line, width + 1, fmt, args);
+  va_end(args);
+  return line;
+}
+
+int emptied(renderer* r) {
+  for (size_t i = 0; i < r->height; i++) {
+    if (r->screen.line_len[i] != 0) return 0;
+  }
+  return 1;
+}
+
+void copy_old_screen(renderer* r) {
+  for (size_t i = 0; i < r->height; i++) {
+    memcpy(r->screen.s[i], r->last_screen.s[i], r->last_screen.line_len[i]);
+    r->screen.line_len[i] = r->last_screen.line_len[i];
+    r->screen.print_line_len[i] = r->last_screen.print_line_len[i];
+  }
+}
+
+// TODO: make better, ability to have input segment
+void update_segment(renderer* r, size_t row, size_t col, size_t width, const char *fmt, ...) {
+  char segment[width + 1];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(segment, sizeof(segment), fmt, args);
+  va_end(args);
+
+  if (emptied(r)) copy_old_screen(r);
+
+  setText(r, row, col, segment);
+}
 
 void put_text(renderer* r, size_t row, size_t col, const char *fmt, ...) {
   char line[r->width + 1];
@@ -269,11 +307,21 @@ void append_line(renderer* r, size_t row, const char *fmt, ...) {
   setText(r, row, r->screen.print_line_len[row], line);
 }
 
-void render(renderer* r, FILE* out) {
+void refresh_screen(renderer* r) {
+  updateSize(r);
+  for (int y = 0; y < (int)r->height; y++) {
+    fprintf(r->out, "\033[%d;1H%.*s\033[0K", y + 1,
+            (int)r->last_screen.line_len[y], r->last_screen.s[y]);
+  }
+  fflush(r->out);
+}
+
+void render(renderer* r) {
   int resize = updateSize(r);
+  // if (emptied(r)) copy_old_screen(r);
   for (int y = 0; y < (int)r->height; y++) {
     if (resize || memcmp(r->screen.s[y], r->last_screen.s[y], r->screen.line_len[y]) != 0) {
-      fprintf(out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
+      fprintf(r->out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
       memcpy(r->last_screen.s[y], r->screen.s[y], r->real_width);
       r->last_screen.line_len[y] = r->screen.line_len[y];
       r->last_screen.print_line_len[y] = r->screen.print_line_len[y];
@@ -281,7 +329,7 @@ void render(renderer* r, FILE* out) {
     r->screen.line_len[y] = 0;
     r->screen.print_line_len[y] = 0;
   }
-  fflush(out);
+  fflush(r->out);
 }
 
 // void render(renderer* r, FILE* out) {
