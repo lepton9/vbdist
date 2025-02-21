@@ -136,7 +136,6 @@ int real_index(const char *str, size_t printable_ind) {
     }
   }
   return -1;
-  // return str - start;
 }
 
 const char* find_printable_start(const char* str, size_t start) {
@@ -324,13 +323,13 @@ void refresh_screen(renderer* r) {
 
 void render(renderer* r) {
   int resize = updateSize(r);
-  // if (emptied(r)) copy_old_screen(r);
   for (int y = 0; y < (int)r->height; y++) {
     int modified = (r->screen.line_len[y] != r->last_screen.line_len[y]) ||
                    (memcmp(r->screen.s[y], r->last_screen.s[y],
                            r->screen.line_len[y]) != 0);
     if (resize || modified) {
       fprintf(r->out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
+      fflush(r->out);
       memcpy(r->last_screen.s[y], r->screen.s[y], r->real_width);
       r->last_screen.line_len[y] = r->screen.line_len[y];
       r->last_screen.print_line_len[y] = r->screen.print_line_len[y];
@@ -338,7 +337,6 @@ void render(renderer* r) {
     r->screen.line_len[y] = 0;
     r->screen.print_line_len[y] = 0;
   }
-  fflush(r->out);
 }
 
 // void render(renderer* r, FILE* out) {

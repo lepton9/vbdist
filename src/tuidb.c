@@ -48,6 +48,7 @@ void freeTuiDB(tuidb* tui) {
   }
   free_list(tui->allPlayers);
   free_list(tui->allTeams);
+  free_renderer(tui->render);
   free(tui->allPlayersArea);
   free(tui->allTeamsArea);
   free(tui->term);
