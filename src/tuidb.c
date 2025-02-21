@@ -320,18 +320,20 @@ void handleKeyPress(tuidb* tui, int c) {
     case 9: // Tab
       tui->tab = (tui->tab == PLAYERS_TAB) ? TEAMS_TAB : PLAYERS_TAB;
       break;
-    case 'r':
+    case 'R': case 'r':
       renameSelectedListElem(tui);
       break;
-    case 'x':
+    case 'X': case 'x':
       deleteSelectedListElem(tui);
       break;
+    case 'K': case 'W':
     case 'k': case 'w':
 #ifdef __linux__
     case KEY_UP:
 #endif
       list_up(tui);
       break;
+    case 'J': case 'S':
     case 'j': case 's':
 #ifdef __linux__
     case KEY_DOWN:
@@ -342,7 +344,7 @@ void handleKeyPress(tuidb* tui, int c) {
       break;
     case 'l': case 'd':
       break;
-    case 'i': // Player info
+    case 'I': case 'i': // Player info
       if (tui->tab == PLAYERS_TAB) tui->show_player_info ^= 1;
       break;
     default: {

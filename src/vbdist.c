@@ -483,24 +483,28 @@ void changeMode(team** teams, dlist* bpcs) {
       case 27: // Esc
         unselect(tui->selected);
         break;
+      case 'K': case 'W':
       case 'k': case 'w':
 #ifdef __linux__
       case KEY_UP:
 #endif
         cur_up(tui);
         break;
+      case 'J': case 'S':
       case 'j': case 's':
 #ifdef __linux__
       case KEY_DOWN:
 #endif
         cur_down(tui);
         break;
+      case 'H': case 'A':
       case 'h': case 'a':
 #ifdef __linux__
       case KEY_LEFT:
 #endif
         cur_left(tui);
         break;
+      case 'L': case 'D':
       case 'l': case 'd':
 #ifdef __linux__
       case KEY_RIGHT:
@@ -664,28 +668,28 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, cha
     c = keyPress();
     error_msg[0] = '\0';
     switch (c) {
-      case 'g':
+      case 'G': case 'g':
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
           sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
         } else {
           teams_added = generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos);
         }
         break;
-      case 't':
+      case 'T': case 't':
         curShow();
         TEAMS_N = askUpdateParamNum("Set new team amount", TEAMS_N);
         curHide();
         break;
-      case 'p':
+      case 'P': case 'p':
         curShow();
         TEAM_SIZE = askUpdateParamNum("Set new team size", TEAM_SIZE);
         curHide();
         break;
-      case 'q':
+      case 'Q': case 'q':
         saveToDB(tui->db, players, bpcs, prefCombos);
         cls(stdout);
         return;
-      case 'd':
+      case 'D': case 'd':
         if (SOURCE == DATABASE) {
           if (teams_added) {
             updateAllTeams(tui);

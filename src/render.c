@@ -323,20 +323,25 @@ void refresh_screen(renderer* r) {
 
 void render(renderer* r) {
   int resize = updateSize(r);
+  int changes = 0;
+  // char l[r->real_width+1];
   for (int y = 0; y < (int)r->height; y++) {
     int modified = (r->screen.line_len[y] != r->last_screen.line_len[y]) ||
                    (memcmp(r->screen.s[y], r->last_screen.s[y],
                            r->screen.line_len[y]) != 0);
     if (resize || modified) {
+      // sprintf(l, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
+      // write(fileno(r->out), l, (int)r->screen.line_len[y]);
       fprintf(r->out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
-      fflush(r->out);
       memcpy(r->last_screen.s[y], r->screen.s[y], r->real_width);
       r->last_screen.line_len[y] = r->screen.line_len[y];
       r->last_screen.print_line_len[y] = r->screen.print_line_len[y];
+      changes = 1;
     }
     r->screen.line_len[y] = 0;
     r->screen.print_line_len[y] = 0;
   }
+  if (changes) fflush(r->out);
 }
 
 // void render(renderer* r, FILE* out) {
