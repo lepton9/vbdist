@@ -235,7 +235,7 @@ dlist* fetchCombos(sqldb* db, comboType type) {
 }
 
 dlist* fetchPlayers(sqldb* db) {
-  char* sql = "SELECT * FROM Player;";
+  char* sql = "SELECT * FROM Player ORDER BY name ASC;";
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
