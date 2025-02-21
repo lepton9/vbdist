@@ -320,7 +320,10 @@ void render(renderer* r) {
   int resize = updateSize(r);
   // if (emptied(r)) copy_old_screen(r);
   for (int y = 0; y < (int)r->height; y++) {
-    if (resize || memcmp(r->screen.s[y], r->last_screen.s[y], r->screen.line_len[y]) != 0) {
+    int modified = (r->screen.line_len[y] != r->last_screen.line_len[y]) ||
+                   (memcmp(r->screen.s[y], r->last_screen.s[y],
+                           r->screen.line_len[y]) != 0);
+    if (resize || modified) {
       fprintf(r->out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
       memcpy(r->last_screen.s[y], r->screen.s[y], r->real_width);
       r->last_screen.line_len[y] = r->screen.line_len[y];
