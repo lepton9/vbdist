@@ -24,7 +24,7 @@ tuidb* initTuiDB(int teams, int team_size) {
 
   tui->term = malloc(sizeof(term_size));
   getTermSize(tui->term);
-  tui->render = init_renderer(stdout, tui->term->cols, tui->term->rows);
+  tui->render = init_renderer(stdout);
 
   return tui;
 }

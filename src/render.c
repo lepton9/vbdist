@@ -5,8 +5,14 @@
 #include <string.h>
 
 
-renderer* init_renderer(FILE* out, size_t w, size_t h) {
+renderer* init_renderer(FILE* out) {
   renderer* r = malloc(sizeof(renderer));
+
+  term_size term = {.rows = 0, .cols = 0};
+  getTermSize(&term);
+  size_t w = term.cols;
+  size_t h = term.rows;
+
   r->out = out;
   r->width = w;
   r->height = h;
@@ -171,7 +177,7 @@ char* printable_substr(const char* str, size_t start, size_t length) {
 }
 
 int setText(renderer* r, size_t row, size_t print_col, const char* line) {
-  if (row < 0 || print_col < 0 || row > r->height || print_col > r->width) return 0;
+  if (row > r->height || print_col > r->width) return 0;
 
   size_t len = strlen(line);
   size_t print_len = printable_length(line);
@@ -191,7 +197,7 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
   }
 
   int real_col = (print_col == r->screen.print_line_len[row])
-                     ? r->screen.line_len[row]
+                     ? (int)r->screen.line_len[row]
                      : real_index(r->screen.s[row], print_col);
   if (real_col < 0) return 0;
 
@@ -202,7 +208,7 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
     print_len = available_space;
   }
 
-  size_t shifted = shift_esc_seq(r->screen.s[row], r->real_width, print_col, len);
+  shift_esc_seq(r->screen.s[row], r->real_width, print_col, len);
 
   if (cut) {
     memcpy(r->screen.s[row] + real_col, cut, len);

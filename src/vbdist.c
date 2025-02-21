@@ -461,13 +461,14 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
 }
 
 void changeMode(team** teams, dlist* bpcs) {
-  tuiswap* tui = initTui(TEAM_SIZE, TEAMS_N);
+  tuiswap* tui = initTuiSwap(TEAM_SIZE, TEAMS_N);
   int c = 0;
+  renderer* renderer = init_renderer(stdout);
 
-  cls(stdout);
-  updateTUI(stdout, tui, teams, bpcs);
-
+  refresh_screen(renderer);
   while (c != 'q') {
+    updateTuiSwap(renderer, tui, teams, bpcs);
+    render(renderer);
     c = keyPress();
     switch (c) {
       case 13: case '\n': case ' ':
@@ -514,10 +515,10 @@ void changeMode(team** teams, dlist* bpcs) {
         break;
       }
     }
-    updateTUI(stdout, tui, teams, bpcs);
   }
   cls(stdout);
-  freeTui(tui);
+  free_renderer(renderer);
+  freeTuiSwap(tui);
 }
 
 int askSaveToFile(char* fileName, team** teams) {

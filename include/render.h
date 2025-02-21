@@ -20,7 +20,7 @@ typedef struct {
 
 } renderer;
 
-renderer* init_renderer(FILE* out, size_t w, size_t h);
+renderer* init_renderer(FILE* out);
 void free_renderer(renderer* r);
 
 int updateSize(renderer* r);

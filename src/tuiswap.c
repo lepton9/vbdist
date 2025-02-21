@@ -1,8 +1,7 @@
 #include "../include/tuiswap.h"
 #include <stdlib.h>
-#include <stdio.h>
 
-tuiswap* initTui(const int team_size, const int team_n) {
+tuiswap* initTuiSwap(const int team_size, const int team_n) {
   tuiswap* t = malloc(sizeof(tuiswap));
   t->team_size = team_size;
   t->team_n = team_n;
@@ -14,7 +13,7 @@ tuiswap* initTui(const int team_size, const int team_n) {
   return t;
 }
 
-void freeTui(tuiswap* tui) {
+void freeTuiSwap(tuiswap* tui) {
   free(tui->selected);
   free(tui->cur);
   free(tui);
@@ -92,36 +91,27 @@ void markCurPlayer(tuiswap* tui, team** teams, fg_color color) {
   else markPlayer(p, color);
 }
 
-void printTuiMan(FILE* out) {
-  fprintf(out, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q\n\n");
-}
-
-void updateTUI(FILE* out, tuiswap* tui, team** teams, dlist* bpcs) {
-  printf("\033[H");
-  printTuiMan(out);
+void updateTuiSwap(renderer* render, tuiswap* tui, team** teams, dlist* bpcs) {
+  append_line(render, 0, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q");
   int width = 15;
-
   for (int t = 0; t < tui->team_n; t += MAX_HOR_TEAMS) {
+    int col = 0;
     for (int i = t; i < t + MAX_HOR_TEAMS && i < tui->team_n; i++) {
-      fprintf(out, "\033[34m%-*.2f\033[0m", width, avgRating(teams[i]));
-    }
-    fprintf(out, "\n");
-    for(int j = 0; j < tui->team_size; j++) {
-      for(int i = t; i < tui->team_n && i - t < MAX_HOR_TEAMS ; i++) {
+      int line = 2 + (t / MAX_HOR_TEAMS) * (tui->team_size + 2);
+      put_text(render, line++, col, "\033[34m%-*.2f\033[0m", width, avgRating(teams[i]));
+      for(int j = 0; j < tui->team_size; j++) {
         player *p = teams[i]->players[j];
         if (highlight(tui, i, j)) {
-          fprintf(out, "\033[%d;7m%-*s\033[0m", p->marker.color, width,
-                  p->firstName);
+          put_text(render, line++, col, "\033[%d;7m%-*s\033[0m",
+                      p->marker.color, width, p->firstName);
         } else if (comboInTeam(bpcs, teams[i], p)) {
-          fprintf(out, "\033[%dm%-*s\033[0m", RED, width, p->firstName);
+          put_text(render, line++, col, "\033[%dm%-*s\033[0m", RED, width, p->firstName);
         } else {
-          fprintf(out, "\033[%dm%-*s\033[0m", p->marker.color, width,
-                  p->firstName);
+          put_text(render, line++, col, "\033[%dm%-*s\033[0m", p->marker.color, width, p->firstName);
         }
       }
-      fprintf(out, "\n");
+      col += width + 2;
     }
-    fprintf(out, "\n");
   }
 }
 
