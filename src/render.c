@@ -312,6 +312,35 @@ void append_line(renderer* r, size_t row, const char *fmt, ...) {
   setText(r, row, r->screen.print_line_len[row], line);
 }
 
+void make_borders_utf(renderer* r, size_t x, size_t y, size_t w, size_t h) {
+}
+
+void make_borders_ascii(renderer* r, size_t x, size_t y, size_t w, size_t h) {
+  for (size_t i = 0; i < h; i++) {
+    for (size_t j = 0; j < w; j++) {
+      size_t real_col = real_index(r->screen.s[y + i], x + j);
+      if ((i == 0 && j == 0) || (i == h - 1 && j == 0) ||
+          (i == 0 && j == w - 1) || (i == h - 1 && j == w - 1))
+        r->screen.s[y + i][real_col] = '+';
+      else if (i == 0 || i == h-1)
+        r->screen.s[y + i][real_col] = '-';
+      else if (j == 0 || j == w-1)
+        r->screen.s[y + i][real_col] = '|';
+      // else if ((i != 0 && i != h-1) && r->screen.print_line_len[i] < j)
+      //   r->screen.s[y + i][real_col] = ' ';
+    }
+    if (x + w > r->screen.print_line_len[y + i]) {
+      size_t over = (x + w) - r->screen.print_line_len[y + i];
+      r->screen.print_line_len[y + i] += over;
+      r->screen.line_len[y + i] += over;
+    }
+  }
+}
+
+void make_borders(renderer* r, size_t x, size_t y, size_t w, size_t h) {
+  make_borders_ascii(r, x, y, w, h);
+}
+
 void refresh_screen(renderer* r) {
   updateSize(r);
   for (int y = 0; y < (int)r->height; y++) {
@@ -340,6 +369,7 @@ void render(renderer* r) {
     }
     r->screen.line_len[y] = 0;
     r->screen.print_line_len[y] = 0;
+    memset(r->screen.s[y], ' ', r->real_width);
   }
   if (changes) fflush(r->out);
 }

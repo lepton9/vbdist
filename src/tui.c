@@ -1,5 +1,6 @@
 #include <string.h>
 #include <errno.h>
+#include <locale.h>
 #include "../include/tui.h"
 #include "../include/log.h"
 
@@ -22,6 +23,11 @@ void curHide() {
 
 void curShow() {
   printf("\033[?25h");
+}
+
+int supportsUnicode() {
+  const char *locale = setlocale(LC_CTYPE, "");
+  return locale && strstr(locale, "UTF-8");
 }
 
 int keyPress() {
