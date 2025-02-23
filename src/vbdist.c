@@ -750,8 +750,7 @@ int main(int argc, char** argv) {
       if (!db->sqlite) {
         exit(1);
       }
-      int r = createDB(db);
-      if (r) printf("Created tables\n");
+      createDB(db);
       players = (params->fileName)
                     ? readPlayers(params->fileName, bannedCombos, prefCombos)
                     : NULL;

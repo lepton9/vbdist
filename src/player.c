@@ -1,4 +1,5 @@
 #include "../include/player.h"
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -63,10 +64,15 @@ player* parsePlayer(char* pStr) {
 double ovRating(player* p) {
   if (!p) return 0.0;
   double sum = 0;
+  int ratings_n = 0;
   for (int i = 0; i < DIFRATINGS; i++) {
-    sum += p->ratings[i];
+    float r = p->ratings[i];
+    if (fabsf(r) > 1e-6f) {
+      sum += r;
+      ratings_n++;
+    }
   }
-  return sum / DIFRATINGS;
+  return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
 int cmpPlayers(const void* a, const void* b) {
