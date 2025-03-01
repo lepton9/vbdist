@@ -277,6 +277,39 @@ dlist* fetchSkills(sqldb* db, player* player) {
   return skills;
 }
 
+
+int insertSkill(sqldb* db, skill* skill) {
+  char sql[100];
+  sprintf(sql, "INSERT INTO Skill (combo_type) VALUES ('%s');", skill->name);
+  int r = execQuery(db->sqlite, sql, NULL, NULL);
+  if (r) {
+    int skill_id = sqlite3_last_insert_rowid(db->sqlite);
+    skill->id = skill_id;
+    log_sql("Created new Skill (%d) '%s'", skill->id, skill->name);
+  }
+  return r;
+}
+
+int deleteSkill(sqldb* db, skill* skill) {
+  char sql[100];
+  sprintf(sql, "INSERT INTO Skill (combo_type) VALUES ('%s');", skill->name);
+  int r = execQuery(db->sqlite, sql, NULL, NULL);
+  if (r) {
+    log_sql("Deleted Skill (%d) '%s'", skill->id, skill->name);
+  }
+  return r;
+}
+
+int renameSkill(sqldb* db, skill* skill, const char* name) {
+  char sql[100];
+  sprintf(sql, "UPDATE Skill SET name = '%s' WHERE skill_id = %d;", name, skill->id);
+  int r = execQuery(db->sqlite, sql, 0, 0);
+  if (r) {
+    log_sql("Renamed Skill (%d) '%s' -> '%s'", skill->id, skill->name, name);
+  }
+  return r;
+}
+
 int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name FROM Player WHERE player_id = %d;", player->id);
