@@ -418,7 +418,7 @@ void renderAllPlayersList(tuidb* tui) {
         append_line(tui->render, line, ">");
       }
       player* player = tui->allPlayers->items[i];
-      append_line(tui->render, line, " %-20s %.2f", player->firstName, ovRating(player));
+      append_line(tui->render, line, " %-20s %.2f", player->firstName, rating(player));
       if (tui->allPlayersArea->selected == i) {
         append_line(tui->render, line, "\033[27m");
       }
@@ -441,7 +441,7 @@ void renderSelectedList(tuidb* tui) {
        i < (int)tui->players->n;
        i++) {
     player* p = tui->players->items[i];
-    put_text(tui->render, line++, startCol, " %-20s %.2f", p->firstName, ovRating(p));
+    put_text(tui->render, line++, startCol, " %-20s %.2f", p->firstName, rating(p));
   }
 }
 
@@ -460,7 +460,7 @@ void renderPlayerInfo(tuidb* tui) {
            p->ratings[1], p->ratings[2], p->ratings[3], p->ratings[4],
            p->ratings[5]);
 
-  put_text(tui->render, line++, startCol, "Overall: %.2f", ovRating(p));
+  put_text(tui->render, line++, startCol, "Overall: %.2f", rating(p));
   put_text(tui->render, ++line, startCol, "Former teammates:");
   line += 2;
 

@@ -24,7 +24,7 @@ double avgRating(team* t) {
   double sum = 0;
   int ratings_n = 0;
   for (int pI = 0; pI < (int)t->size; pI++) {
-    double r = ovRating(t->players[pI]);
+    double r = rating(t->players[pI]);
     if (fabs(r) > 1e-6f) {
       sum += r;
       ratings_n++;

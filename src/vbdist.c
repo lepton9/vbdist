@@ -215,7 +215,7 @@ void printTeams(FILE *out, team **teams, const int printWidth,
         if (PRINT_MODE == PRINT_ALL) {
           sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "",
                   teams[i]->players[j]->firstName,
-                  ovRating(teams[i]->players[j]));
+                  rating(teams[i]->players[j]));
           fprintf(out, "%-*s", printWidth, str);
         } else {
           sprintf(str, "%s%-10s", (indent) ? "  " : "", teams[i]->players[j]->firstName);
@@ -238,7 +238,7 @@ double averageRating(team** teams, dlist* prefCombos) {
         n--;
         continue;
       }
-      sumRating += ovRating(teams[t]->players[p]);
+      sumRating += rating(teams[t]->players[p]);
     }
   }
   return (n <= 0) ? 0.0 : sumRating / n;

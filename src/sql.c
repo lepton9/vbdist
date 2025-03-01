@@ -249,6 +249,7 @@ dlist* fetchPlayers(sqldb* db) {
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
+    fetchSkills(db, list->items[i]);
     fetchRating(db, list->items[i]);
   }
   return list;

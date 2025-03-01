@@ -30,6 +30,12 @@ player* copyPlayer(player* p) {
   *copy = *p;
   copy->firstName = strdup(p->firstName);
   if (p->surName) copy->surName = strdup(p->surName);
+  copy->skills = init_list();
+  for (size_t i = 0; i < p->skills->n; i++) {
+    skill* s = p->skills->items[i];
+    skill* s_copy = initSkill(s->id, s->name, s->value);
+    list_add(copy->skills, s_copy);
+  }
   return copy;
 }
 
@@ -66,12 +72,13 @@ player* parsePlayer(char* pStr) {
   return p;
 }
 
-double ovRating(player* p) {
+double rating(player* p) {
   if (!p) return 0.0;
   double sum = 0;
   int ratings_n = 0;
-  for (int i = 0; i < DIFRATINGS; i++) {
-    float r = p->ratings[i];
+  for (size_t i = 0; i < p->skills->n; i++) {
+    skill* s = p->skills->items[i];
+    float r = s->value;
     if (fabsf(r) > 1e-6f) {
       sum += r;
       ratings_n++;
@@ -80,10 +87,24 @@ double ovRating(player* p) {
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
+// double ovRating(player* p) {
+//   if (!p) return 0.0;
+//   double sum = 0;
+//   int ratings_n = 0;
+//   for (int i = 0; i < DIFRATINGS; i++) {
+//     float r = p->ratings[i];
+//     if (fabsf(r) > 1e-6f) {
+//       sum += r;
+//       ratings_n++;
+//     }
+//   }
+//   return (ratings_n > 0) ? sum / ratings_n : 0.0;
+// }
+
 int cmpPlayers(const void* a, const void* b) {
   player* ap = *(player**)a;
   player* bp = *(player**)b;
-  double ret = ovRating(bp) - ovRating(ap);
+  double ret = rating(bp) - rating(ap);
   return (ret < 0) ? -1 : (ret > 0) ? 1 : 0;
 }
 
@@ -111,6 +132,6 @@ void printPlayer(FILE* out, player* p) {
   for (int i = 0; i < DIFRATINGS; i++) {
     fprintf(out, "%.1f ", p->ratings[i]);
   }
-  fprintf(out, "| %.1f\n", ovRating(p));
+  fprintf(out, "| %.1f\n", rating(p));
 }
 
