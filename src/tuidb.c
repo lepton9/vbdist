@@ -455,19 +455,14 @@ void renderPlayerInfo(tuidb* tui) {
 
   put_text(tui->render, line++, startCol, "ID: %d", p->id);
 
-  put_text(tui->render, line++, startCol, "Rating:");
+  line++;
   for (size_t i = 0; i < p->skills->n; i++) {
     skill* s = p->skills->items[i];
     put_text(tui->render, line++, startCol,
-             "%s: %.2f", s->name, s->value);
+             "%-15s %.2f", s->name, s->value);
   }
 
-  // put_text(tui->render, line++, startCol,
-  //          "Rating: %.2f %.2f %.2f %.2f %.2f %.2f", p->ratings[0],
-  //          p->ratings[1], p->ratings[2], p->ratings[3], p->ratings[4],
-  //          p->ratings[5]);
-
-  put_text(tui->render, line++, startCol, "Overall: %.2f", rating(p));
+  put_text(tui->render, line++, startCol, "%-15s %.2f", "Overall", rating(p));
   put_text(tui->render, ++line, startCol, "Former teammates:");
   line += 2;
 
@@ -483,13 +478,14 @@ void renderPlayerInfo(tuidb* tui) {
     }
   }
 
-  line = 5;
+  line = 1;
   startCol = startCol + 30;
   put_text(tui->render, line, startCol, "Not teammates with:");
   line += 2;
 
+  int printed_players = 0;
   dlist* not_player_ids = fetchNotTeammates(tui->db, p);
-  for (int i = 0; i < (int)not_player_ids->n && line < tui->term->rows - 2; i++) {
+  for (int i = 0; i < (int)not_player_ids->n && line < tui->term->rows - 3; i++) {
     int_tuple* t = not_player_ids->items[i];
     if (t->a == p->id) continue;
     int ind = playerInList(tui->allPlayers, t->a);
@@ -497,8 +493,14 @@ void renderPlayerInfo(tuidb* tui) {
       player* p = tui->allPlayers->items[ind];
       put_text(tui->render, line++, startCol, "%s %s", p->firstName,
                p->surName ? p->surName : "");
+      printed_players++;
     }
   }
+  if (not_player_ids->n - printed_players > 0) {
+    put_text(tui->render, line++, startCol, "... %d more players",
+             not_player_ids->n - printed_players);
+  }
+
   for (int i = 0; i < (int)not_player_ids->n; i++) {
     free(not_player_ids->items[i]);
   }

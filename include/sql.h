@@ -33,7 +33,8 @@ int saveToPlayerList(sqldb* db, dlist* players);
 dlist* fetchPlayerList(sqldb* db);
 
 int fetchPlayer(sqldb* db, player* player);
-int fetchSkills(sqldb* db, player* player);
+int fetchPlayerSkills(sqldb* db, player* player);
+dlist* fetchSkills(sqldb* db, player* player);
 dlist* fetchPlayers(sqldb* db);
 dlist* fetchTeams(sqldb* db);
 dlist* fetchPlayerTeams(sqldb* db, player* player);

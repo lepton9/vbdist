@@ -55,12 +55,21 @@ int cb_player(void* p, int argc, char **argv, char **colName) {
   return 0;
 }
 
-int cb_skill(void* skills, int count, char **data, char **columns) {
+int cb_player_skill(void* skills, int count, char **data, char **columns) {
   assert(count == 3);
   int id = atoi(data[0]);
   float value = atof(data[1]);
   const char* name = data[2];
   skill* s = initSkill(id, name, value);
+  list_add(skills, s);
+  return 0;
+}
+
+int cb_skill(void* skills, int count, char **data, char **columns) {
+  assert(count == 2);
+  int id = atoi(data[0]);
+  const char* name = data[1];
+  skill* s = initSkill(id, name, 0);
   list_add(skills, s);
   return 0;
 }
@@ -164,7 +173,7 @@ dlist* fetchPlayerList(sqldb* db) {
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
-    fetchSkills(db, list->items[i]);
+    fetchPlayerSkills(db, list->items[i]);
   }
   log_sql("Found player list with %d players", list->n);
   return list;
@@ -238,7 +247,7 @@ dlist* fetchPlayers(sqldb* db) {
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
-    fetchSkills(db, list->items[i]);
+    fetchPlayerSkills(db, list->items[i]);
   }
   return list;
 }
@@ -250,21 +259,29 @@ dlist* fetchTeams(sqldb* db) {
   return list;
 }
 
-int fetchSkills(sqldb* db, player* player) {
+int fetchPlayerSkills(sqldb* db, player* player) {
   char sql[200];
   sprintf(sql,
           "SELECT ps.skill_id, ps.value, s.name FROM PlayerSkill ps INNER JOIN "
           "Skill s ON ps.player_id = %d AND ps.skill_id = s.skill_id;",
           player->id);
-  int result = execQuery(db->sqlite, sql, cb_skill, player->skills);
+  int result = execQuery(db->sqlite, sql, cb_player_skill, player->skills);
   return result;
+}
+
+dlist* fetchSkills(sqldb* db, player* player) {
+  char sql[200];
+  dlist* skills = init_list();
+  sprintf(sql, "SELECT skill_id, name FROM Skill;");
+  execQuery(db->sqlite, sql, cb_skill, player->skills);
+  return skills;
 }
 
 int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name FROM Player WHERE player_id = %d;", player->id);
   execQuery(db->sqlite, sql, cb_player, player);
-  fetchSkills(db, player);
+  fetchPlayerSkills(db, player);
   return player->found;
 }
 
