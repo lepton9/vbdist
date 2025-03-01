@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "../include/mark.h"
 #include "../include/dlist.h"
+#include "../include/skill.h"
 
 #define DIFRATINGS 6
 
@@ -11,8 +12,12 @@ typedef struct {
   char* firstName;
   char* surName;
   int id;
+
+  // TODO: Deprecated
   float ratings[DIFRATINGS];
   int ratings_id;
+
+  dlist* skills;
   int found;
   mark marker;
 } player;

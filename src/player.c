@@ -9,6 +9,7 @@ player* initPlayer() {
   p->firstName = NULL;
   p->surName = NULL;
   p->found = 0;
+  p->skills = init_list();
   unmarkPlayer(p);
   return p;
 }
@@ -17,6 +18,10 @@ void freePlayer(player* p) {
   if (!p) return;
   if (p->firstName) free(p->firstName);
   if (p->surName) free(p->surName);
+  for (size_t i = 0; i < p->skills->n; i++) {
+    freeSkill(p->skills->items[i]);
+  }
+  free_list(p->skills);
   free(p);
 }
 

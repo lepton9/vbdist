@@ -66,6 +66,16 @@ int cb_rating(void* p, int argc, char **argv, char **colName) {
   return 0;
 }
 
+int cb_skill(void* skills, int count, char **data, char **columns) {
+  assert(count == 3);
+  int id = atoi(data[0]);
+  float value = atof(data[1]);
+  const char* name = data[2];
+  skill* s = initSkill(id, name, value);
+  list_add(skills, s);
+  return 0;
+}
+
 int cb_teammates(void* teammates, int count, char **data, char **columns) {
   assert(count == 2);
   int_tuple* tuple = malloc(sizeof(int_tuple));
@@ -258,10 +268,21 @@ int fetchRating(sqldb* db, player* player) {
   return result;
 }
 
+int fetchSkills(sqldb* db, player* player) {
+  char sql[200];
+  sprintf(sql,
+          "SELECT ps.skill_id, ps.value, s.name FROM PlayerSkill ps INNER JOIN "
+          "Skill s ON ps.player_id = %d AND ps.skill_id = s.skill_id;",
+          player->id);
+  int result = execQuery(db->sqlite, sql, cb_skill, player->skills);
+  return result;
+}
+
 int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name, rating_id FROM Player WHERE player_id = %d;", player->id);
   execQuery(db->sqlite, sql, cb_player, player);
+  fetchSkills(db, player);
   fetchRating(db, player);
   return player->found;
 }
@@ -389,6 +410,20 @@ int createDB(sqldb* db) {
       "  setting REAL NOT NULL,"
       "  saving REAL NOT NULL,"
       "  consistency REAL NOT NULL"
+      ");"
+      ""
+      "CREATE TABLE IF NOT EXISTS Skill ("
+      "  skill_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+      "  name TEXT"
+      ");"
+      ""
+      "CREATE TABLE IF NOT EXISTS PlayerSkill ("
+      "  player_id INTEGER NOT NULL,"
+      "  skill_id INTEGER NOT NULL,"
+      "  value REAL DEFAULT 0,"
+      "  PRIMARY KEY (player_id, skill_id),"
+      "  FOREIGN KEY (player_id) REFERENCES Player (player_id) ON DELETE CASCADE,"
+      "  FOREIGN KEY (skill_id) REFERENCES Skill (skill_id) ON DELETE CASCADE"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS PlayerTeam ("
