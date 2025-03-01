@@ -38,31 +38,20 @@ int cb_teams(void* tList, int count, char **data, char **columns) {
   return 0;
 }
 
-int cb_players(void* pList, int count, char **data, char **columns) {
-  assert(count == 3);
-  dlist* list = pList;
+int cb_players(void* list, int count, char **data, char **columns) {
+  assert(count == 2);
   player* p = initPlayer();
   p->id = atoi(data[0]);
-  p->ratings_id = atoi(data[1]);
-  p->firstName = strdup(data[2]);
+  p->firstName = strdup(data[1]);
   list_add(list, p);
   return 0;
 }
 
 int cb_player(void* p, int argc, char **argv, char **colName) {
   player* player = p;
-  assert(argc == 2);
+  assert(argc == 1);
   player->firstName = strdup(argv[0]);
-  player->ratings_id = atoi(argv[1]);
   player->found = 1;
-  return 0;
-}
-
-int cb_rating(void* p, int argc, char **argv, char **colName) {
-  player* player = p;
-  for (int i = 1; i < argc; i++) {
-    player->ratings[i - 1] = atof(argv[i]);
-  }
   return 0;
 }
 
@@ -171,11 +160,11 @@ int saveToPlayerList(sqldb* db, dlist* players) {
 }
 
 dlist* fetchPlayerList(sqldb* db) {
-  char* sql = "SELECT * FROM Player WHERE player_id IN (SELECT player_id FROM InPlayerList WHERE playerlist_id = 1);";
+  char* sql = "SELECT player_id, name FROM Player WHERE player_id IN (SELECT player_id FROM InPlayerList WHERE playerlist_id = 1);";
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
-    fetchRating(db, list->items[i]);
+    fetchSkills(db, list->items[i]);
   }
   log_sql("Found player list with %d players", list->n);
   return list;
@@ -245,12 +234,11 @@ dlist* fetchCombos(sqldb* db, comboType type) {
 }
 
 dlist* fetchPlayers(sqldb* db) {
-  char* sql = "SELECT * FROM Player ORDER BY name ASC;";
+  char* sql = "SELECT player_id, name FROM Player ORDER BY name ASC;";
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
     fetchSkills(db, list->items[i]);
-    fetchRating(db, list->items[i]);
   }
   return list;
 }
@@ -260,13 +248,6 @@ dlist* fetchTeams(sqldb* db) {
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_teams, list);
   return list;
-}
-
-int fetchRating(sqldb* db, player* player) {
-  char sql_rating[100];
-  sprintf(sql_rating, "SELECT * FROM Rating WHERE rating_id = %d;", player->ratings_id);
-  int result = execQuery(db->sqlite, sql_rating, cb_rating, player);
-  return result;
 }
 
 int fetchSkills(sqldb* db, player* player) {
@@ -281,10 +262,9 @@ int fetchSkills(sqldb* db, player* player) {
 
 int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
-  sprintf(sql, "SELECT name, rating_id FROM Player WHERE player_id = %d;", player->id);
+  sprintf(sql, "SELECT name FROM Player WHERE player_id = %d;", player->id);
   execQuery(db->sqlite, sql, cb_player, player);
   fetchSkills(db, player);
-  fetchRating(db, player);
   return player->found;
 }
 
@@ -398,19 +378,7 @@ int createDB(sqldb* db) {
   const char *sql =
       "CREATE TABLE IF NOT EXISTS Player ("
       "  player_id INTEGER PRIMARY KEY AUTOINCREMENT,"
-      "  rating_id INTEGER NOT NULL,"
-      "  name TEXT,"
-      "  FOREIGN KEY (rating_id) REFERENCES Rating (rating_id) ON DELETE RESTRICT"
-      ");"
-      ""
-      "CREATE TABLE IF NOT EXISTS Rating ("
-      "  rating_id INTEGER PRIMARY KEY AUTOINCREMENT,"
-      "  defence REAL NOT NULL,"
-      "  spike REAL NOT NULL,"
-      "  serve REAL NOT NULL,"
-      "  setting REAL NOT NULL,"
-      "  saving REAL NOT NULL,"
-      "  consistency REAL NOT NULL"
+      "  name TEXT"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS Skill ("

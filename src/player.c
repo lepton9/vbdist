@@ -63,11 +63,11 @@ player* parsePlayer(char* pStr) {
   }
 
   token = strtok(NULL, " ");
-  int i = 0;
-  while (token != NULL && i < DIFRATINGS) {
-      while (isspace(*token)) token++;
-      p->ratings[i++] = strtof(token, NULL);
-      token = strtok(NULL, " ");
+  while (token != NULL) {
+    while (isspace(*token)) token++;
+    skill* s = initSkill(0, "", strtof(token, NULL));
+    list_add(p->skills, s);
+    token = strtok(NULL, " ");
   }
   return p;
 }
@@ -86,20 +86,6 @@ double rating(player* p) {
   }
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
-
-// double ovRating(player* p) {
-//   if (!p) return 0.0;
-//   double sum = 0;
-//   int ratings_n = 0;
-//   for (int i = 0; i < DIFRATINGS; i++) {
-//     float r = p->ratings[i];
-//     if (fabsf(r) > 1e-6f) {
-//       sum += r;
-//       ratings_n++;
-//     }
-//   }
-//   return (ratings_n > 0) ? sum / ratings_n : 0.0;
-// }
 
 int cmpPlayers(const void* a, const void* b) {
   player* ap = *(player**)a;
@@ -129,8 +115,8 @@ void printPlayer(FILE* out, player* p) {
   strcat(fullName, p->firstName);
   if (p->surName) strcat(strcat(fullName, " "), p->surName);
   fprintf(out, "%-25s ", fullName);
-  for (int i = 0; i < DIFRATINGS; i++) {
-    fprintf(out, "%.1f ", p->ratings[i]);
+  for (size_t i = 0; i < p->skills->n; i++) {
+    fprintf(out, "%.1f ", ((skill*)p->skills->items[i])->value);
   }
   fprintf(out, "| %.1f\n", rating(p));
 }

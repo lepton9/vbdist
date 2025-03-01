@@ -455,10 +455,17 @@ void renderPlayerInfo(tuidb* tui) {
 
   put_text(tui->render, line++, startCol, "ID: %d", p->id);
 
-  put_text(tui->render, line++, startCol,
-           "Rating: %.2f %.2f %.2f %.2f %.2f %.2f", p->ratings[0],
-           p->ratings[1], p->ratings[2], p->ratings[3], p->ratings[4],
-           p->ratings[5]);
+  put_text(tui->render, line++, startCol, "Rating:");
+  for (size_t i = 0; i < p->skills->n; i++) {
+    skill* s = p->skills->items[i];
+    put_text(tui->render, line++, startCol,
+             "%s: %.2f", s->name, s->value);
+  }
+
+  // put_text(tui->render, line++, startCol,
+  //          "Rating: %.2f %.2f %.2f %.2f %.2f %.2f", p->ratings[0],
+  //          p->ratings[1], p->ratings[2], p->ratings[3], p->ratings[4],
+  //          p->ratings[5]);
 
   put_text(tui->render, line++, startCol, "Overall: %.2f", rating(p));
   put_text(tui->render, ++line, startCol, "Former teammates:");
