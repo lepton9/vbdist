@@ -125,15 +125,6 @@ void unselectPlayer(tuidb* tui) {
   freePlayer(p);
 }
 
-void initSelectedInd(tuidb* tui) {
-  if (tui->allPlayersArea->selected < 0 && tui->allPlayers->n > 0) {
-    tui->allPlayersArea->selected = 0;
-  }
-  if (tui->allTeamsArea->selected < 0 && tui->allTeams->n > 0) {
-    tui->allTeamsArea->selected = 0;
-  }
-}
-
 void tuidb_list_up(tuidb* tui) {
   switch (tui->tab) {
     case PLAYERS_TAB: {
@@ -344,7 +335,8 @@ void runTuiDB(tuidb* tui) {
   refresh_screen(tui->render);
   int c = 0;
   while (c != 'q') {
-    initSelectedInd(tui);
+    list_init_selected(tui->allPlayersArea);
+    list_init_selected(tui->allTeamsArea);
     updateArea(tui);
     renderTuidb(tui);
     c = keyPress();

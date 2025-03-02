@@ -43,7 +43,6 @@ int playerInList(dlist* list, int player_id);
 player* getPlayerInList(dlist* list, int player_id);
 void selectPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui);
-void initSelectedInd(tuidb* tui);
 
 void setAllPlayers(tuidb* tui, dlist* players);
 void setAllTeams(tuidb* tui, dlist* teams);

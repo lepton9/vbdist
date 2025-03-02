@@ -51,3 +51,9 @@ void update_list_len(list_area* la, size_t n) {
   la->len = n;
 }
 
+void list_init_selected(list_area* la) {
+  if (la->selected < 0 && la->len > 0) {
+    la->selected = 0;
+  }
+}
+

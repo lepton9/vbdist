@@ -269,11 +269,11 @@ int fetchPlayerSkills(sqldb* db, player* player) {
   return result;
 }
 
-dlist* fetchSkills(sqldb* db, player* player) {
+dlist* fetchSkills(sqldb* db) {
   char sql[200];
   dlist* skills = init_list();
   sprintf(sql, "SELECT skill_id, name FROM Skill;");
-  execQuery(db->sqlite, sql, cb_skill, player->skills);
+  execQuery(db->sqlite, sql, cb_skill, skills);
   return skills;
 }
 

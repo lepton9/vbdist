@@ -47,7 +47,7 @@ int fetchCombo(sqldb* db, pCombo* combo);
 dlist* fetchCombos(sqldb* db, comboType type);
 int comboExists(sqldb* db, pCombo* combo);
 
-dlist* fetchSkills(sqldb* db, player* player);
+dlist* fetchSkills(sqldb* db);
 int insertSkill(sqldb* db, skill* skill);
 int deleteSkill(sqldb* db, skill* skill);
 int renameSkill(sqldb* db, skill* skill, const char* name);

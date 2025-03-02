@@ -7,6 +7,7 @@
 
 #include "../include/tuiswap.h"
 #include "../include/tuidb.h"
+#include "../include/tuiskills.h"
 #include "../include/tui.h"
 #include "../include/args.h"
 #include "../include/sql.h"
@@ -647,7 +648,18 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   insertCombos(db, prefCombos);
 }
 
-void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, char* err) {
+dlist* initSelectedSkills(dlist* allSkills) {
+  dlist* skills = init_list();
+  for (size_t i = 0; i < allSkills->n; i++) {
+    int* id = malloc(sizeof(int));
+    *id = ((skill*)allSkills->items[i])->id;
+    list_add(skills, id);
+  }
+  return skills;
+}
+
+void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dlist* allSkills, char* err) {
+  dlist* selected_skills = initSelectedSkills(allSkills);
   int teams_added = 0;
   char error_msg[1000];
   strcpy(error_msg, err);
@@ -664,6 +676,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, cha
     if (SOURCE == DATABASE) printf(" [d] Database\n");
     printf(" [t] Teams: %d\n", TEAMS_N);
     printf(" [p] Team size: %d\n", TEAM_SIZE);
+    printf(" [s] Skills\n");
     printf(" [q] Quit\n");
 
     printf("\n\033[31m%s\033[0m\n", error_msg);
@@ -700,6 +713,10 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, cha
           runTuiDB(tui);
           updatePlayerCombos(tui->db, players, bpcs, prefCombos);
         }
+        break;
+      case 'S': case 's':
+        // TODO:
+        runTuiSkills(tui->db, allSkills, selected_skills);
         break;
       default: {
         break;
@@ -817,11 +834,18 @@ int main(int argc, char** argv) {
     tui->players = players;
   }
 
+  dlist* skills = fetchSkills(db);
+
   curHide();
   altBufferEnable();
-  runBeginTui(tui, players, bannedCombos, prefCombos, err_msg);
+  runBeginTui(tui, players, bannedCombos, prefCombos, skills, err_msg);
   altBufferDisable();
   curShow();
+
+  for (size_t i = 0; i < skills->n; i++) {
+    freeSkill(skills->items[i]);
+  }
+  free_list(skills);
 
   for (int i = 0; i < (int)players->n; i++) {
     freePlayer(players->items[i]);
