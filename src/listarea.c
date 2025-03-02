@@ -1,10 +1,10 @@
 #include "../include/listarea.h"
 
 
-list_area* initListArea(size_t w, size_t h) {
+list_area* init_list_area(size_t w, size_t h) {
   list_area* area = malloc(sizeof(list_area));
   area->first_ind = 0;
-  area->selected = 0;
+  area->selected = -1;
   area->width = w;
   area->max_shown = h;
   return area;
@@ -24,7 +24,7 @@ int list_up(list_area* la) {
 }
 
 int list_down(list_area* la) {
-  if (la->selected < (int)la->len) {
+  if (la->selected < (int)la->len - 1) {
     la->selected += 1;
     fit_screen(la);
     return 1;
@@ -44,5 +44,10 @@ void fit_screen(list_area* la) {
 void update_list_area(list_area* la, size_t w, size_t h) {
   la->width = w;
   la->max_shown = h;
+  fit_screen(la);
+}
+
+void update_list_len(list_area* la, size_t n) {
+  la->len = n;
 }
 

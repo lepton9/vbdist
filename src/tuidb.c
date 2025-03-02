@@ -10,14 +10,11 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->teams_n = teams;
   tui->team_size = team_size;
 
-  tui->allPlayers = init_list();
-  tui->allTeams = init_list();
+  tui->allPlayers = NULL;
+  tui->allTeams = NULL;
 
-  tui->allPlayersArea = initListArea();
-  tui->allTeamsArea = initListArea();
-
-  tui->allPlayersArea->selected = -1;
-  tui->allTeamsArea->selected = -1;
+  tui->allPlayersArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
+  tui->allTeamsArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
 
   tui->tab = PLAYERS_TAB;
   tui->show_player_info = 0;
@@ -29,25 +26,40 @@ tuidb* initTuiDB(int teams, int team_size) {
   return tui;
 }
 
-listArea* initListArea() {
-  listArea* area = malloc(sizeof(listArea));
-  area->firstInd = 0;
-  area->selected = 0;
-  area->width = BASE_SECTION_WIDTH;
-  area->maxShown = BASE_LIST_LEN;
-  return area;
+void freeAllPlayers(dlist* allPlayers) {
+  if (allPlayers) {
+    for (int i = 0; i < (int)allPlayers->n; i++) {
+      freePlayer(allPlayers->items[i]);
+    }
+    free_list(allPlayers);
+  }
+}
+
+void freeAllTeams(dlist* allTeams) {
+  if (allTeams) {
+    for (int i = 0; i < (int)allTeams->n; i++) {
+      freeTeam(allTeams->items[i]);
+    }
+    free_list(allTeams);
+  }
+}
+
+void setAllPlayers(tuidb* tui, dlist* players) {
+  freeAllPlayers(tui->allPlayers);
+  tui->allPlayers = players;
+  update_list_len(tui->allPlayersArea, tui->allPlayers->n);
+}
+
+void setAllTeams(tuidb* tui, dlist* teams) {
+  freeAllTeams(tui->allTeams);
+  tui->allTeams = teams;
+  update_list_len(tui->allTeamsArea, tui->allTeams->n);
 }
 
 void freeTuiDB(tuidb* tui) {
   if (!tui) return;
-  for (int i = 0; i < (int)tui->allPlayers->n; i++) {
-    freePlayer(tui->allPlayers->items[i]);
-  }
-  for (int i = 0; i < (int)tui->allTeams->n; i++) {
-    freeTeam(tui->allTeams->items[i]);
-  }
-  free_list(tui->allPlayers);
-  free_list(tui->allTeams);
+  freeAllPlayers(tui->allPlayers);
+  freeAllTeams(tui->allTeams);
   free_renderer(tui->render);
   free(tui->allPlayersArea);
   free(tui->allTeamsArea);
@@ -122,53 +134,27 @@ void initSelectedInd(tuidb* tui) {
   }
 }
 
-void fitToScreen(tuidb* tui) {
-  if (tui->tab == PLAYERS_TAB) fitAreaToScreen(tui->allPlayersArea);
-  if (tui->tab == TEAMS_TAB) fitAreaToScreen(tui->allTeamsArea);
-}
-
-void fitAreaToScreen(listArea* a) {
-  if (a->selected < a->firstInd) {
-    a->firstInd = a->selected;
-  }
-  else if (a->selected > a->firstInd + (int)a->maxShown - 1) {
-    a->firstInd = a->selected - a->maxShown + 1;
-  }
-}
-
-void list_up(tuidb* tui) {
+void tuidb_list_up(tuidb* tui) {
   switch (tui->tab) {
     case PLAYERS_TAB: {
-      if (tui->allPlayersArea->selected > 0) {
-        tui->allPlayersArea->selected -= 1;
-        fitToScreen(tui);
-      }
+      list_up(tui->allPlayersArea);
       break;
     }
     case TEAMS_TAB: {
-      if (tui->allTeamsArea->selected > 0) {
-        tui->allTeamsArea->selected -= 1;
-        fitToScreen(tui);
-      }
+      list_up(tui->allTeamsArea);
       break;
     }
   }
 }
 
-void list_down(tuidb* tui) {
+void tuidb_list_down(tuidb* tui) {
   switch (tui->tab) {
     case PLAYERS_TAB: {
-      if (tui->allPlayersArea->selected < (int)tui->allPlayers->n - 1) {
-        tui->allPlayersArea->selected += 1;
-        fitToScreen(tui);
-      }
+      list_down(tui->allPlayersArea);
       break;
     }
     case TEAMS_TAB: {
-      if (tui->allTeamsArea->selected < (int)tui->allTeams->n - 1) {
-        tui->allTeamsArea->selected += 1;
-        fitToScreen(tui);
-      }
+      list_down(tui->allTeamsArea);
       break;
     }
   }
@@ -331,14 +317,14 @@ void handleKeyPress(tuidb* tui, int c) {
 #ifdef __linux__
     case KEY_UP:
 #endif
-      list_up(tui);
+      tuidb_list_up(tui);
       break;
     case 'J': case 'S':
     case 'j': case 's':
 #ifdef __linux__
     case KEY_DOWN:
 #endif
-      list_down(tui);
+      tuidb_list_down(tui);
       break;
     case 'h': case 'a':
       break;
@@ -373,12 +359,9 @@ void updateArea(tuidb* tui) {
                                                          : BASE_SECTION_WIDTH;
   int maxShown = (maxRows < BASE_LIST_LEN) ? maxRows : BASE_LIST_LEN;
 
-  tui->allPlayersArea->width = baseWidth;
-  tui->allPlayersArea->maxShown = maxShown;
+  update_list_area(tui->allPlayersArea, baseWidth, maxShown);
+  update_list_area(tui->allTeamsArea, baseWidth, maxShown);
 
-  tui->allTeamsArea->width = baseWidth;
-  tui->allTeamsArea->maxShown = maxShown;
-  fitToScreen(tui);
   setSize(tui->render, tui->term->cols, tui->term->rows);
 }
 
@@ -405,9 +388,9 @@ void renderAllPlayersList(tuidb* tui) {
            (int)tui->allPlayers->n);
   if (tui->allPlayers->n > 0) {
     int line = 1;
-    for (int i = tui->allPlayersArea->firstInd;
+    for (int i = tui->allPlayersArea->first_ind;
     line <= tui->term->rows - 1 &&
-    i - tui->allPlayersArea->firstInd + 1 <= (int)tui->allPlayersArea->maxShown &&
+    i - tui->allPlayersArea->first_ind + 1 <= (int)tui->allPlayersArea->max_shown &&
     i < (int)tui->allPlayers->n;
     i++) {
       if (tui->allPlayersArea->selected == i) {
@@ -437,7 +420,7 @@ void renderSelectedList(tuidb* tui) {
   int line = 2;
   for (int i = 0;
        line <= tui->term->rows - 1 &&
-       i + 1 <= (int)tui->allPlayersArea->maxShown &&
+       i + 1 <= (int)tui->allPlayersArea->max_shown &&
        i < (int)tui->players->n;
        i++) {
     player* p = tui->players->items[i];
@@ -517,9 +500,9 @@ void renderAllTeamsList(tuidb* tui) {
               tui->allTeamsArea->selected + 1, (int)tui->allTeams->n);
   if (tui->allTeams->n > 0) {
     int line = 1;
-    for (int i = tui->allTeamsArea->firstInd;
+    for (int i = tui->allTeamsArea->first_ind;
     line <= tui->term->rows - 1 &&
-    i - tui->allTeamsArea->firstInd + 1 <= (int)tui->allTeamsArea->maxShown &&
+    i - tui->allTeamsArea->first_ind + 1 <= (int)tui->allTeamsArea->max_shown &&
     i < (int)tui->allTeams->n;
     i++) {
       if (tui->allTeamsArea->selected == i) {

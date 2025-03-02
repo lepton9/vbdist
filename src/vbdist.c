@@ -812,8 +812,8 @@ int main(int argc, char** argv) {
   if (SOURCE == DATABASE) {
     tui = initTuiDB(TEAMS_N, TEAM_SIZE);
     tui->db = db;
-    tui->allPlayers = fetchPlayers(db);
-    tui->allTeams = fetchTeams(db);
+    setAllPlayers(tui, fetchPlayers(db));
+    setAllTeams(tui, fetchTeams(db));
     tui->players = players;
   }
 
