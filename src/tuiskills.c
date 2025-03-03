@@ -42,6 +42,9 @@ void handleSkillsInput(tui_skills *tui, int c) {
     case 'R': case 'r':
       rename_selected_skill(tui);
       break;
+    case 'A': case 'a':
+      add_skill(tui);
+      break;
     case 'X': case 'x':
       break;
     case 'K': case 'W':
@@ -56,10 +59,6 @@ void handleSkillsInput(tui_skills *tui, int c) {
     case KEY_DOWN:
 #endif
       list_down(tui->skills_area);
-      break;
-    case 'h': case 'a':
-      break;
-    case 'l': case 'd':
       break;
     default: {
       break;
@@ -144,7 +143,47 @@ void delete_selected_skill(tui_skills* tui) {
 }
 
 void add_skill(tui_skills* tui) {
+  int width = tui->skills_area->width;
+  int row = 2;
 
+  curShow();
+  const size_t max_len = 50;
+  size_t len = 0;
+  char new[max_len + 1];
+  new[0] = '\0';
+  int c = 0;
+  while (1) {
+    curSet(row, width - 1);
+    printf("\033[1K");
+    curSet(row, 1);
+    printf("Enter new skill: %s", new);
+    fflush(stdout);
+    c = keyPress();
+    if (c == 27) {
+      break;
+    } else if (isEnter(c)) {
+      if (*new == '\0') {
+        break;
+      }
+      skill* new_skill = initSkill(-1, new, 0);
+      if (insertSkill(tui->db, new_skill)) {
+        list_add(tui->skills, new_skill);
+        update_list_len(tui->skills_area, tui->skills->n);
+      } else {
+        freeSkill(new_skill);
+      }
+      break;
+    } else if (len > 0 && isBackspace(c)) {
+      new[len - 1] = '\0';
+      len--;
+    } else if (len < max_len) {
+      if (c >= 32 && c <= 126) {
+        strcatc(new, &len, c);
+      }
+    }
+  }
+  curHide();
+  refresh_screen(tui->render);
 }
 
 void update_skills_area(tui_skills* tui) {

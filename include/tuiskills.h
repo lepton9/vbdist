@@ -30,6 +30,7 @@ int is_selected_skill(skill* skill, dlist* selected_ids);
 void toggle_selected_skill(tui_skills* tui);
 
 void rename_selected_skill(tui_skills* tui);
+void add_skill(tui_skills* tui);
 
 void renderSkillsTui(tui_skills* tui);
 

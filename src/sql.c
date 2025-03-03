@@ -280,7 +280,7 @@ dlist* fetchSkills(sqldb* db) {
 
 int insertSkill(sqldb* db, skill* skill) {
   char sql[100];
-  sprintf(sql, "INSERT INTO Skill (combo_type) VALUES ('%s');", skill->name);
+  sprintf(sql, "INSERT INTO Skill (name) VALUES ('%s');", skill->name);
   int r = execQuery(db->sqlite, sql, NULL, NULL);
   if (r) {
     int skill_id = sqlite3_last_insert_rowid(db->sqlite);
