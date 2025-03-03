@@ -7,5 +7,6 @@ int isBackspace(int c);
 int isEnter(int c);
 void strcatc(char* str, size_t* len, char c);
 char* trimWS(char* str);
+int min(int a, int b);
 
 #endif
