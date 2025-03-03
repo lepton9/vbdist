@@ -20,7 +20,17 @@ typedef struct {
 
 tui_skills* init_tui_skills(sqldb* db, dlist* skills, dlist* selectedSkills);
 void free_tui_skills(tui_skills* tui);
+
 void runTuiSkills(sqldb* db, dlist* allSkills, dlist* selectedSkills);
+void update_skills_area(tui_skills* tui);
 void handleSkillsInput(tui_skills* tui, int c);
+
+skill* get_selected_skill(tui_skills* tui);
+int is_selected_skill(skill* skill, dlist* selected_ids);
+void toggle_selected_skill(tui_skills* tui);
+
+void rename_selected_skill(tui_skills* tui);
+
+void renderSkillsTui(tui_skills* tui);
 
 #endif

@@ -1,4 +1,5 @@
 #include "../include/tuiskills.h"
+#include "../include/utils.h"
 #include <stdlib.h>
 
 tui_skills* init_tui_skills(sqldb* db, dlist* skills, dlist* selectedSkills) {
@@ -22,10 +23,6 @@ void free_tui_skills(tui_skills* tui) {
   free(tui->term);
   free_renderer(tui->render);
   free_list_area(tui->skills_area);
-  // for (size_t i = 0; i < tui->skills->n; i++) {
-  //   freeSkill(tui->skills->items[i]);
-  // }
-  // free_list(tui->skills);
   free(tui);
 }
 
@@ -35,6 +32,7 @@ void handleSkillsInput(tui_skills *tui, int c) {
 #ifdef __linux__
     case KEY_ENTER:
 #endif
+      toggle_selected_skill(tui);
       break;
     case 27: {  // Esc
       break;
@@ -42,6 +40,7 @@ void handleSkillsInput(tui_skills *tui, int c) {
     case 9: // Tab
       break;
     case 'R': case 'r':
+      rename_selected_skill(tui);
       break;
     case 'X': case 'x':
       break;
@@ -77,8 +76,13 @@ int is_selected_skill(skill* skill, dlist* selected_ids) {
   return -1;
 }
 
+skill* get_selected_skill(tui_skills* tui) {
+  if (tui->skills_area->selected < 0) return NULL;
+  return tui->skills->items[tui->skills_area->selected];
+}
+
 void toggle_selected_skill(tui_skills* tui) {
-  skill* selected = tui->skills->items[tui->skills_area->selected];
+  skill* selected = get_selected_skill(tui);
   int i = is_selected_skill(selected, tui->selected_skill_ids);
   if (i >= 0) {
     int* id = pop_elem(tui->selected_skill_ids, i);
@@ -88,6 +92,59 @@ void toggle_selected_skill(tui_skills* tui) {
     *id = selected->id;
     list_add(tui->selected_skill_ids, id);
   }
+}
+
+void rename_selected_skill(tui_skills* tui) {
+  skill* selected = get_selected_skill(tui);
+  if (!selected) return;
+  char* old_name = selected->name;
+  int width = tui->skills_area->width;
+  int row = tui->skills_area->selected_term_row;
+
+  curShow();
+  const size_t max_len = 50;
+  size_t len = strlen((old_name) ? old_name : 0);
+  char new[max_len + 1];
+  strcpy(new, (old_name) ? old_name : "");
+  int c = 0;
+  while (1) {
+    curSet(row, width - 1);
+    printf("\033[1K");
+    curSet(row, 1);
+    printf("|> %s", new);
+    fflush(stdout);
+    c = keyPress();
+    if (c == 27) {
+      break;
+    } else if (isEnter(c)) {
+      if (*new == '\0') {
+        break;
+      }
+      if (renameSkill(tui->db, selected, new)) {
+        if (selected->name) free(selected->name);
+        selected->name = strdup(new);
+        break;
+      }
+    } else if (len > 0 && isBackspace(c)) {
+      new[len - 1] = '\0';
+      len--;
+    } else if (len < max_len) {
+      if (c >= 32 && c <= 126) {
+        strcatc(new, &len, c);
+      }
+    }
+  }
+  curHide();
+  refresh_screen(tui->render);
+}
+
+void delete_selected_skill(tui_skills* tui) {
+  skill* selected = get_selected_skill(tui);
+
+}
+
+void add_skill(tui_skills* tui) {
+
 }
 
 void update_skills_area(tui_skills* tui) {
