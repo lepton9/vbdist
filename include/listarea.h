@@ -19,7 +19,7 @@ void free_list_area(list_area* la);
 int list_up(list_area* tui);
 int list_down(list_area* tui);
 
-void list_init_selected(list_area* la);
+void check_selected(list_area* la);
 void update_list_area(list_area* la, size_t w, size_t h);
 void update_list_len(list_area* la, size_t n);
 

@@ -292,7 +292,7 @@ int insertSkill(sqldb* db, skill* skill) {
 
 int deleteSkill(sqldb* db, skill* skill) {
   char sql[100];
-  sprintf(sql, "INSERT INTO Skill (combo_type) VALUES ('%s');", skill->name);
+  sprintf(sql, "DELETE FROM Skill WHERE skill_id = %d;", skill->id);
   int r = execQuery(db->sqlite, sql, NULL, NULL);
   if (r) {
     log_sql("Deleted Skill (%d) '%s'", skill->id, skill->name);

@@ -46,6 +46,7 @@ void handleSkillsInput(tui_skills *tui, int c) {
       add_skill(tui);
       break;
     case 'X': case 'x':
+      delete_selected_skill(tui);
       break;
     case 'K': case 'W':
     case 'k': case 'w':
@@ -137,14 +138,40 @@ void rename_selected_skill(tui_skills* tui) {
   refresh_screen(tui->render);
 }
 
+int delete_skill(tui_skills* tui, int index) {
+  if (index < 0) return 0;
+  if (deleteSkill(tui->db, tui->skills->items[index])) {
+    skill* s = pop_elem(tui->skills, tui->skills_area->selected);
+    freeSkill(s);
+    return 1;
+  }
+  return 0;
+}
+
 void delete_selected_skill(tui_skills* tui) {
   skill* selected = get_selected_skill(tui);
-
+  if (!selected) return;
+  int row = tui->skills_area->selected_term_row;
+  int width = tui->skills_area->width;
+  curShow();
+  curSet(row, width - 1);
+  printf("\033[1K");
+  curSet(row, 1);
+  printf("|> Delete %s? [y/N]", selected->name);
+  fflush(stdout);
+  char c = keyPress();
+  if (c == 'y') {
+    if (delete_skill(tui, tui->skills_area->selected)) {
+      update_list_len(tui->skills_area, tui->skills->n);
+    }
+  }
+  curHide();
+  refresh_screen(tui->render);
 }
 
 void add_skill(tui_skills* tui) {
   int width = tui->skills_area->width;
-  int row = 2;
+  int row = 3;
 
   curShow();
   const size_t max_len = 50;
@@ -155,7 +182,7 @@ void add_skill(tui_skills* tui) {
   while (1) {
     curSet(row, width - 1);
     printf("\033[1K");
-    curSet(row, 1);
+    curSet(row, 3);
     printf("Enter new skill: %s", new);
     fflush(stdout);
     c = keyPress();
@@ -195,17 +222,15 @@ void update_skills_area(tui_skills* tui) {
 }
 
 void renderSkillsTui(tui_skills* tui) {
-  append_line(tui->render, 0, "\033[4m %s \033[24m", "Selected skills");
+  put_text(tui->render, 1, 2, "\033[4m %s \033[24m", "Selected skills");
 
-  // TODO: make func to iterate tui lists
-  int line = 2;
-  for (int i = tui->skills_area->first_ind;
-  line <= tui->term->rows - 1 &&
-  i - tui->skills_area->first_ind + 1 <= (int)tui->skills_area->max_shown &&
-  i < (int)tui->skills->n;
-  i++) {
+  int line = 3;
+  int len = min(min(tui->term->rows - line, (int)tui->skills_area->max_shown), (int)tui->skills->n - (tui->skills_area->first_ind));
+
+  for (int i = tui->skills_area->first_ind; i < tui->skills_area->first_ind + len; i++) {
     skill* cur_skill = tui->skills->items[i];
 
+    append_line(tui->render, line, "  ");
     if (tui->skills_area->selected == i) {
       tui->skills_area->selected_term_row = line + 1;
       append_line(tui->render, line, "\033[7m");
@@ -220,7 +245,7 @@ void renderSkillsTui(tui_skills* tui) {
     }
     line++;
   }
-
+  make_borders(tui->render, 0, 0, 30, len + 5);
   render(tui->render);
 }
 
@@ -230,7 +255,7 @@ void runTuiSkills(sqldb* db, dlist* allSkills, dlist* selectedSkills) {
   refresh_screen(tui->render);
   int c = 0;
   while (c != 'q') {
-    list_init_selected(tui->skills_area);
+    check_selected(tui->skills_area);
     update_skills_area(tui);
     renderSkillsTui(tui);
     c = keyPress();

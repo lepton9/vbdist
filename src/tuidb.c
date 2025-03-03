@@ -335,8 +335,8 @@ void runTuiDB(tuidb* tui) {
   refresh_screen(tui->render);
   int c = 0;
   while (c != 'q') {
-    list_init_selected(tui->allPlayersArea);
-    list_init_selected(tui->allTeamsArea);
+    check_selected(tui->allPlayersArea);
+    check_selected(tui->allTeamsArea);
     updateArea(tui);
     renderTuidb(tui);
     c = keyPress();

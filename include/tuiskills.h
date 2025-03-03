@@ -29,6 +29,8 @@ skill* get_selected_skill(tui_skills* tui);
 int is_selected_skill(skill* skill, dlist* selected_ids);
 void toggle_selected_skill(tui_skills* tui);
 
+int delete_skill(tui_skills* tui, int index);
+void delete_selected_skill(tui_skills* tui);
 void rename_selected_skill(tui_skills* tui);
 void add_skill(tui_skills* tui);
 

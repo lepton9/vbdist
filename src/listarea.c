@@ -44,6 +44,7 @@ void fit_screen(list_area* la) {
 void update_list_area(list_area* la, size_t w, size_t h) {
   la->width = w;
   la->max_shown = h;
+  check_selected(la);
   fit_screen(la);
 }
 
@@ -51,8 +52,11 @@ void update_list_len(list_area* la, size_t n) {
   la->len = n;
 }
 
-void list_init_selected(list_area* la) {
-  if (la->selected < 0 && la->len > 0) {
+void check_selected(list_area* la) {
+  if (la->selected >= (int)la->len) {
+    la->selected = la->len - 1;
+  }
+  else if (la->selected < 0 && la->len > 0) {
     la->selected = 0;
   }
 }
