@@ -1,6 +1,11 @@
 #include "../include/dlist.h"
 
-dlist *init_list(size_t item_size) {
+dlist *init_list() {
+  dlist *list = init_list_size(sizeof(void*));
+  return list;
+}
+
+dlist *init_list_size(size_t item_size) {
   dlist *list = malloc(sizeof(dlist));
   list->n = 0;
   list->size = 1;
@@ -24,8 +29,30 @@ void list_add(dlist *list, void *item) {
   list->items[list->n++] = item;
 }
 
+int shrink_list(dlist* list) {
+  if (list->n < list->size / 4 && list->size > 4) {
+    size_t new_size = (list->n > 0) ? list->n * 2 : 4;
+    void** new_items = realloc(list->items, new_size * list->item_size);
+    if (new_items == NULL) return -1;
+    list->items = new_items;
+    list->size = new_size;
+  }
+  return 0;
+}
+
+void* pop_elem(dlist* list, size_t index) {
+  if (!list || list->n == 0 || index >= list->n) return NULL;
+  void* e = list->items[index];
+  for (size_t i = index; i < list->n - 1; i++) {
+    list->items[i] = list->items[i + 1];
+  }
+  list->n--;
+  shrink_list(list);
+  return e;
+}
+
 dlist *list_from(void **items, int item_size, int n) {
-  dlist *list = init_list(item_size);
+  dlist *list = init_list_size(item_size);
   free(list->items);
   list->n = n;
   list->size = n;

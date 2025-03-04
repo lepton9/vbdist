@@ -1,9 +1,11 @@
 #ifndef TUIDB_H
 #define TUIDB_H
 
+#include "render.h"
 #include "sql.h"
 #include "player.h"
 #include "tui.h"
+#include "listarea.h"
 
 #define BASE_LIST_LEN 50
 #define BASE_SECTION_WIDTH 50
@@ -14,21 +16,14 @@ typedef enum {
 } TuiTab;
 
 typedef struct {
-  size_t maxShown;
-  size_t width;
-  int firstInd;
-  int selected;
-  int selected_term_row;
-} listArea;
-
-typedef struct {
   sqldb* db;
   dlist* players;
   dlist* allPlayers;
   dlist* allTeams;
-  listArea* allPlayersArea;
-  listArea* allTeamsArea;
+  list_area* allPlayersArea;
+  list_area* allTeamsArea;
   term_size* term;
+  renderer* render;
   int teams_n;
   int team_size;
   TuiTab tab;
@@ -39,23 +34,28 @@ typedef struct {
 tuidb* initTuiDB(int teams, int team_size);
 void freeTuiDB(tuidb* tui);
 
-listArea* initListArea();
-
+void updateAllTeams(tuidb* tui);
 void updateTeamSize(tuidb* tui, int team_n, int team_size);
 
 void runTuiDB(tuidb* tui);
 
 int playerInList(dlist* list, int player_id);
+player* getPlayerInList(dlist* list, int player_id);
 void selectPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui);
 
+void setAllPlayers(tuidb* tui, dlist* players);
+void setAllTeams(tuidb* tui, dlist* teams);
+
+player* selectedPlayer(tuidb* tui);
+team* selectedTeam(tuidb* tui);
+
 void renameSelectedListElem(tuidb* tui);
+void deleteSelectedListElem(tuidb* tui);
 
-void list_up(tuidb* tui);
-void list_down(tuidb* tui);
+void tuidb_list_up(tuidb* tui);
+void tuidb_list_down(tuidb* tui);
 
-void fitToScreen(tuidb* tui);
-void fitAreaToScreen(listArea* a);
 void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);
 void renderAllPlayersList(tuidb* tui);
@@ -64,6 +64,6 @@ void renderPlayerInfo(tuidb* tui);
 void renderAllTeamsList(tuidb* tui);
 void renderSelectedTeam(tuidb* tui);
 
-void handleKeyPress(tuidb* tui, char c);
+void handleKeyPress(tuidb* tui, int c);
 
 #endif

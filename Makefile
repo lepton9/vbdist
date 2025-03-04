@@ -5,7 +5,7 @@ INCLUDE := ./include
 BUILD := $(BIN)/build
 OBJS := ./objs
 INC := -I$(INCLUDE) -I$(LIB)
-FLAGS := -O3 -Wextra -Wall
+FLAGS := -O3 -Wextra -Wall -Wno-unused-parameter
 LINK := -L$(LIB)
 
 PLATFORM := $(shell uname)
@@ -19,7 +19,7 @@ MAIN := vbdist
 TESTS := ./tests
 TEST_TARGETS := 
 
-OBJ := player team tui tuiSwitch tuidb combo mark args sql dlist
+OBJ := player team tui tuiswap tuidb tuiskills combo mark args sql dlist log utils render skill listarea
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
 $(MAIN): $(OBJECT_FILES) $(LIB)/sqlite3.o | $(BIN)

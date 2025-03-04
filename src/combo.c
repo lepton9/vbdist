@@ -1,44 +1,66 @@
 #include "../include/combo.h"
+#include <stdlib.h>
+#include <string.h>
 
-pCombos* initCombos() {
-  pCombos* combos = malloc(sizeof(pCombos));
-  combos->combos = malloc(sizeof(pCombo));
-  combos->n = 0;
-  return combos;
+const char* comboTypeString(comboType type) {
+  switch (type) {
+    case BAN: return "BAN";
+    case PAIR: return "PAIR";
+    default: return "DEFAULT";
+  }
 }
 
-void addCombo(pCombos* combos, int a, int b) {
-  combos->combos = realloc(combos->combos, (combos->n + 1) * sizeof(pCombo));
-  combos->combos[combos->n].pidA = a;
-  combos->combos[combos->n].pidB = b;
-  combos->n++;
+comboType toComboType(const char* type) {
+  if (strcmp(type, "BAN") == 0) {
+    return BAN;
+  } else if (strcmp(type, "PAIR") == 0) {
+    return PAIR;
+  } else {
+    return DEFAULT;
+  }
 }
 
-void freeCombos(pCombos* combos) {
-  free(combos->combos);
-  free(combos);
-}
-
-int isInCombo(pCombos* combos, player* a) {
+void freeCombos(dlist *combos) {
+  if (combos == NULL) return;
   for (int i = 0; i < (int)combos->n; i++) {
-    if ((combos->combos[i].pidA == a->id || combos->combos[i].pidB == a->id)) {
+    if (combos->items[i] != NULL) {
+      free(combos->items[i]);
+      combos->items[i] = NULL;
+    }
+  }
+  free_list(combos);
+}
+
+void addCombo(dlist* combos, comboType type, int a, int b) {
+  pCombo* combo = malloc(sizeof(pCombo));
+  combo->pidA = a;
+  combo->pidB = b;
+  combo->type = type;
+  list_add(combos, combo);
+}
+
+int isInCombo(dlist* combos, player* a) {
+  for (int i = 0; i < (int)combos->n; i++) {
+    pCombo* combo = combos->items[i];
+    if ((combo->pidA == a->id || combo->pidB == a->id)) {
       return i;
     }
   }
   return -1;
 }
 
-char isCombo(pCombos* combos, player* a, player* b) {
+char isCombo(dlist* combos, player* a, player* b) {
   for (int i = 0; i < (int)combos->n; i++) {
-    if ((combos->combos[i].pidA == a->id && combos->combos[i].pidB == b->id) ||
-      (combos->combos[i].pidA == b->id && combos->combos[i].pidB == a->id)) {
+    pCombo* combo = combos->items[i];
+    if ((combo->pidA == a->id && combo->pidB == b->id) ||
+      (combo->pidA == b->id && combo->pidB == a->id)) {
       return 1;
     }
   }
   return 0;
 }
 
-char comboInTeam(pCombos* combos, team* t, player* p) {
+char comboInTeam(dlist* combos, team* t, player* p) {
   for (int i = 0; i < (int)t->size; i++) {
     if (isCombo(combos, p, t->players[i])) return 1;
   }

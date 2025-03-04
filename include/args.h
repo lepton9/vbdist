@@ -11,8 +11,8 @@ typedef struct {
 } args;
 
 void printUsage(FILE *out);
-void printUsageVerbose(FILE *out);
+int checkForOption(const char *arg, const char *shortOpt, const char *longOpt);
 args *parseArgs(int argc, char **argv);
-void freeArgs(args* args);
+void freeArgs(args *args);
 
 #endif
