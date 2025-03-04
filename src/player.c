@@ -87,6 +87,23 @@ double rating(player* p) {
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
+double rating_filter(player* p, dlist* skill_ids) {
+  if (!p) return 0.0;
+  double sum = 0;
+  int ratings_n = 0;
+  for (size_t i = 0; i < p->skills->n; i++) {
+    skill* s = p->skills->items[i];
+    if (is_selected_skill(s, skill_ids)) {
+      float r = s->value;
+      if (fabsf(r) > 1e-6f) {
+        sum += r;
+        ratings_n++;
+      }
+    }
+  }
+  return (ratings_n > 0) ? sum / ratings_n : 0.0;
+}
+
 int cmpPlayers(const void* a, const void* b) {
   player* ap = *(player**)a;
   player* bp = *(player**)b;

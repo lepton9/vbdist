@@ -67,15 +67,6 @@ void handleSkillsInput(tui_skills *tui, int c) {
   }
 }
 
-int is_selected_skill(skill* skill, dlist* selected_ids) {
-  for (size_t i = 0; i < selected_ids->n; i++) {
-    if (skill->id == *(int*)selected_ids->items[i]) {
-      return i;
-    }
-  }
-  return -1;
-}
-
 skill* get_selected_skill(tui_skills* tui) {
   if (tui->skills_area->selected < 0) return NULL;
   return tui->skills->items[tui->skills_area->selected];

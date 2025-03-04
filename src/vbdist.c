@@ -353,7 +353,7 @@ void setPreferredCombos(team** teams, dlist* prefCombos) {
   }
 }
 
-int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* prefCombos) {
+int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* prefCombos, dlist* skills) {
   double avgR = averageRating(teams, prefCombos);
   int swaps = 0;
   int failures = 0;
@@ -398,7 +398,7 @@ int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* 
     qsort(teams[i]->players, TEAM_SIZE, sizeof(player*), cmpPlayers);
   }
 
-  if (swaps >= MAX_SWAPS && oneSideValidation) swaps += balancedClustering(teams, 0, bpcs, prefCombos);
+  if (swaps >= MAX_SWAPS && oneSideValidation) swaps += balancedClustering(teams, 0, bpcs, prefCombos, skills);
 
   return swaps;
 }
@@ -587,7 +587,8 @@ int askUpdateParamNum(const char* query, int current) {
   return (strcmp(new, "") == 0) ? current : atoi(new);
 }
 
-int generateTeams(sqldb* db, dlist* players, dlist* bannedCombos, dlist* prefCombos) {
+int generateTeams(sqldb *db, dlist *players, dlist *bannedCombos,
+                  dlist *prefCombos, dlist *skills) {
   int saved = 0;
   int clustering = 1;
   cls(stdout);
@@ -600,7 +601,7 @@ int generateTeams(sqldb* db, dlist* players, dlist* bannedCombos, dlist* prefCom
 
   if (clustering) {
     printf("\nBalancing teams..\n");
-    int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos);
+    int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos, skills);
     printf("Total swaps: %d\n", swaps);
   }
 
@@ -648,16 +649,6 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   insertCombos(db, prefCombos);
 }
 
-dlist* initSelectedSkills(dlist* allSkills) {
-  dlist* skills = init_list();
-  for (size_t i = 0; i < allSkills->n; i++) {
-    int* id = malloc(sizeof(int));
-    *id = ((skill*)allSkills->items[i])->id;
-    list_add(skills, id);
-  }
-  return skills;
-}
-
 void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dlist* allSkills, char* err) {
   dlist* selected_skills = initSelectedSkills(allSkills);
   int teams_added = 0;
@@ -687,7 +678,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
           sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
         } else {
-          teams_added = generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos);
+          teams_added = generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos, selected_skills);
         }
         break;
       case 'T': case 't':
@@ -702,6 +693,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
         break;
       case 'Q': case 'q':
         saveToDB(tui->db, players, bpcs, prefCombos);
+        freeSelectedSkills(selected_skills);
         cls(stdout);
         return;
       case 'D': case 'd':
@@ -715,7 +707,6 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
         }
         break;
       case 'S': case 's':
-        // TODO:
         runTuiSkills(tui->db, allSkills, selected_skills);
         break;
       default: {

@@ -26,7 +26,6 @@ void update_skills_area(tui_skills* tui);
 void handleSkillsInput(tui_skills* tui, int c);
 
 skill* get_selected_skill(tui_skills* tui);
-int is_selected_skill(skill* skill, dlist* selected_ids);
 void toggle_selected_skill(tui_skills* tui);
 
 int delete_skill(tui_skills* tui, int index);
