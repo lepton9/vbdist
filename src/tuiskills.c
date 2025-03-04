@@ -217,6 +217,7 @@ void renderSkillsTui(tui_skills* tui) {
 
   int line = 3;
   int len = min(min(tui->term->rows - line, (int)tui->skills_area->max_shown), (int)tui->skills->n - (tui->skills_area->first_ind));
+  if (tui->skills->n == 0) len = 0;
 
   for (int i = tui->skills_area->first_ind; i < tui->skills_area->first_ind + len; i++) {
     skill* cur_skill = tui->skills->items[i];
