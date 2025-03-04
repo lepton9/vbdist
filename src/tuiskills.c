@@ -216,7 +216,7 @@ void renderSkillsTui(tui_skills* tui) {
   put_text(tui->render, 1, 2, "\033[4m %s \033[24m", "Selected skills");
 
   int line = 3;
-  int len = min(min(tui->term->rows - line, (int)tui->skills_area->max_shown), (int)tui->skills->n - (tui->skills_area->first_ind));
+  int len = min_int(min_int(tui->term->rows - line, (int)tui->skills_area->max_shown), (int)tui->skills->n - (tui->skills_area->first_ind));
   if (tui->skills->n == 0) len = 0;
 
   for (int i = tui->skills_area->first_ind; i < tui->skills_area->first_ind + len; i++) {

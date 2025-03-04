@@ -35,7 +35,7 @@ char* trimWS(char* str) {
   return str;
 }
 
-int min(int a, int b) {
+int min_int(int a, int b) {
   return (a < b) ? a : b;
 }
 
