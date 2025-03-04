@@ -229,23 +229,20 @@ void printTeams(FILE *out, team **teams, const int printWidth,
   }
 }
 
-double averageRating(team** teams, dlist* prefCombos) {
+double averageRating(team** teams, dlist* prefCombos, dlist* skill_ids) {
   int n = TEAMS_N * TEAM_SIZE;
   if (teams == NULL) return 0.0;
   double sumRating = 0.0;
   for (int t = 0; t < TEAMS_N; t++) {
     for (int p = 0; p < TEAM_SIZE; p++) {
-      if (isInCombo(prefCombos, teams[t]->players[p]) >= 0) {
-        n--;
-        continue;
-      }
-      sumRating += rating(teams[t]->players[p]);
+      sumRating += rating_filter(teams[t]->players[p], skill_ids);
     }
   }
   return (n <= 0) ? 0.0 : sumRating / n;
 }
 
 int validateSwap(double a, double b, double aNew, double bNew, double avg, int oneSideValidation) {
+  if (fabs(avg) < 1e-6f) return 1;
   int valid = 0;
   if (fabs(aNew - avg) < fabs(a - avg)) valid++;
   if (fabs(bNew - avg) < fabs(b - avg)) valid++;
@@ -354,7 +351,7 @@ void setPreferredCombos(team** teams, dlist* prefCombos) {
 }
 
 int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* prefCombos, dlist* skills) {
-  double avgR = averageRating(teams, prefCombos);
+  double avgR = averageRating(teams, prefCombos, skills);
   int swaps = 0;
   int failures = 0;
 
@@ -365,13 +362,13 @@ int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* 
     player* pA = teams[teamA]->players[randintRange(0, TEAM_SIZE - 1)];
     player* pB = teams[teamB]->players[randintRange(0, TEAM_SIZE - 1)];
 
-    double ratingTeamA = avgRating(teams[teamA]);
-    double ratingTeamB = avgRating(teams[teamB]);
+    double ratingTeamA = team_rating_filter(teams[teamA], skills);
+    double ratingTeamB = team_rating_filter(teams[teamB], skills);
 
     swapPlayers(pA, pB);
 
-    double ratingTeamA_new = avgRating(teams[teamA]);
-    double ratingTeamB_new = avgRating(teams[teamB]);
+    double ratingTeamA_new = team_rating_filter(teams[teamA], skills);
+    double ratingTeamB_new = team_rating_filter(teams[teamB], skills);
 
     int valid = validateSwap(ratingTeamA, ratingTeamB, ratingTeamA_new, ratingTeamB_new, avgR, oneSideValidation);
 
@@ -667,7 +664,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
     if (SOURCE == DATABASE) printf(" [d] Database\n");
     printf(" [t] Teams: %d\n", TEAMS_N);
     printf(" [p] Team size: %d\n", TEAM_SIZE);
-    printf(" [s] Skills\n");
+    printf(" [s] Skills %d/%d\n", (int)selected_skills->n, (int)allSkills->n);
     printf(" [q] Quit\n");
 
     printf("\n\033[31m%s\033[0m\n", error_msg);

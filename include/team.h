@@ -14,5 +14,6 @@ typedef struct {
 team* initTeam(char* teamName, const size_t size);
 void freeTeam(team* t);
 double avgRating(team* t);
+double team_rating_filter(team* t, dlist* skill_ids);
 
 #endif

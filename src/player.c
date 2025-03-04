@@ -93,7 +93,7 @@ double rating_filter(player* p, dlist* skill_ids) {
   int ratings_n = 0;
   for (size_t i = 0; i < p->skills->n; i++) {
     skill* s = p->skills->items[i];
-    if (is_selected_skill(s, skill_ids)) {
+    if (is_selected_skill(s, skill_ids) >= 0) {
       float r = s->value;
       if (fabsf(r) > 1e-6f) {
         sum += r;
