@@ -242,6 +242,17 @@ dlist* fetchCombos(sqldb* db, comboType type) {
   return combos;
 }
 
+dlist* fetchAllCombos(sqldb* db) {
+  dlist* combos = init_list();
+  char sql[100];
+  sprintf(sql, "SELECT combo_id, combo_type FROM Combo;");
+  execQuery(db->sqlite, sql, cb_combos, combos);
+  for (int i = 0; i < (int)combos->n; i++) {
+    fetchCombo(db, combos->items[i]);
+  }
+  return combos;
+}
+
 dlist* fetchPlayers(sqldb* db) {
   char* sql = "SELECT player_id, name FROM Player ORDER BY name ASC;";
   dlist* list = init_list();

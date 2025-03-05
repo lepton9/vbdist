@@ -14,14 +14,9 @@ typedef enum {
 } comboTuiMode;
 
 typedef struct {
-  dlist* l;
-  comboType type;
-} combos;
-
-typedef struct {
   comboTuiMode mode;
   dlist* players;
-  dlist* combo_lists;
+  dlist* combos;
   list_area* combos_area;
   list_area* players_area;
   sqldb* db;
@@ -39,8 +34,6 @@ void changeComboTuiMode(tui_combos* tui);
 
 void comboTuiListUp(tui_combos* tui);
 void comboTuiListDown(tui_combos* tui);
-
-int addComboList(tui_combos* tui, dlist* combos, comboType type);
 
 void runTuiCombo(sqldb* db, dlist* players);
 void updateTuiComboAreas(tui_combos* tui);

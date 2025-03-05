@@ -28,4 +28,7 @@ void markPlayer(player* p, fg_color color);
 void unmarkPlayer(player* p);
 void printPlayer(FILE* out, player* p);
 
+int playerInList(dlist* list, int player_id);
+player* getPlayerInList(dlist* list, int player_id);
+
 #endif

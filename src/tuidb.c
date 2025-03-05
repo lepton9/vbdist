@@ -80,21 +80,6 @@ void updateTeamSize(tuidb* tui, int team_n, int team_size) {
   tui->team_size = team_size;
 }
 
-int playerInList(dlist* list, int player_id) {
-  for (int i = 0; i < (int)list->n; i++) {
-    if (((player*)list->items[i])->id == player_id) return i;
-  }
-  return -1;
-}
-
-player* getPlayerInList(dlist* list, int player_id) {
-  int i = playerInList(list, player_id);
-  if (i >= 0) {
-    return list->items[i];
-  }
-  return NULL;
-}
-
 player* selectedPlayer(tuidb *tui) {
   if (tui->allPlayers->n == 0 || tui->allPlayersArea->selected < 0)
     return NULL;

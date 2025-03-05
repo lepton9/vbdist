@@ -1,16 +1,5 @@
 #include "../include/tuicombo.h"
 #include "../include/utils.h"
-#include <string.h>
-
-// typedef struct {
-//   dlist* players;
-//   dlist* combo_lists;
-//   list_area* combos_area;
-//   list_area* players_area;
-//   sqldb* db;
-//   term_size* term;
-//   renderer* render;
-// } tui_combo;
 
 tui_combos* init_tui_combo(sqldb* db, dlist* players) {
   tui_combos* tui = malloc(sizeof(tui_combos));
@@ -20,17 +9,18 @@ tui_combos* init_tui_combo(sqldb* db, dlist* players) {
   getTermSize(tui->term);
   tui->render = init_renderer(stdout);
 
-  tui->combo_lists = init_list();
-
   tui->mode = CTUI_PLAYER_LIST;
 
   tui->cur_combo = NULL;
   tui->recording_combo = 0;
 
+  tui->combos = fetchAllCombos(db);
+  tui->players = players;
+
   tui->combos_area = init_list_area(tui->term->cols, tui->term->rows);
   tui->players_area = init_list_area(tui->term->cols, tui->term->rows);
-  tui->players = players;
   update_list_len(tui->players_area, tui->players->n);
+  update_list_len(tui->combos_area, tui->combos->n);
   return tui;
 }
 
@@ -39,13 +29,9 @@ void free_tui_combo(tui_combos* tui) {
   free_renderer(tui->render);
   free_list_area(tui->players_area);
   free_list_area(tui->combos_area);
-  for (size_t i = 0; i < tui->combo_lists->n; i++) {
-    free(tui->combo_lists->items[i]);
-  }
-  free_list(tui->combo_lists);
+  freeCombos(tui->combos);
   free(tui);
 }
-
 
 void changeComboTuiMode(tui_combos* tui) {
   if (tui->mode == CTUI_PLAYER_LIST) {
@@ -54,21 +40,6 @@ void changeComboTuiMode(tui_combos* tui) {
     tui->mode = CTUI_PLAYER_LIST;
   }
 }
-
-int addComboList(tui_combos* tui, dlist* combo_list, comboType type) {
-  for (size_t i = 0; i < tui->combo_lists->n; i++) {
-    combos* c = tui->combo_lists->items[i];
-    if (c->type == type) {
-      return 0;
-    }
-  }
-  combos* list = malloc(sizeof(combos));
-  list->l = combo_list;
-  list->type = type;
-  list_add(tui->combo_lists, list);
-  return 1;
-}
-
 
 void runTuiCombo(sqldb* db, dlist* players) {
   tui_combos* tui = init_tui_combo(db, players);
@@ -89,8 +60,8 @@ void updateTuiComboAreas(tui_combos* tui) {
   getTermSize(tui->term);
   int rows = tui->term->rows - 4;
   int cols = tui->term->cols / 2;
-  update_list_area(tui->combos_area, cols, rows);
-  update_list_area(tui->players_area, cols, rows);
+  update_list_area(tui->combos_area, min_int(cols, 50), rows);
+  update_list_area(tui->players_area, min_int(cols, 30), rows);
 }
 
 void comboTuiListUp(tui_combos* tui) {
@@ -170,31 +141,43 @@ void ctuiRenderPlayersArea(tui_combos* tui) {
   int line = 2;
   int len = getListAreaLen(tui->players_area, tui->term, line);
 
-  // put_text(tui->render, 1, 2, "\033[4m %s \033[24m", "Selected players");
-
   char player_text[100];
   player_text[0] = '\0';
 
   for (int i = tui->players_area->first_ind; i < tui->players_area->first_ind + len; i++) {
     player* p = tui->players->items[i];
-
-    if (tui->players_area->selected == i) {
-      tui->players_area->selected_term_row = line + 1;
-      strcat(player_text, "\033[7m");
-    }
     strcat(player_text, p->firstName);
     if (tui->players_area->selected == i) {
-      strcat(player_text, "\033[27m");
+      tui->players_area->selected_term_row = line + 1;
+      put_text(tui->render, line++, col, "\033[7m %-20s\033[27m", player_text);
+    } else {
+      put_text(tui->render, line++, col, " %-20s", player_text);
     }
-    put_text(tui->render, line++, col, " %-20s", player_text);
     player_text[0] = '\0';
   }
-  make_borders(tui->render, 0, 0, 30, len + 4);
+  make_borders(tui->render, 0, 0, tui->players_area->width, len + 4);
   put_text(tui->render, 0, 3, "%s", "Selected players");
 }
 
 void ctuiRenderCombosArea(tui_combos* tui) {
+  int col = tui->players_area->width + 5;
+  int line = 2;
+  int len = getListAreaLen(tui->combos_area, tui->term, line);
 
+  char combo_text[100];
+  combo_text[0] = '\0';
+
+  for (int i = tui->combos_area->first_ind; i < tui->combos_area->first_ind + len; i++) {
+    pCombo* combo = tui->combos->items[i];
+    player* p1 = getPlayerInList(tui->players, combo->pidA);
+    player* p2 = getPlayerInList(tui->players, combo->pidB);
+    sprintf(combo_text, "(%s) %s - %s", comboTypeString(combo->type), p1->firstName, p2->firstName);
+    put_text(tui->render, line++, col + 1, " %-20s", combo_text);
+    combo_text[0] = '\0';
+  }
+
+  make_borders(tui->render, col, 0, tui->combos_area->width, len + 4);
+  put_text(tui->render, 0, col + 3, "%s", "Combos");
 }
 
 
