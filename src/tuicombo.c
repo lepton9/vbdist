@@ -1,4 +1,6 @@
 #include "../include/tuicombo.h"
+#include "../include/utils.h"
+#include <string.h>
 
 // typedef struct {
 //   dlist* players;
@@ -85,11 +87,10 @@ void runTuiCombo(sqldb* db, dlist* players) {
 
 void updateTuiComboAreas(tui_combos* tui) {
   getTermSize(tui->term);
-  int rows = tui->term->rows - 2;
-  int cols = tui->term->cols;
+  int rows = tui->term->rows - 4;
+  int cols = tui->term->cols / 2;
   update_list_area(tui->combos_area, cols, rows);
   update_list_area(tui->players_area, cols, rows);
-  setSize(tui->render, tui->term->cols, tui->term->rows);
 }
 
 void comboTuiListUp(tui_combos* tui) {
@@ -158,9 +159,40 @@ void renderComboTui(tui_combos* tui) {
   render(tui->render);
 }
 
-void ctuiRenderPlayersArea(tui_combos* tui) {
-
+int getListAreaLen(list_area* area, term_size* term, int start_line) {
+  if (area->len == 0) return 0;
+  return min_int(min_int(term->rows - start_line, (int)area->max_shown),
+                 (int)area->len - (area->first_ind));
 }
+
+void ctuiRenderPlayersArea(tui_combos* tui) {
+  int col = 2;
+  int line = 2;
+  int len = getListAreaLen(tui->players_area, tui->term, line);
+
+  // put_text(tui->render, 1, 2, "\033[4m %s \033[24m", "Selected players");
+
+  char player_text[100];
+  player_text[0] = '\0';
+
+  for (int i = tui->players_area->first_ind; i < tui->players_area->first_ind + len; i++) {
+    player* p = tui->players->items[i];
+
+    if (tui->players_area->selected == i) {
+      tui->players_area->selected_term_row = line + 1;
+      strcat(player_text, "\033[7m");
+    }
+    strcat(player_text, p->firstName);
+    if (tui->players_area->selected == i) {
+      strcat(player_text, "\033[27m");
+    }
+    put_text(tui->render, line++, col, " %-20s", player_text);
+    player_text[0] = '\0';
+  }
+  make_borders(tui->render, 0, 0, 30, len + 4);
+  put_text(tui->render, 0, 3, "%s", "Selected players");
+}
+
 void ctuiRenderCombosArea(tui_combos* tui) {
 
 }

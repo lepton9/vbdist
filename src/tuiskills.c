@@ -206,10 +206,9 @@ void add_skill(tui_skills* tui) {
 
 void update_skills_area(tui_skills* tui) {
   getTermSize(tui->term);
-  int rows = tui->term->rows - 2;
+  int rows = tui->term->rows - 5;
   int cols = tui->term->cols;
   update_list_area(tui->skills_area, cols, rows);
-  setSize(tui->render, tui->term->cols, tui->term->rows);
 }
 
 void renderSkillsTui(tui_skills* tui) {
