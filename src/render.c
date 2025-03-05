@@ -1,5 +1,6 @@
 #include "../include/render.h"
 #include "../include/tui.h"
+#include "../include/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -126,7 +127,7 @@ int real_index(const char *str, size_t printable_ind) {
   size_t print_count = 0;
   const char *start = str;
 
-  while (*str) {
+  while (str && *str) {
     str = skip_escape(str);
 
     if (*str) {
@@ -295,6 +296,7 @@ void update_segment(renderer* r, size_t row, size_t col, size_t width, const cha
 }
 
 void put_text(renderer* r, size_t row, size_t col, const char *fmt, ...) {
+  if (row >= r->height) return;
   char line[r->width + 1];
   va_list args;
   va_start(args, fmt);
@@ -304,6 +306,7 @@ void put_text(renderer* r, size_t row, size_t col, const char *fmt, ...) {
 }
 
 void append_line(renderer* r, size_t row, const char *fmt, ...) {
+  if (row >= r->height) return;
   char line[r->width + 1];
   va_list args;
   va_start(args, fmt);
@@ -338,6 +341,8 @@ void make_borders_ascii(renderer* r, size_t x, size_t y, size_t w, size_t h) {
 }
 
 void make_borders(renderer* r, size_t x, size_t y, size_t w, size_t h) {
+  w = min_int(w, r->width - (x));
+  h = min_int(h, r->height - (y));
   make_borders_ascii(r, x, y, w, h);
 }
 
