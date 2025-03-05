@@ -20,6 +20,11 @@ tui_combos* init_tui_combo(sqldb* db, dlist* players) {
 
   tui->combo_lists = init_list();
 
+  tui->mode = CTUI_PLAYER_LIST;
+
+  tui->cur_combo = NULL;
+  tui->recording_combo = 0;
+
   tui->combos_area = init_list_area(tui->term->cols, tui->term->rows);
   tui->players_area = init_list_area(tui->term->cols, tui->term->rows);
   tui->players = players;
@@ -39,6 +44,15 @@ void free_tui_combo(tui_combos* tui) {
   free(tui);
 }
 
+
+void changeComboTuiMode(tui_combos* tui) {
+  if (tui->mode == CTUI_PLAYER_LIST) {
+    tui->mode = CTUI_COMBO_LIST;
+  } else {
+    tui->mode = CTUI_PLAYER_LIST;
+  }
+}
+
 int addComboList(tui_combos* tui, dlist* combo_list, comboType type) {
   for (size_t i = 0; i < tui->combo_lists->n; i++) {
     combos* c = tui->combo_lists->items[i];
@@ -51,6 +65,104 @@ int addComboList(tui_combos* tui, dlist* combo_list, comboType type) {
   list->type = type;
   list_add(tui->combo_lists, list);
   return 1;
+}
+
+
+void runTuiCombo(sqldb* db, dlist* players) {
+  tui_combos* tui = init_tui_combo(db, players);
+  curHide();
+  refresh_screen(tui->render);
+  int c = 0;
+  while (c != 'q') {
+    check_selected(tui->combos_area);
+    check_selected(tui->players_area);
+    updateTuiComboAreas(tui);
+    renderComboTui(tui);
+    c = keyPress();
+    handleComboTuiInput(tui, c);
+  }
+}
+
+void updateTuiComboAreas(tui_combos* tui) {
+  getTermSize(tui->term);
+  int rows = tui->term->rows - 2;
+  int cols = tui->term->cols;
+  update_list_area(tui->combos_area, cols, rows);
+  update_list_area(tui->players_area, cols, rows);
+  setSize(tui->render, tui->term->cols, tui->term->rows);
+}
+
+void comboTuiListUp(tui_combos* tui) {
+  switch (tui->mode) {
+    case CTUI_PLAYER_LIST:
+      list_up(tui->players_area);
+      break;
+    case CTUI_COMBO_LIST:
+      list_up(tui->combos_area);
+      break;
+  }
+}
+
+void comboTuiListDown(tui_combos* tui) {
+  switch (tui->mode) {
+    case CTUI_PLAYER_LIST:
+      list_down(tui->players_area);
+      break;
+    case CTUI_COMBO_LIST:
+      list_down(tui->combos_area);
+      break;
+  }
+}
+
+void handleComboTuiInput(tui_combos* tui, int c) {
+  switch (c) {
+    case 13: case '\n': case ' ':
+#ifdef __linux__
+    case KEY_ENTER:
+#endif
+      break;
+    case 27: {  // Esc
+      break;
+    }
+    case 9: // Tab
+      changeComboTuiMode(tui);
+      break;
+    case 'R': case 'r':
+      break;
+    case 'A': case 'a':
+      break;
+    case 'X': case 'x':
+      break;
+    case 'K': case 'W':
+    case 'k': case 'w':
+#ifdef __linux__
+    case KEY_UP:
+#endif
+      comboTuiListUp(tui);
+      break;
+    case 'j': case 's':
+#ifdef __linux__
+    case KEY_DOWN:
+#endif
+      comboTuiListDown(tui);
+      break;
+    default: {
+      break;
+    }
+  }
+}
+
+void renderComboTui(tui_combos* tui) {
+  ctuiRenderPlayersArea(tui);
+  ctuiRenderCombosArea(tui);
+  render(tui->render);
+}
+
+void ctuiRenderPlayersArea(tui_combos* tui) {
+
+}
+void ctuiRenderCombosArea(tui_combos* tui) {
+
 }
 
 

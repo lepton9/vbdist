@@ -6,6 +6,7 @@
 #include <ctype.h>
 
 #include "../include/tuiswap.h"
+#include "../include/tuicombo.h"
 #include "../include/tuidb.h"
 #include "../include/tuiskills.h"
 #include "../include/tui.h"
@@ -665,6 +666,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
     printf(" [t] Teams: %d\n", TEAMS_N);
     printf(" [p] Team size: %d\n", TEAM_SIZE);
     printf(" [s] Skills %d/%d\n", (int)selected_skills->n, (int)allSkills->n);
+    printf(" [c] Combos\n");
     printf(" [q] Quit\n");
 
     printf("\n\033[31m%s\033[0m\n", error_msg);
@@ -708,7 +710,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
         break;
       case 'C': case 'c':
         // TODO:
-        // runTuiCombo(tui->db);
+        runTuiCombo(tui->db, players);
         break;
       default: {
         break;
