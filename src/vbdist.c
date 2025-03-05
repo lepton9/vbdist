@@ -706,6 +706,10 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
       case 'S': case 's':
         runTuiSkills(tui->db, allSkills, selected_skills);
         break;
+      case 'C': case 'c':
+        // TODO:
+        // runTuiCombo(tui->db);
+        break;
       default: {
         break;
       }
