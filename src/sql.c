@@ -194,6 +194,7 @@ int insertCombo(sqldb* db, pCombo* combo) {
         combo_id, combo->pidA, combo_id, combo->pidB);
     if (execQuery(db->sqlite, sql, NULL, NULL)) {
       log_sql("Inserted Combo %s (%d, %d)", comboTypeString(combo->type), combo->pidA, combo->pidB);
+      return 1;
     }
   }
   return 0;
