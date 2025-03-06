@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "ansicodes.h"
+
 typedef struct {
   FILE* out;
   size_t real_width;
@@ -33,7 +35,7 @@ void update_segment(renderer* r, size_t row, size_t col, size_t width, const cha
 void refresh_screen(renderer* r);
 void render(renderer* r);
 
-// draw_box()
+void make_borders_color(renderer* r, size_t x, size_t y, size_t w, size_t h, color_fg c);
 void make_borders(renderer* r, size_t x, size_t y, size_t w, size_t h);
 
 void shift_right(char* line, size_t real_ind, size_t len, size_t shift_n);

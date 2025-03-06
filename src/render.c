@@ -354,6 +354,26 @@ void make_borders_ascii(renderer* r, size_t x, size_t y, size_t w, size_t h) {
   }
 }
 
+void make_borders_ascii_color(renderer* r, size_t x, size_t y, size_t w, size_t h, color_fg c) {
+  for (size_t i = 0; i < h; i++) {
+    if (i == 0 || i == h - 1) {
+      char line[w];
+      memset(line, '-', (int)w - 2);
+      line[w - 2] = '\0';
+      put_text(r, y + i, x, "\033[%dm+%s+\033[0m", c, line);
+    } else {
+      put_text(r, y + i, x, "\033[%dm%s\033[0m", c, "|");
+      put_text(r, y + i, x + w - 1, "\033[%dm%s\033[0m", c, "|");
+    }
+  }
+}
+
+void make_borders_color(renderer* r, size_t x, size_t y, size_t w, size_t h, color_fg c) {
+  w = min_int(w, r->width - (x));
+  h = min_int(h, r->height - (y));
+  make_borders_ascii_color(r, x, y, w, h, c);
+}
+
 void make_borders(renderer* r, size_t x, size_t y, size_t w, size_t h) {
   w = min_int(w, r->width - (x));
   h = min_int(h, r->height - (y));
