@@ -210,6 +210,13 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
 
   shift_esc_seq(r->screen.s[row], r->real_width, print_col, len);
 
+  if (len > print_len && print_col < r->screen.print_line_len[row]) {
+    size_t shift = len - print_len;
+    shift_right(r->screen.s[row], real_col,
+                r->real_width - real_col, shift);
+    r->screen.line_len[row] += shift;
+  }
+
   if (cut) {
     memcpy(r->screen.s[row] + real_col, cut, len);
     free(cut);
@@ -224,7 +231,12 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
   r->screen.line_len[row] = (real_col + len > r->screen.line_len[row])
     ? (real_col + len)
     : r->screen.line_len[row];
+
   return 1;
+}
+
+void shift_right(char* line, size_t real_ind, size_t len, size_t shift_n) {
+  memmove(line + real_ind + shift_n, line + real_ind, len);
 }
 
 
@@ -251,7 +263,8 @@ size_t shift_esc_seq(char* line, size_t line_len, size_t print_ind, size_t secti
   }
   if (esc_start >= 0) {
     size_t shift = section_len - (esc_start - real_ind);
-    memmove(line + esc_start + shift, line + esc_start, esc_len);
+    shift_right(line, real_ind, esc_len, shift);
+    // memmove(line + esc_start + shift, line + esc_start, esc_len);
     return shift;
   }
   return 0;

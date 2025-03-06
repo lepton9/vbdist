@@ -38,7 +38,9 @@ void render(renderer* r);
 // draw_box()
 void make_borders(renderer* r, size_t x, size_t y, size_t w, size_t h);
 
+void shift_right(char* line, size_t real_ind, size_t len, size_t shift_n);
 size_t shift_esc_seq(char* line, size_t line_len, size_t print_ind, size_t section_len);
+
 int is_escape_end(char c);
 const char* skip_escape(const char* str);
 size_t printable_length(const char *str);
