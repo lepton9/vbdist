@@ -2,10 +2,14 @@
 #define PLAYER_H
 
 #include <stdio.h>
-#include "../include/mark.h"
 #include "../include/dlist.h"
 #include "../include/skill.h"
+#include "../include/ansicodes.h"
 
+typedef struct {
+  char active;
+  color_fg color;
+} mark;
 
 typedef struct {
   char* firstName;
@@ -24,11 +28,13 @@ int cmpPlayers(const void* a, const void* b);
 void swapPlayers(player* a, player* b);
 double rating(player* p);
 double rating_filter(player* p, dlist* skill_ids);
-void markPlayer(player* p, fg_color color);
+void markPlayer(player* p, color_fg color);
 void unmarkPlayer(player* p);
 void printPlayer(FILE* out, player* p);
 
 int playerInList(dlist* list, int player_id);
 player* getPlayerInList(dlist* list, int player_id);
+
+color_fg getMarkColor(const int key);
 
 #endif

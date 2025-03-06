@@ -1,6 +1,7 @@
 #include "../include/render.h"
 #include "../include/tui.h"
 #include "../include/utils.h"
+#include "../include/ansicodes.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

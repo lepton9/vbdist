@@ -85,9 +85,9 @@ char highlight(const tuiswap* tui, const int team, const int player) {
   return (tui->cur->team == team && tui->cur->player == player) || (tui->selected->team == team && tui->selected->player == player);
 }
 
-void markCurPlayer(tuiswap* tui, team** teams, fg_color color) {
+void markCurPlayer(tuiswap* tui, team** teams, color_fg color) {
   player* p = teams[tui->cur->team]->players[tui->cur->player];
-  if (p->marker.active && p->marker.color != DEFAULT_COLOR) unmarkPlayer(p);
+  if (p->marker.active && p->marker.color != DEFAULT_FG) unmarkPlayer(p);
   else markPlayer(p, color);
 }
 
@@ -105,7 +105,7 @@ void updateTuiSwap(renderer* render, tuiswap* tui, team** teams, dlist* bpcs) {
           put_text(render, line++, col, "\033[%d;7m%-*s\033[0m",
                       p->marker.color, width, p->firstName);
         } else if (comboInTeam(bpcs, teams[i], p)) {
-          put_text(render, line++, col, "\033[%dm%-*s\033[0m", RED, width, p->firstName);
+          put_text(render, line++, col, "\033[%dm%-*s\033[0m", RED_FG, width, p->firstName);
         } else {
           put_text(render, line++, col, "\033[%dm%-*s\033[0m", p->marker.color, width, p->firstName);
         }

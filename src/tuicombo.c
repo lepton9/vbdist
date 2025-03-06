@@ -207,6 +207,12 @@ void ctuiRenderPlayersArea(tui_combos* tui) {
   int line = 2;
   int len = getListAreaLen(tui->players_area, tui->term, line);
 
+  make_borders(tui->render, 0, 0, tui->players_area->width, len + 4);
+  put_text(tui->render, 0, 3, "%s", "Selected players");
+  if (tui->recording_combo) {
+    put_text(tui->render, 0, 22, "(%s)", comboTypeString(tui->cur_combo_type));
+  }
+
   char player_text[100];
   player_text[0] = '\0';
 
@@ -227,12 +233,6 @@ void ctuiRenderPlayersArea(tui_combos* tui) {
       put_text(tui->render, line++, col, " %-20s", player_text);
     }
     player_text[0] = '\0';
-  }
-  make_borders(tui->render, 0, 0, tui->players_area->width, len + 4);
-  put_text(tui->render, 0, 3, "%s", "Selected players");
-
-  if (tui->recording_combo) {
-    put_text(tui->render, 0, 22, "(%s)", comboTypeString(tui->cur_combo_type));
   }
 }
 

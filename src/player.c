@@ -117,14 +117,14 @@ void swapPlayers(player* a, player* b) {
   *b = tmp;
 }
 
-void markPlayer(player* p, fg_color color) {
+void markPlayer(player* p, color_fg color) {
   p->marker.active = 1;
   p->marker.color = color;
 }
 
 void unmarkPlayer(player* p) {
   p->marker.active = 0;
-  p->marker.color = DEFAULT_COLOR;
+  p->marker.color = DEFAULT_FG;
 }
 
 void printPlayer(FILE* out, player* p) {
@@ -151,5 +151,16 @@ player* getPlayerInList(dlist* list, int player_id) {
     return list->items[i];
   }
   return NULL;
+}
+
+color_fg getMarkColor(const int key) {
+  switch (key) {
+    case 1: return GREEN_FG;
+    case 2: return YELLOW_FG;
+    case 3: return BLUE_FG;
+    case 4: return MAGENTA_FG;
+    case 5: return CYAN_FG;
+    default: return DEFAULT_FG;
+  }
 }
 

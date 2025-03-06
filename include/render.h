@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define ESC '\033'
-
 typedef struct {
   FILE* out;
   size_t real_width;
