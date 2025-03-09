@@ -12,8 +12,13 @@ typedef struct {
 } config;
 
 config* read_config();
-void write_config(config* conf);
+void write_config(config* cfg);
 
+void expand_path(char* path);
+int dir_exists(const char* path);
+int file_exists(const char* path);
+
+void make_dir(const char* path);
 int find_config(char* path);
 config* base_config(const char* base_path);
 config* create_config(const char* base_path);

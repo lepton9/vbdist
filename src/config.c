@@ -7,25 +7,41 @@
 #ifdef __linux__
 #define CONFIG_LOCATIONS 3
 #define CONFIG_DEFAULT 2
+#define PATH_SEPARATOR '/'
 const char* config_paths[CONFIG_LOCATIONS] = {"./", "~/", "~/.config/vbdist/"};
 #else
+#include <windows.h>
+#define mkdir(dir, mode) _mkdir(dir)
 #define CONFIG_LOCATIONS 2
 #define CONFIG_DEFAULT 1
-const char* config_paths[CONCONFIG_LOCATIONS] = {"./", "C:\\Users\\Public\\"};
+#define PATH_SEPARATOR '\\'
+const char* config_paths[CONCONFIG_LOCATIONS] = {".\\", "C:\\Users\\Public\\vbdist\\"};
 #endif
 
+
+void cfg_full_path(char* full, const char* base_path) {
+  sprintf(full, "%s%s", base_path, CONFIG_NAME);
+}
 
 int file_exists(const char* path) {
   struct stat buffer;
   return (stat(path, &buffer) == 0);
 }
 
+int dir_exists(const char* path) {
+  struct stat info;
+  return (stat(path, &info) == 0 && (info.st_mode & S_IFDIR));
+}
+
 int find_config(char* path) {
   for (int i = 0; i < CONFIG_LOCATIONS; i++) {
     char full_path[512];
-    sprintf(full_path, "%s%s", config_paths[i], CONFIG_NAME);
+    char base_path[512];
+    strcpy(base_path, config_paths[i]);
+    expand_path(base_path);
+    cfg_full_path(full_path, base_path);
     if (file_exists(full_path)) {
-      strcpy(path, config_paths[i]);
+      strcpy(path, base_path);
       return 1;
     }
   }
@@ -37,7 +53,7 @@ config* base_config(const char* base_path) {
   cfg->teams_n = 0;
   cfg->team_size = 0;
   strcpy(cfg->db_path, "");
-  sprintf(cfg->config_path, "%s%s", base_path, CONFIG_NAME);
+  cfg_full_path(cfg->config_path, base_path);
   cfg->created = 0;
   return cfg;
 }
@@ -47,14 +63,12 @@ config* read_config() {
   if (!find_config(config_path)) {
     return create_config(config_paths[CONFIG_DEFAULT]);
   }
-  sprintf(config_path, "%s%s", config_path, CONFIG_NAME);
   config* cfg = base_config(config_path);
 
   FILE* file = fopen(cfg->config_path, "r");
   if (!file) {
-    return NULL;
+    return cfg;
   }
-
 
   char line[256];
   while (fgets(line, sizeof(line), file)) {
@@ -76,9 +90,57 @@ config* read_config() {
 }
 
 config* create_config(const char* base_path) {
-  config* cfg = base_config(base_path);
+  char path[512];
+  strcpy(path, base_path);
+  expand_path(path);
+  config* cfg = base_config(path);
   cfg->created = 1;
-  // TODO: write base config
+  make_dir(path);
+  write_config(cfg);
   return cfg;
+}
+
+void expand_path(char* path) {
+#ifdef __linux__
+  char temp[512];
+  char* p = NULL;
+  size_t len;
+  if (path[0] == '~') {
+    const char* home = getenv("HOME");
+    if (!home) {
+      return;
+    }
+    snprintf(temp, sizeof(temp), "%s%s", home, path + 1);
+    strcpy(path, temp);
+  }
+#endif
+}
+
+void make_dir(const char* path) {
+  char temp[512];
+  char* p = NULL;
+  size_t len;
+  strcpy(temp, path);
+  len = strlen(temp);
+  if (temp[len - 1] == PATH_SEPARATOR) temp[len - 1] = '\0';
+  for (p = temp + 1; *p; p++) {
+    if (*p == PATH_SEPARATOR) {
+      *p = '\0';
+      if (!dir_exists(temp)) mkdir(temp, 0755);
+      *p = PATH_SEPARATOR;
+    }
+  }
+  if (!dir_exists(temp)) mkdir(temp, 0755);
+}
+
+void write_config(config* cfg) {
+  FILE* file = fopen(cfg->config_path, "w");
+  if (!file) {
+    return;
+  }
+  fprintf(file, "teams_n=%d\n", cfg->teams_n);
+  fprintf(file, "team_size=%d\n", cfg->team_size);
+  fprintf(file, "db_path=%s\n", cfg->db_path);
+  fclose(file);
 }
 

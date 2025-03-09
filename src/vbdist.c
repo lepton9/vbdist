@@ -752,7 +752,7 @@ int main(int argc, char** argv) {
   config* cfg = read_config();
 
   if (!cfg || cfg->created) {
-    printf("No config found, created new\n");
+    printf("No config found, created new at %s\n", cfg->config_path);
   } else {
     printf("%s\n", cfg->db_path);
     printf("%s\n", cfg->config_path);
