@@ -8,5 +8,6 @@ int isEnter(int c);
 void strcatc(char* str, size_t* len, char c);
 char* trimWS(char* str);
 int min_int(int a, int b);
+int max_int(int a, int b);
 
 #endif

@@ -48,7 +48,7 @@ void free_renderer(renderer* r) {
 }
 
 void resize_screen(renderer* r, size_t new_w, size_t new_h) {
-  size_t new_rw = 2 * new_w;
+  size_t new_rw = max_int(2 * new_w, 50);
   char** new_screen = malloc(new_h * sizeof(char*));
   char** new_last_screen = malloc(new_h * sizeof(char*));
 
@@ -155,13 +155,13 @@ const char* find_printable_start(const char* str, size_t start) {
 
 char* printable_substr(const char* str, size_t start, size_t length) {
   const char *substr_start = find_printable_start(str, start);
-  if (!substr_start) return strdup("");
+  if (!substr_start || length == 0) return strdup("");
 
   size_t max_print_len = printable_length(substr_start);
   size_t effective_length = (length > max_print_len) ? max_print_len : length;
 
   char *result = malloc(strlen(substr_start) + 1);
-  if (!result) return NULL;
+  if (!result) return strdup("");
 
   char *out = result;
   size_t print_count = 0;
@@ -178,12 +178,12 @@ char* printable_substr(const char* str, size_t start, size_t length) {
 }
 
 int setText(renderer* r, size_t row, size_t print_col, const char* line) {
-  if (row > r->height || print_col > r->width) return 0;
+  if (row > r->height || print_col >= r->width) return 0;
 
   size_t len = strlen(line);
   size_t print_len = printable_length(line);
   size_t line_print_len = r->screen.print_line_len[row];
-  size_t available_space = r->width - line_print_len;
+  size_t available_space = (r->width > line_print_len) ? r->width - line_print_len : 0;
 
   if (r->screen.line_len[row] + len > r->real_width) return 0;
 
@@ -202,6 +202,9 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
                      : real_index(r->screen.s[row], print_col);
   if (real_col < 0) return 0;
 
+
+  // TODO: cut only printable chars
+  // if esc seq dont cut
   char* cut = NULL;
   if (print_len > available_space) {
     cut = printable_substr(line, 0, available_space);
@@ -214,7 +217,7 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
   if (len > print_len && print_col < r->screen.print_line_len[row]) {
     size_t shift = len - print_len;
     shift_right(r->screen.s[row], real_col,
-                r->real_width - real_col, shift);
+                r->real_width - real_col - shift, shift);
     r->screen.line_len[row] += shift;
   }
 
@@ -264,8 +267,12 @@ size_t shift_esc_seq(char* line, size_t line_len, size_t print_ind, size_t secti
   }
   if (esc_start >= 0) {
     size_t shift = section_len - (esc_start - real_ind);
-    shift_right(line, real_ind, esc_len, shift);
-    // memmove(line + esc_start + shift, line + esc_start, esc_len);
+    if (real_ind + esc_len + shift > line_len) {
+      size_t over = (real_ind + esc_len + shift) - line_len;
+      shift_right(line, real_ind, (esc_len - over), shift);
+    } else {
+      shift_right(line, real_ind, esc_len, shift);
+    }
     return shift;
   }
   return 0;
@@ -369,14 +376,20 @@ void make_borders_ascii_color(renderer* r, size_t x, size_t y, size_t w, size_t 
 }
 
 void make_borders_color(renderer* r, size_t x, size_t y, size_t w, size_t h, color_fg c) {
-  w = min_int(w, r->width - (x));
-  h = min_int(h, r->height - (y));
+  w = min_int(w, r->width - x);
+  h = min_int(h, r->height - y);
+  if (x >= r->width || y >= r->height || w < 2 || h < 2) {
+    return;
+  }
   make_borders_ascii_color(r, x, y, w, h, c);
 }
 
 void make_borders(renderer* r, size_t x, size_t y, size_t w, size_t h) {
-  w = min_int(w, r->width - (x));
-  h = min_int(h, r->height - (y));
+  w = min_int(w, r->width - x);
+  h = min_int(h, r->height - y);
+  if (x >= r->width || y >= r->height || w < 2 || h < 2) {
+    return;
+  }
   make_borders_ascii(r, x, y, w, h);
 }
 
