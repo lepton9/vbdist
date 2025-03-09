@@ -12,13 +12,13 @@
 const char* config_paths[CONFIG_LOCATIONS] = {"./", "~/", "~/.config/vbdist/"};
 #elif _WIN32
 #include <windows.h>
+#include <direct.h>
 #define mkdir(dir, mode) _mkdir(dir)
-#define PATH_MAX MAX_PATH
 #define realpath(N, R) _fullpath((R), (N), PATH_MAX)
 #define CONFIG_LOCATIONS 2
 #define CONFIG_DEFAULT 1
 #define PATH_SEPARATOR '\\'
-const char* config_paths[CONCONFIG_LOCATIONS] = {".\\", "C:\\Users\\Public\\vbdist\\"};
+const char* config_paths[CONFIG_LOCATIONS] = {".\\", "C:\\Users\\Public\\vbdist\\"};
 #endif
 
 char* absolute_path(const char* path) {
