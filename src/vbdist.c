@@ -762,7 +762,7 @@ int main(int argc, char** argv) {
       exit(1);
     }
   } else if (SOURCE == DATABASE) {
-    strcpy(cfg->db_path, params->dbName);
+    set_db_path(cfg, params->dbName);
     strcpy(database, params->dbName);
   }
 

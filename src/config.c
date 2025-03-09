@@ -3,21 +3,35 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #ifdef __linux__
 #define CONFIG_LOCATIONS 3
 #define CONFIG_DEFAULT 2
 #define PATH_SEPARATOR '/'
 const char* config_paths[CONFIG_LOCATIONS] = {"./", "~/", "~/.config/vbdist/"};
-#else
+#elif _WIN32
 #include <windows.h>
 #define mkdir(dir, mode) _mkdir(dir)
+#define PATH_MAX MAX_PATH
+#define realpath(N, R) _fullpath((R), (N), PATH_MAX)
 #define CONFIG_LOCATIONS 2
 #define CONFIG_DEFAULT 1
 #define PATH_SEPARATOR '\\'
 const char* config_paths[CONCONFIG_LOCATIONS] = {".\\", "C:\\Users\\Public\\vbdist\\"};
 #endif
 
+char* absolute_path(const char* path) {
+  char* abs_path = (char*)malloc(PATH_MAX);
+  realpath(path, abs_path);
+  return abs_path;
+}
+
+void set_db_path(config* cfg, const char* path) {
+  char* abs_path = absolute_path(path);
+  strcpy(cfg->db_path, abs_path);
+  free(abs_path);
+}
 
 void cfg_full_path(char* full, const char* base_path) {
   sprintf(full, "%s%s", base_path, CONFIG_NAME);

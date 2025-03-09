@@ -14,6 +14,9 @@ typedef struct {
 config* read_config();
 void write_config(config* cfg);
 
+char* absolute_path(const char* path);
+void set_db_path(config* cfg, const char* path);
+
 void expand_path(char* path);
 int dir_exists(const char* path);
 int file_exists(const char* path);
