@@ -36,7 +36,7 @@ int dir_exists(const char* path) {
 int find_config(char* path) {
   for (int i = 0; i < CONFIG_LOCATIONS; i++) {
     char full_path[512];
-    char base_path[512];
+    char base_path[420];
     strcpy(base_path, config_paths[i]);
     expand_path(base_path);
     cfg_full_path(full_path, base_path);
@@ -59,7 +59,7 @@ config* base_config(const char* base_path) {
 }
 
 config* read_config() {
-  char config_path[512];
+  char config_path[420];
   if (!find_config(config_path)) {
     return create_config(config_paths[CONFIG_DEFAULT]);
   }
@@ -72,7 +72,7 @@ config* read_config() {
 
   char line[256];
   while (fgets(line, sizeof(line), file)) {
-    char key[128], value[128];
+    char key[128], value[256];
 
     if (sscanf(line, "%127[^=]=%127[^\n]", key, value) == 2) {
       if (strlen(value) == 0) continue;
@@ -81,7 +81,7 @@ config* read_config() {
       } else if (strcmp(key, "team_size") == 0) {
         cfg->team_size = atoi(value);
       } else if (strcmp(key, "db_path") == 0) {
-        strncpy(cfg->db_path, value, strlen(value));
+        strcpy(cfg->db_path, value);
       }
     }
   }
@@ -103,8 +103,6 @@ config* create_config(const char* base_path) {
 void expand_path(char* path) {
 #ifdef __linux__
   char temp[512];
-  char* p = NULL;
-  size_t len;
   if (path[0] == '~') {
     const char* home = getenv("HOME");
     if (!home) {

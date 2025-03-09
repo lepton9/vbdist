@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include <time.h>
 #include <ctype.h>
 
@@ -731,6 +732,10 @@ int main(int argc, char** argv) {
   initScreen();
 #endif
 
+  char* err_msg = malloc(1);
+  err_msg[0] = '\0';
+  char database[512];
+
   args* params = parseArgs(argc, argv);
   if (!params) {
     exit(0);
@@ -740,37 +745,39 @@ int main(int argc, char** argv) {
            : (params->fileName) ? TEXT_FILE
                                 : NO_SOURCE;
 
-  if (SOURCE == NO_SOURCE) {
-    printUsage(stdout);
-    exit(1);
-  }
-
-  TEAMS_N = params->teams;
-  TEAM_SIZE = params->players;
-  PRINT_MODE = params->printMode;
-
   config* cfg = read_config();
-
-  if (!cfg || cfg->created) {
-    printf("No config found, created new at %s\n", cfg->config_path);
-  } else {
-    printf("%s\n", cfg->db_path);
-    printf("%s\n", cfg->config_path);
-    printf("%d\n", cfg->teams_n);
-    printf("%d\n", cfg->team_size);
+  if (cfg && cfg->created) {
+    char msg[600];
+    snprintf(msg, sizeof(msg), "Config file created at '%s'\n", cfg->config_path);
+    err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
+    strcat(err_msg, msg);
   }
-  return 0;
+
+  if (SOURCE == NO_SOURCE) {
+    if (strcmp(cfg->db_path, "") != 0) {
+      SOURCE = DATABASE;
+      strcpy(database, cfg->db_path);
+    } else {
+      printUsage(stdout);
+      exit(1);
+    }
+  } else if (SOURCE == DATABASE) {
+    strcpy(cfg->db_path, params->dbName);
+    strcpy(database, params->dbName);
+  }
 
   dlist* bannedCombos = init_list();
   dlist* prefCombos = init_list();
   sqldb* db = NULL;
   dlist* players = NULL;
-  char* err_msg = malloc(1);
-  err_msg[0] = '\0';
+
+  TEAMS_N = (params->teams > 0) ? params->teams : cfg->teams_n;
+  TEAM_SIZE = (params->players > 0) ? params->players : cfg->team_size;
+  PRINT_MODE = params->printMode;
 
   switch (SOURCE) {
     case DATABASE: {
-      db = openSqlDB(params->dbName);
+      db = openSqlDB(database);
       if (!db->sqlite) {
         exit(1);
       }
@@ -848,6 +855,11 @@ int main(int argc, char** argv) {
   runBeginTui(tui, players, bannedCombos, prefCombos, skills, err_msg);
   altBufferDisable();
   curShow();
+
+  cfg->team_size = TEAM_SIZE;
+  cfg->teams_n = TEAMS_N;
+  write_config(cfg);
+  free(cfg);
 
   for (size_t i = 0; i < skills->n; i++) {
     freeSkill(skills->items[i]);
