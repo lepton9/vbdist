@@ -14,6 +14,7 @@
 #include "../include/sql.h"
 #include "../include/log.h"
 #include "../include/utils.h"
+#include "../include/config.h"
 
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
@@ -747,6 +748,18 @@ int main(int argc, char** argv) {
   TEAMS_N = params->teams;
   TEAM_SIZE = params->players;
   PRINT_MODE = params->printMode;
+
+  config* cfg = read_config();
+
+  if (!cfg || cfg->created) {
+    printf("No config found, created new\n");
+  } else {
+    printf("%s\n", cfg->db_path);
+    printf("%s\n", cfg->config_path);
+    printf("%d\n", cfg->teams_n);
+    printf("%d\n", cfg->team_size);
+  }
+  return 0;
 
   dlist* bannedCombos = init_list();
   dlist* prefCombos = init_list();
