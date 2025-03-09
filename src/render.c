@@ -12,17 +12,18 @@ renderer* init_renderer(FILE* out) {
 
   term_size term = {.rows = 0, .cols = 0};
   getTermSize(&term);
-  size_t w = term.cols;
-  size_t h = term.rows;
+  size_t w = min_int(term.cols, MAX_WIDTH);
+  size_t h = min_int(term.rows, MAX_HEIGHT);
 
   r->out = out;
   r->width = w;
   r->height = h;
-  r->real_width = 2 * w;
-  r->screen.s = malloc(h * sizeof(char*));
-  r->last_screen.s = malloc(h * sizeof(char*));
+  r->real_width = MAX_WIDTH;
+  r->real_height = MAX_HEIGHT;
+  r->screen.s = malloc(r->real_height * sizeof(char*));
+  r->last_screen.s = malloc(r->real_height * sizeof(char*));
 
-  for (size_t i = 0; i < h; i++) {
+  for (size_t i = 0; i < r->real_height; i++) {
     r->screen.s[i] = calloc(r->real_width + 1, sizeof(char));
     r->last_screen.s[i] = calloc(r->real_width + 1, sizeof(char));
     memset(r->screen.s[i], ' ', r->real_width);
@@ -30,14 +31,18 @@ renderer* init_renderer(FILE* out) {
     r->screen.s[i][r->real_width] = '\0';
     r->last_screen.s[i][r->real_width] = '\0';
   }
-  r->screen.line_len = calloc(h, sizeof(size_t));
-  r->screen.print_line_len = calloc(h, sizeof(size_t));
-  r->last_screen.line_len = calloc(h, sizeof(size_t));
-  r->last_screen.print_line_len = calloc(h, sizeof(size_t));
+  r->screen.line_len = calloc(r->real_height, sizeof(size_t));
+  r->screen.print_line_len = calloc(r->real_height, sizeof(size_t));
+  r->last_screen.line_len = calloc(r->real_height, sizeof(size_t));
+  r->last_screen.print_line_len = calloc(r->real_height, sizeof(size_t));
   return r;
 }
 
 void free_renderer(renderer* r) {
+  for (size_t i = 0; i < r->real_height; i++) {
+    free(r->screen.s[i]);
+    free(r->last_screen.s[i]);
+  }
   free(r->screen.s);
   free(r->last_screen.s);
   free(r->screen.line_len);
@@ -65,7 +70,7 @@ void resize_screen(renderer* r, size_t new_w, size_t new_h) {
     new_last_screen[i] = calloc(new_rw + 1, sizeof(char));
 
     if (i < r->height) {
-      int len = (new_rw < r->real_width ? new_rw : r->width);
+      int len = (new_rw < r->real_width ? new_rw : r->real_width);
       strncpy(new_screen[i], r->screen.s[i], len);
       strncpy(new_last_screen[i], r->last_screen.s[i], len);
     }
@@ -93,7 +98,9 @@ int updateSize(renderer* r) {
 
 int setSize(renderer* r, size_t new_w, size_t new_h) {
   if (new_w != r->width || new_h != r->height) {
-    resize_screen(r, new_w, new_h);
+    r->width = min_int(new_w, MAX_WIDTH);
+    r->height = min_int(new_h, MAX_HEIGHT);
+    // resize_screen(r, new_w, new_h);
     return 1;
   }
   return 0;
@@ -178,7 +185,7 @@ char* printable_substr(const char* str, size_t start, size_t length) {
 }
 
 int setText(renderer* r, size_t row, size_t print_col, const char* line) {
-  if (row > r->height || print_col >= r->width) return 0;
+  if (row >= r->height || print_col >= r->width) return 0;
 
   size_t len = strlen(line);
   size_t print_len = printable_length(line);
@@ -204,7 +211,7 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
 
 
   // TODO: cut only printable chars
-  // if esc seq dont cut
+  // keep the escape sequences
   char* cut = NULL;
   if (print_len > available_space) {
     cut = printable_substr(line, 0, available_space);

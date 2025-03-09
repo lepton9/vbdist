@@ -6,9 +6,13 @@
 
 #include "ansicodes.h"
 
+#define MAX_WIDTH 500
+#define MAX_HEIGHT 100
+
 typedef struct {
   FILE* out;
   size_t real_width;
+  size_t real_height;
   size_t width;
   size_t height;
 
