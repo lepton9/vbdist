@@ -254,6 +254,16 @@ dlist* fetchAllCombos(sqldb* db) {
   return combos;
 }
 
+int deleteCombo(sqldb* db, pCombo* combo) {
+  char sql[100];
+  sprintf(sql, "DELETE FROM Combo WHERE combo_id = %d;", combo->combo_id);
+  int r = execQuery(db->sqlite, sql, NULL, NULL);
+  if (r) {
+    log_sql("Deleted Combo (%d)", combo->combo_id);
+  }
+  return r;
+}
+
 dlist* fetchPlayers(sqldb* db) {
   char* sql = "SELECT player_id, name FROM Player ORDER BY name ASC;";
   dlist* list = init_list();

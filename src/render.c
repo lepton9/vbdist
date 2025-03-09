@@ -213,7 +213,7 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
   // TODO: cut only printable chars
   // keep the escape sequences
   char* cut = NULL;
-  if (print_len > available_space) {
+  if (print_len > available_space && print_col >= line_print_len) {
     cut = printable_substr(line, 0, available_space);
     len = strlen(cut);
     print_len = available_space;

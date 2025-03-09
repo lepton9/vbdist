@@ -90,6 +90,17 @@ void ctuiSelectPlayer(tui_combos* tui) {
   }
 }
 
+void deleteCurCombo(tui_combos* tui) {
+  int ind = tui->combos_area->selected;
+  if (ind < 0) return;
+  pCombo* combo = tui->combos->items[ind];
+  int res = deleteCombo(tui->db, combo);
+  if (res) {
+    free(pop_elem(tui->combos, ind));
+    update_list_len(tui->combos_area, tui->combos->n);
+  }
+}
+
 void runTuiCombo(sqldb* db, dlist* players) {
   tui_combos* tui = init_tui_combo(db, players);
   curHide();
@@ -170,6 +181,9 @@ void handleComboTuiInput(tui_combos* tui, int c) {
     case 'A': case 'a':
       break;
     case 'X': case 'x':
+      if (tui->mode == CTUI_COMBO_LIST) {
+        deleteCurCombo(tui);
+      }
       break;
     case 'K': case 'W':
     case 'k': case 'w':
@@ -245,6 +259,13 @@ void ctuiRenderCombosArea(tui_combos* tui) {
   int line = 2;
   int len = getListAreaLen(tui->combos_area, tui->term, line);
 
+  if (tui->mode == CTUI_COMBO_LIST) {
+    make_borders_color(tui->render, col, 0, tui->combos_area->width, len + 4, BLUE_FG);
+  } else {
+    make_borders(tui->render, col, 0, tui->combos_area->width, len + 4);
+  }
+  put_text(tui->render, 0, col + 3, "%s", "Combos");
+
   char combo_text[100];
   combo_text[0] = '\0';
 
@@ -257,20 +278,15 @@ void ctuiRenderCombosArea(tui_combos* tui) {
 
     if (tui->combos_area->selected == i) {
       tui->combos_area->selected_term_row = line + 1;
-      put_text(tui->render, line++, col + 1, "\033[7m %s\033[27m", combo_text);
+      put_text(tui->render, line++, col + 2, "\033[7m %s\033[27m", combo_text);
+      // TODO: collapsing list
+      // put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", p1->firstName);
+      // put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", p2->firstName);
     } else {
-      put_text(tui->render, line++, col + 1, "%s", combo_text);
+      put_text(tui->render, line++, col + 2, "%s", combo_text);
     }
     combo_text[0] = '\0';
   }
-
-  if (tui->mode == CTUI_COMBO_LIST) {
-    make_borders_color(tui->render, col, 0, tui->combos_area->width, len + 4, BLUE_FG);
-  } else {
-    make_borders(tui->render, col, 0, tui->combos_area->width, len + 4);
-  }
-
-  put_text(tui->render, 0, col + 3, "%s", "Combos");
 }
 
 

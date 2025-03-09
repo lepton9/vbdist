@@ -46,6 +46,7 @@ int insertCombos(sqldb* db, dlist* combos);
 int fetchCombo(sqldb* db, pCombo* combo);
 dlist* fetchCombos(sqldb* db, comboType type);
 dlist* fetchAllCombos(sqldb* db);
+int deleteCombo(sqldb* db, pCombo* combo);
 int comboExists(sqldb* db, pCombo* combo);
 
 dlist* fetchSkills(sqldb* db);
