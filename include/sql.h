@@ -41,6 +41,7 @@ dlist* fetchFormerTeammates(sqldb* db, player* player);
 dlist* fetchNotTeammates(sqldb* db, player* player);
 dlist* fetchPlayersInTeam(sqldb* db, team* team);
 
+void removeEmptyCombos(dlist* combos);
 int insertCombo(sqldb* db, combo* combo);
 int insertCombos(sqldb* db, dlist* combos);
 int fetchCombo(sqldb* db, combo* combo);

@@ -100,58 +100,65 @@ char** parseComboLine(char* line, int* n) {
   return tokens;
 }
 
-// void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
-//   char fc = line[0];
-//   int idA = -1;
-//   int n = 0;
-//   char** tokens = parseComboLine(line, &n);
-//   assert(n > 0);
-//   for (int i = 0; i < (int)players->n; i++) {
-//     if ((SOURCE == TEXT_FILE && strcmp(((player*)players->items[i])->firstName, tokens[0]) == 0)
-//     || (SOURCE == DATABASE && ((player*)players->items[i])->id == atoi(tokens[0]))) {
-//       idA = ((player*)players->items[i])->id;
-//       break;
-//     }
-//   }
-//   for (int i = 1; i < n; i++) {
-//     int idB = -1;
-//     for (int j = 0; j < (int)players->n; j++) {
-//       player* pj = ((player*)players->items[j]);
-//       if ((SOURCE == TEXT_FILE && strcmp(pj->firstName, tokens[i]) == 0)
-//       || (SOURCE == DATABASE && pj->id == atoi(tokens[i]))) {
-//         idB = pj->id;
-//         break;
-//       }
-//     }
-//     if (idA >= 0 && idB >= 0) {
-//       if (fc == '+') addCombo(prefCombos, PAIR, idA, idB);
-//       else if (fc == '!') addCombo(bpcs, BAN, idA, idB);
-//       else if (fc == '?') {
-//         for (int j = 0; j < (int)players->n; j++) {
-//           player* pj = ((player*)players->items[j]);
-//           if ((SOURCE == TEXT_FILE && strcmp(pj->firstName, tokens[i - 1]) == 0)
-//             || (SOURCE == DATABASE && pj->id == atoi(tokens[i - 1]))) {
-//             idA = pj->id;
-//             break;
-//           }
-//         }
-//         for (int j = i; j < n; j++) {
-//           for (int k = 0; k < (int)players->n; k++) {
-//             player* pk = ((player*)players->items[k]);
-//             if ((SOURCE == TEXT_FILE && strcmp(pk->firstName, tokens[j]) == 0)
-//               || (SOURCE == DATABASE && pk->id == atoi(tokens[j]))) {
-//               idB = pk->id;
-//               addCombo(bpcs, BAN, idA, idB);
-//               break;
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-//   for (int i = 0; i < n; i++) free(tokens[i]);
-//   free(tokens);
-// }
+void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
+  char fc = line[0];
+  int n = 0;
+  char** tokens = parseComboLine(line, &n); // Ids or names
+  dlist* ids = init_list();
+  assert(n > 0);
+
+  // Find ids from players
+  for (int t = 0; t < n; t++) {
+    for (size_t i = 0; i < players->n; i++) {
+      if (SOURCE == TEXT_FILE) {
+        if (strcmp(((player *)players->items[i])->firstName, tokens[t]) == 0) {
+          int* id = malloc(sizeof(int));
+          *id = ((player *)players->items[i])->id;
+          list_add(ids, id);
+          break;
+        }
+      }
+      else if (SOURCE == DATABASE) {
+        if (((player *)players->items[i])->id == atoi(tokens[t])) {
+          int* id = malloc(sizeof(int));
+          *id = ((player *)players->items[i])->id;
+          list_add(ids, id);
+          break;
+        }
+      }
+    }
+  }
+
+  if (n == (int)ids->n) {
+    if (fc == '+') {
+      combo* c = initCombo(PAIR, -1);
+      for (size_t i = 0; i < ids->n; i++) {
+        addToCombo(c, *((int*)ids->items[i]));
+      }
+      list_add(prefCombos, c);
+    }
+    else if (fc == '?') {
+      combo* c = initCombo(BAN, -1);
+      for (size_t i = 0; i < ids->n; i++) {
+        addToCombo(c, *((int*)ids->items[i]));
+      }
+      list_add(bpcs, c);
+    }
+    else if (fc == '!') {
+      for (size_t i = 1; i < ids->n; i++) {
+        combo* c = initCombo(BAN, -1);
+        addToCombo(c, *((int*)ids->items[0]));
+        addToCombo(c, *((int*)ids->items[i]));
+        list_add(bpcs, c);
+      }
+    }
+  }
+
+  for (size_t i = 0; i < ids->n; i++) free(ids->items[i]);
+  free_list(ids);
+  for (int i = 0; i < n; i++) free(tokens[i]);
+  free(tokens);
+}
 
 dlist* readPlayers(const char *fileName, dlist* bpcs, dlist* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
@@ -167,7 +174,7 @@ dlist* readPlayers(const char *fileName, dlist* bpcs, dlist* prefCombos) {
     line[strcspn(line, "\n")] = 0;
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
     if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
-      // parseCombos(line, ps, bpcs, prefCombos);
+      parseCombos(line, ps, bpcs, prefCombos);
     } else {
       switch (SOURCE) {
         case DATABASE: {
@@ -262,65 +269,6 @@ int maxTeamFromPrefCombos(dlist* prefCombos) {
   }
   return biggest_size;
 }
-
-// int maxTeamFromPrefCombos(dlist* prefCombos) {
-//   int maxSize = 0;
-//   int nTeams = 1;
-//   int* ns = calloc(nTeams, sizeof(int));
-//   int** presetTeams = malloc(sizeof(int*));
-//   *presetTeams = calloc(2, sizeof(int));
-//   pCombo* prefCombo = NULL;
-//
-//   for (int i = 0; i < (int)prefCombos->n; i++) {
-//     char comboSet = 0;
-//     if (nTeams == 1 && ns[0] == 0) {
-//       prefCombo = prefCombos->items[i];
-//       presetTeams[0][ns[0]++] = prefCombo->pidA;
-//       presetTeams[0][ns[0]++] = prefCombo->pidB;
-//       maxSize = ns[0];
-//       continue;
-//     }
-//     for (int j = 0; j < nTeams; j++) {
-//       for (int k = 0; k < ns[j]; k++) {
-//         int id = (presetTeams[j][k] == prefCombo->pidA)
-//                      ? prefCombo->pidB
-//                  : (presetTeams[j][k] == prefCombo->pidB)
-//                      ? prefCombo->pidA
-//                      : -1;
-//         if (id >= 0) {
-//           char inTeam = 0;
-//           for (int l = 0; l < ns[j]; l++) {
-//             if (presetTeams[j][l] == id) inTeam = 1;
-//           }
-//           if (!inTeam) {
-//             presetTeams[j] = realloc(presetTeams[j], (ns[j] + 1) * sizeof(int));
-//             presetTeams[j][ns[j]++] = id;
-//             if (ns[j] > maxSize) maxSize = ns[j];
-//             comboSet = 1;
-//             break;
-//           }
-//         }
-//       }
-//       if (comboSet) break;
-//     }
-//      if (!comboSet) {
-//       presetTeams = realloc(presetTeams, (nTeams + 1) * sizeof(int*));
-//       ns = realloc(ns, (nTeams + 1) * sizeof(int));
-//       ns[nTeams] = 0;
-//       presetTeams[nTeams] = calloc(2, sizeof(int));
-//       presetTeams[nTeams][ns[nTeams]++] = prefCombo->pidA;
-//       presetTeams[nTeams][ns[nTeams]++] = prefCombo->pidB;
-//       nTeams++;
-//     }
-//   }
-//
-//   for (int i = 0; i < nTeams; i++) {
-//     free(presetTeams[i]);
-//   }
-//   free(presetTeams);
-//   free(ns);
-//   return maxSize;
-// }
 
 void setPreferredCombos(team** teams, dlist* prefCombos) {
   for (size_t c = 0; c < prefCombos->n; c++) {

@@ -175,9 +175,9 @@ dlist* fetchPlayerList(sqldb* db) {
 
 // TODO:
 int insertCombo(sqldb* db, combo* combo) {
-  if (comboExists(db, combo)) {
-    return 0;
-  }
+  // if (comboExists(db, combo)) {
+  //   return 0;
+  // }
   return 0;
   char sql[200];
   sprintf(sql, "INSERT INTO Combo (combo_type) VALUES ('%s');",
@@ -237,14 +237,24 @@ int fetchCombo(sqldb* db, combo* combo) {
   return execQuery(db->sqlite, sql, cb_combo, combo);
 }
 
+void removeEmptyCombos(dlist* combos) {
+  for (size_t i = combos->n - 1; i > 0; i--) {
+    combo* c = combos->items[i];
+    if (c->ids->n == 0) {
+      freeCombo(pop_elem(combos, i));
+    }
+  }
+}
+
 dlist* fetchCombos(sqldb* db, comboType type) {
   dlist* combos = init_list();
   char sql[100];
   sprintf(sql, "SELECT combo_id, combo_type FROM Combo WHERE combo_type = '%s';", comboTypeString(type));
   execQuery(db->sqlite, sql, cb_combos, combos);
-  for (int i = 0; i < (int)combos->n; i++) {
+  for (size_t i = 0; i < combos->n; i++) {
     fetchCombo(db, combos->items[i]);
   }
+  removeEmptyCombos(combos);
   return combos;
 }
 

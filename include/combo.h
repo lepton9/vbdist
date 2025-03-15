@@ -11,13 +11,6 @@ typedef enum {
   DEFAULT
 } comboType;
 
-// typedef struct {
-//   int pidA;
-//   int pidB;
-//   comboType type;
-//   int combo_id;
-// } pCombo;
-
 typedef struct {
   dlist* ids;
   comboType type;

@@ -275,14 +275,17 @@ void ctuiRenderCombosArea(tui_combos* tui) {
     player* p1 = getPlayerInList(tui->players, *((int*)combo->ids->items[0]));
     player* p2 = getPlayerInList(tui->players, *((int*)combo->ids->items[1]));
 
-    sprintf(combo_text, "(%s) %s - %s", comboTypeString(combo->type), p1->firstName, p2->firstName);
+    sprintf(combo_text, "(%s) %s - %s%s", comboTypeString(combo->type),
+            p1->firstName, p2->firstName, (combo->ids->n > 2) ? " - ..." : "");
 
     if (tui->combos_area->selected == i) {
       tui->combos_area->selected_term_row = line + 1;
       put_text(tui->render, line++, col + 2, "\033[7m %s\033[27m", combo_text);
-      // TODO: collapsing list
-      // put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", p1->firstName);
-      // put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", p2->firstName);
+      // TODO: calculate max and border height
+      for (size_t j = 0; j < combo->ids->n; j++) {
+        player* p = getPlayerInList(tui->players, *((int*)combo->ids->items[j]));
+        put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", p->firstName);
+      }
     } else {
       put_text(tui->render, line++, col + 2, "%s", combo_text);
     }
