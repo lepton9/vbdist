@@ -44,13 +44,12 @@ void freeCombo(combo* combo) {
   free(combo);
 }
 
-// void addCombo(dlist* combos, comboType type, int a, int b) {
-//   pCombo* combo = malloc(sizeof(pCombo));
-//   combo->pidA = a;
-//   combo->pidB = b;
-//   combo->type = type;
-//   list_add(combos, combo);
-// }
+void addCombo(dlist* combos, comboType type, int a, int b) {
+  combo* combo = initCombo(type, -1);
+  addToCombo(combo, a);
+  addToCombo(combo, b);
+  list_add(combos, combo);
+}
 
 void addToCombo(combo* combo, int a) {
   int* id = malloc(sizeof(int));

@@ -173,10 +173,12 @@ dlist* fetchPlayerList(sqldb* db) {
   return list;
 }
 
+// TODO:
 int insertCombo(sqldb* db, combo* combo) {
   if (comboExists(db, combo)) {
     return 0;
   }
+  return 0;
   char sql[200];
   sprintf(sql, "INSERT INTO Combo (combo_type) VALUES ('%s');",
           comboTypeString(combo->type));

@@ -252,6 +252,17 @@ int validateSwap(double a, double b, double aNew, double bNew, double avg, int o
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
 }
 
+int maxTeamFromPrefCombos(dlist* prefCombos) {
+  int biggest_size = 0;
+  for (size_t i = 0; i < prefCombos->n; i++) {
+    combo* c = prefCombos->items[i];
+    if ((int)c->ids->n > biggest_size) {
+      biggest_size = (int)c->ids->n;
+    }
+  }
+  return biggest_size;
+}
+
 // int maxTeamFromPrefCombos(dlist* prefCombos) {
 //   int maxSize = 0;
 //   int nTeams = 1;
@@ -835,9 +846,7 @@ int main(int argc, char** argv) {
       break;
   }
 
-  // TODO:
-  // int maxSize = maxTeamFromPrefCombos(prefCombos);
-  int maxSize = 0;
+  int maxSize = maxTeamFromPrefCombos(prefCombos);
   if (maxSize > TEAM_SIZE) {
     // TODO: handle somehow
     char msg[100];

@@ -34,7 +34,7 @@ void freeCombos(dlist* combos);
 
 void addToCombo(combo* combo, int a);
 
-// void addCombo(dlist* combos, comboType type, int a, int b);
+void addCombo(dlist* combos, comboType type, int a, int b);
 
 int isInCombo(combo* combo, player* a);
 int isInSomeCombo(dlist* combos, player* a);
