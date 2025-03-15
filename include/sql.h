@@ -41,13 +41,13 @@ dlist* fetchFormerTeammates(sqldb* db, player* player);
 dlist* fetchNotTeammates(sqldb* db, player* player);
 dlist* fetchPlayersInTeam(sqldb* db, team* team);
 
-int insertCombo(sqldb* db, pCombo* combo);
+int insertCombo(sqldb* db, combo* combo);
 int insertCombos(sqldb* db, dlist* combos);
-int fetchCombo(sqldb* db, pCombo* combo);
+int fetchCombo(sqldb* db, combo* combo);
 dlist* fetchCombos(sqldb* db, comboType type);
 dlist* fetchAllCombos(sqldb* db);
-int deleteCombo(sqldb* db, pCombo* combo);
-int comboExists(sqldb* db, pCombo* combo);
+int deleteCombo(sqldb* db, combo* combo);
+int comboExists(sqldb* db, combo* combo);
 
 dlist* fetchSkills(sqldb* db);
 int insertSkill(sqldb* db, skill* skill);

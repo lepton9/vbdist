@@ -93,7 +93,7 @@ void ctuiSelectPlayer(tui_combos* tui) {
 void deleteCurCombo(tui_combos* tui) {
   int ind = tui->combos_area->selected;
   if (ind < 0) return;
-  pCombo* combo = tui->combos->items[ind];
+  combo* combo = tui->combos->items[ind];
   int res = deleteCombo(tui->db, combo);
   if (res) {
     free(pop_elem(tui->combos, ind));
@@ -269,10 +269,11 @@ void ctuiRenderCombosArea(tui_combos* tui) {
   char combo_text[100];
   combo_text[0] = '\0';
 
+  // TODO: display all players
   for (int i = tui->combos_area->first_ind; i < tui->combos_area->first_ind + len; i++) {
-    pCombo* combo = tui->combos->items[i];
-    player* p1 = getPlayerInList(tui->players, combo->pidA);
-    player* p2 = getPlayerInList(tui->players, combo->pidB);
+    combo* combo = tui->combos->items[i];
+    player* p1 = getPlayerInList(tui->players, *((int*)combo->ids->items[0]));
+    player* p2 = getPlayerInList(tui->players, *((int*)combo->ids->items[1]));
 
     sprintf(combo_text, "(%s) %s - %s", comboTypeString(combo->type), p1->firstName, p2->firstName);
 

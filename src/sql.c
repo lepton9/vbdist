@@ -101,20 +101,14 @@ int cb_add_id_list(void* list, int count, char **data, char **columns) {
 
 int cb_combos(void* combos, int count, char **data, char **columns) {
   assert(count == 2);
-  pCombo* c = malloc(sizeof(pCombo));
-  c->combo_id = atoi(data[0]);
-  c->type = toComboType(data[1]);
-  c->pidA = -1;
-  c->pidB = -1;
+  combo* c = initCombo(toComboType(data[1]), atoi(data[0]));
   list_add(combos, c);
   return 0;
 }
 
 int cb_combo(void* combo, int count, char **data, char **columns) {
   assert(count == 1);
-  pCombo* c = combo;
-  if (c->pidA < 0) c->pidA = atoi(data[0]);
-  else if (c->pidB < 0) c->pidB = atoi(data[0]);
+  addToCombo(combo, atoi(data[0]));
   return 0;
 }
 
@@ -179,21 +173,27 @@ dlist* fetchPlayerList(sqldb* db) {
   return list;
 }
 
-int insertCombo(sqldb* db, pCombo* combo) {
+int insertCombo(sqldb* db, combo* combo) {
   if (comboExists(db, combo)) {
     return 0;
   }
-  char sql[100];
+  char sql[200];
   sprintf(sql, "INSERT INTO Combo (combo_type) VALUES ('%s');",
           comboTypeString(combo->type));
   if (execQuery(db->sqlite, sql, NULL, NULL)) {
     int combo_id = sqlite3_last_insert_rowid(db->sqlite);
-    sprintf(
-        sql,
-        "INSERT INTO InCombo (combo_id, player_id) VALUES (%d, %d), (%d, %d);",
-        combo_id, combo->pidA, combo_id, combo->pidB);
+    sprintf(sql, "INSERT INTO InCombo (combo_id, player_id) VALUES ");
+    for (size_t i = 0; i < combo->ids->n; i++) {
+      if (i > 0) strcat(sql, ",");
+      char sql_combo[20];
+      int* id = combo->ids->items[i];
+      sprintf(sql_combo, "(%d, %d)", combo_id, *id);
+      strcat(sql, sql_combo);
+    }
+    strcat(sql, ";");
+
     if (execQuery(db->sqlite, sql, NULL, NULL)) {
-      log_sql("Inserted Combo %s (%d, %d)", comboTypeString(combo->type), combo->pidA, combo->pidB);
+      log_sql("Inserted Combo %s (%d players)", comboTypeString(combo->type), (int)combo->ids->n);
       return 1;
     }
   }
@@ -208,25 +208,28 @@ int insertCombos(sqldb* db, dlist* combos) {
   return r;
 }
 
-int comboExists(sqldb* db, pCombo* combo) {
+int comboExists(sqldb* db, combo* combo) {
   char sql[300];
-  sprintf(sql, "SELECT player_id FROM InCombo WHERE combo_id = %d;", combo->combo_id);
-  sprintf(sql,
-          "SELECT combo_id FROM Combo "
-          "WHERE combo_type = '%s' "
-          "AND combo_id IN ("
-          "    SELECT combo_id FROM InCombo "
-          "    WHERE player_id IN (%d, %d) "
-          "    GROUP BY combo_id "
-          "    HAVING COUNT(DISTINCT player_id) = 2"
-          ");",
-          comboTypeString(combo->type), combo->pidA, combo->pidB);
+  // sprintf(sql,
+  //         "SELECT combo_id FROM Combo "
+  //         "WHERE combo_type = '%s' "
+  //         "AND combo_id IN ("
+  //         "    SELECT combo_id FROM InCombo "
+  //         "    WHERE player_id IN (%d, %d) "
+  //         "    GROUP BY combo_id "
+  //         "    HAVING COUNT(DISTINCT player_id) = 2"
+  //         ");",
+  //         comboTypeString(combo->type), combo->pidA, combo->pidB);
+
+  // TODO: make work
+  // sprintf(sql, "SELECT c.combo_id FROM Combo c JOIN InCombo ic ON c.combo_id = ic.combo_id WHERE c.combo_type = '%s' AND COUNT(c.combo_id) = %d AND");
+
   int found = 0;
   execQuery(db->sqlite, sql, cb_found, &found);
   return found;
 }
 
-int fetchCombo(sqldb* db, pCombo* combo) {
+int fetchCombo(sqldb* db, combo* combo) {
   char sql[100];
   sprintf(sql, "SELECT player_id FROM InCombo WHERE combo_id = %d;", combo->combo_id);
   return execQuery(db->sqlite, sql, cb_combo, combo);
@@ -254,7 +257,7 @@ dlist* fetchAllCombos(sqldb* db) {
   return combos;
 }
 
-int deleteCombo(sqldb* db, pCombo* combo) {
+int deleteCombo(sqldb* db, combo* combo) {
   char sql[100];
   sprintf(sql, "DELETE FROM Combo WHERE combo_id = %d;", combo->combo_id);
   int r = execQuery(db->sqlite, sql, NULL, NULL);

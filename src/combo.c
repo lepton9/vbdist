@@ -22,7 +22,7 @@ comboType toComboType(const char* type) {
 
 void freeCombos(dlist *combos) {
   if (combos == NULL) return;
-  for (size_t i = 0; i < (int)combos->n; i++) {
+  for (size_t i = 0; i < combos->n; i++) {
     freeCombo(combos->items[i]);
   }
   free_list(combos);

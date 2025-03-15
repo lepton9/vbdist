@@ -39,15 +39,15 @@ dataSource SOURCE = NO_SOURCE;
 printMode PRINT_MODE = PRINT_MINIMAL;
 
 
-int comboRelevant(dlist* players, pCombo* combo) {
+int comboRelevant(dlist* players, combo* combo) {
   int match = 0;
   for (int i = 0; i < (int)players->n; i++) {
     player* p = players->items[i];
-    if (p->id == combo->pidA || p->id == combo->pidB) {
+    if (isInCombo(combo, p)) {
       match++;
     }
   }
-  return match == 2;
+  return match == (int)combo->ids->n;
 }
 
 void updateCombos(sqldb* db, dlist* players, dlist* combos, comboType combo_type) {
@@ -60,7 +60,7 @@ void updateCombos(sqldb* db, dlist* players, dlist* combos, comboType combo_type
   dlist* new_combos = fetchCombos(db, combo_type);
 
   if (combos->size < new_combos->n) {
-    void** resized_items = realloc(combos->items, new_combos->size * sizeof(pCombo*));
+    void** resized_items = realloc(combos->items, new_combos->size * sizeof(combo*));
     combos->items = resized_items;
     combos->size = new_combos->size;
   }
@@ -100,58 +100,58 @@ char** parseComboLine(char* line, int* n) {
   return tokens;
 }
 
-void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
-  char fc = line[0];
-  int idA = -1;
-  int n = 0;
-  char** tokens = parseComboLine(line, &n);
-  assert(n > 0);
-  for (int i = 0; i < (int)players->n; i++) {
-    if ((SOURCE == TEXT_FILE && strcmp(((player*)players->items[i])->firstName, tokens[0]) == 0)
-    || (SOURCE == DATABASE && ((player*)players->items[i])->id == atoi(tokens[0]))) {
-      idA = ((player*)players->items[i])->id;
-      break;
-    }
-  }
-  for (int i = 1; i < n; i++) {
-    int idB = -1;
-    for (int j = 0; j < (int)players->n; j++) {
-      player* pj = ((player*)players->items[j]);
-      if ((SOURCE == TEXT_FILE && strcmp(pj->firstName, tokens[i]) == 0)
-      || (SOURCE == DATABASE && pj->id == atoi(tokens[i]))) {
-        idB = pj->id;
-        break;
-      }
-    }
-    if (idA >= 0 && idB >= 0) {
-      if (fc == '+') addCombo(prefCombos, PAIR, idA, idB);
-      else if (fc == '!') addCombo(bpcs, BAN, idA, idB);
-      else if (fc == '?') {
-        for (int j = 0; j < (int)players->n; j++) {
-          player* pj = ((player*)players->items[j]);
-          if ((SOURCE == TEXT_FILE && strcmp(pj->firstName, tokens[i - 1]) == 0)
-            || (SOURCE == DATABASE && pj->id == atoi(tokens[i - 1]))) {
-            idA = pj->id;
-            break;
-          }
-        }
-        for (int j = i; j < n; j++) {
-          for (int k = 0; k < (int)players->n; k++) {
-            player* pk = ((player*)players->items[k]);
-            if ((SOURCE == TEXT_FILE && strcmp(pk->firstName, tokens[j]) == 0)
-              || (SOURCE == DATABASE && pk->id == atoi(tokens[j]))) {
-              idB = pk->id;
-              addCombo(bpcs, BAN, idA, idB);
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
-  for (int i = 0; i < n; i++) free(tokens[i]);
-  free(tokens);
-}
+// void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
+//   char fc = line[0];
+//   int idA = -1;
+//   int n = 0;
+//   char** tokens = parseComboLine(line, &n);
+//   assert(n > 0);
+//   for (int i = 0; i < (int)players->n; i++) {
+//     if ((SOURCE == TEXT_FILE && strcmp(((player*)players->items[i])->firstName, tokens[0]) == 0)
+//     || (SOURCE == DATABASE && ((player*)players->items[i])->id == atoi(tokens[0]))) {
+//       idA = ((player*)players->items[i])->id;
+//       break;
+//     }
+//   }
+//   for (int i = 1; i < n; i++) {
+//     int idB = -1;
+//     for (int j = 0; j < (int)players->n; j++) {
+//       player* pj = ((player*)players->items[j]);
+//       if ((SOURCE == TEXT_FILE && strcmp(pj->firstName, tokens[i]) == 0)
+//       || (SOURCE == DATABASE && pj->id == atoi(tokens[i]))) {
+//         idB = pj->id;
+//         break;
+//       }
+//     }
+//     if (idA >= 0 && idB >= 0) {
+//       if (fc == '+') addCombo(prefCombos, PAIR, idA, idB);
+//       else if (fc == '!') addCombo(bpcs, BAN, idA, idB);
+//       else if (fc == '?') {
+//         for (int j = 0; j < (int)players->n; j++) {
+//           player* pj = ((player*)players->items[j]);
+//           if ((SOURCE == TEXT_FILE && strcmp(pj->firstName, tokens[i - 1]) == 0)
+//             || (SOURCE == DATABASE && pj->id == atoi(tokens[i - 1]))) {
+//             idA = pj->id;
+//             break;
+//           }
+//         }
+//         for (int j = i; j < n; j++) {
+//           for (int k = 0; k < (int)players->n; k++) {
+//             player* pk = ((player*)players->items[k]);
+//             if ((SOURCE == TEXT_FILE && strcmp(pk->firstName, tokens[j]) == 0)
+//               || (SOURCE == DATABASE && pk->id == atoi(tokens[j]))) {
+//               idB = pk->id;
+//               addCombo(bpcs, BAN, idA, idB);
+//               break;
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+//   for (int i = 0; i < n; i++) free(tokens[i]);
+//   free(tokens);
+// }
 
 dlist* readPlayers(const char *fileName, dlist* bpcs, dlist* prefCombos) {
   FILE *fp = fopen(fileName, "rb");
@@ -167,7 +167,7 @@ dlist* readPlayers(const char *fileName, dlist* bpcs, dlist* prefCombos) {
     line[strcspn(line, "\n")] = 0;
     if (line[0] == '#' || strcmp(trimWS(line), "") == 0) continue;
     if (line[0] == '!' || line[0] == '?' || line[0] == '+') {
-      parseCombos(line, ps, bpcs, prefCombos);
+      // parseCombos(line, ps, bpcs, prefCombos);
     } else {
       switch (SOURCE) {
         case DATABASE: {
@@ -252,104 +252,111 @@ int validateSwap(double a, double b, double aNew, double bNew, double avg, int o
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
 }
 
-int maxTeamFromPrefCombos(dlist* prefCombos) {
-  int maxSize = 0;
-  int nTeams = 1;
-  int* ns = calloc(nTeams, sizeof(int));
-  int** presetTeams = malloc(sizeof(int*));
-  *presetTeams = calloc(2, sizeof(int));
-  pCombo* prefCombo = NULL;
-
-  for (int i = 0; i < (int)prefCombos->n; i++) {
-    char comboSet = 0;
-    if (nTeams == 1 && ns[0] == 0) {
-      prefCombo = prefCombos->items[i];
-      presetTeams[0][ns[0]++] = prefCombo->pidA;
-      presetTeams[0][ns[0]++] = prefCombo->pidB;
-      maxSize = ns[0];
-      continue;
-    }
-    for (int j = 0; j < nTeams; j++) {
-      for (int k = 0; k < ns[j]; k++) {
-        int id = (presetTeams[j][k] == prefCombo->pidA)
-                     ? prefCombo->pidB
-                 : (presetTeams[j][k] == prefCombo->pidB)
-                     ? prefCombo->pidA
-                     : -1;
-        if (id >= 0) {
-          char inTeam = 0;
-          for (int l = 0; l < ns[j]; l++) {
-            if (presetTeams[j][l] == id) inTeam = 1;
-          }
-          if (!inTeam) {
-            presetTeams[j] = realloc(presetTeams[j], (ns[j] + 1) * sizeof(int));
-            presetTeams[j][ns[j]++] = id;
-            if (ns[j] > maxSize) maxSize = ns[j];
-            comboSet = 1;
-            break;
-          }
-        }
-      }
-      if (comboSet) break;
-    }
-     if (!comboSet) {
-      presetTeams = realloc(presetTeams, (nTeams + 1) * sizeof(int*));
-      ns = realloc(ns, (nTeams + 1) * sizeof(int));
-      ns[nTeams] = 0;
-      presetTeams[nTeams] = calloc(2, sizeof(int));
-      presetTeams[nTeams][ns[nTeams]++] = prefCombo->pidA;
-      presetTeams[nTeams][ns[nTeams]++] = prefCombo->pidB;
-      nTeams++;
-    }
-  }
-
-  for (int i = 0; i < nTeams; i++) {
-    free(presetTeams[i]);
-  }
-  free(presetTeams);
-  free(ns);
-  return maxSize;
-}
+// int maxTeamFromPrefCombos(dlist* prefCombos) {
+//   int maxSize = 0;
+//   int nTeams = 1;
+//   int* ns = calloc(nTeams, sizeof(int));
+//   int** presetTeams = malloc(sizeof(int*));
+//   *presetTeams = calloc(2, sizeof(int));
+//   pCombo* prefCombo = NULL;
+//
+//   for (int i = 0; i < (int)prefCombos->n; i++) {
+//     char comboSet = 0;
+//     if (nTeams == 1 && ns[0] == 0) {
+//       prefCombo = prefCombos->items[i];
+//       presetTeams[0][ns[0]++] = prefCombo->pidA;
+//       presetTeams[0][ns[0]++] = prefCombo->pidB;
+//       maxSize = ns[0];
+//       continue;
+//     }
+//     for (int j = 0; j < nTeams; j++) {
+//       for (int k = 0; k < ns[j]; k++) {
+//         int id = (presetTeams[j][k] == prefCombo->pidA)
+//                      ? prefCombo->pidB
+//                  : (presetTeams[j][k] == prefCombo->pidB)
+//                      ? prefCombo->pidA
+//                      : -1;
+//         if (id >= 0) {
+//           char inTeam = 0;
+//           for (int l = 0; l < ns[j]; l++) {
+//             if (presetTeams[j][l] == id) inTeam = 1;
+//           }
+//           if (!inTeam) {
+//             presetTeams[j] = realloc(presetTeams[j], (ns[j] + 1) * sizeof(int));
+//             presetTeams[j][ns[j]++] = id;
+//             if (ns[j] > maxSize) maxSize = ns[j];
+//             comboSet = 1;
+//             break;
+//           }
+//         }
+//       }
+//       if (comboSet) break;
+//     }
+//      if (!comboSet) {
+//       presetTeams = realloc(presetTeams, (nTeams + 1) * sizeof(int*));
+//       ns = realloc(ns, (nTeams + 1) * sizeof(int));
+//       ns[nTeams] = 0;
+//       presetTeams[nTeams] = calloc(2, sizeof(int));
+//       presetTeams[nTeams][ns[nTeams]++] = prefCombo->pidA;
+//       presetTeams[nTeams][ns[nTeams]++] = prefCombo->pidB;
+//       nTeams++;
+//     }
+//   }
+//
+//   for (int i = 0; i < nTeams; i++) {
+//     free(presetTeams[i]);
+//   }
+//   free(presetTeams);
+//   free(ns);
+//   return maxSize;
+// }
 
 void setPreferredCombos(team** teams, dlist* prefCombos) {
-  for (int c = 0; c < (int)prefCombos->n; c++) {
-    int t1 = -1;
-    int t2 = -1;
-    player* p1 = NULL;
-    player* p2 = NULL;
-    player* pToSwap = NULL;
-    pCombo* combo = prefCombos->items[c];
-    // Finds the players in the combo and their teams
-    for (int i = 0; i < TEAMS_N; i++) {
-      for (int j = 0; j < TEAM_SIZE; j++) {
-        if (teams[i]->players[j]->id == combo->pidA) {
-          p1 = teams[i]->players[j];
-          t1 = i;
+  for (size_t c = 0; c < prefCombos->n; c++) {
+    combo* combo = prefCombos->items[c];
+
+    if (combo->ids->n < 2) continue;
+    for (size_t ind = 0; ind < combo->ids->n - 1; ind++) {
+      int id_a = *((int*)combo->ids->items[ind]);
+      int id_b = *((int*)combo->ids->items[ind + 1]);
+
+      int t1 = -1;
+      int t2 = -1;
+      player* p1 = NULL;
+      player* p2 = NULL;
+      player* pToSwap = NULL;
+      // Finds the players in the combo and their teams
+      for (int i = 0; i < TEAMS_N; i++) {
+        for (int j = 0; j < TEAM_SIZE; j++) {
+          if (teams[i]->players[j]->id == id_a) {
+            p1 = teams[i]->players[j];
+            t1 = i;
+          }
+          else if (teams[i]->players[j]->id == id_b) {
+            p2 = teams[i]->players[j];
+            t2 = i;
+          }
         }
-        else if (teams[i]->players[j]->id == combo->pidB) {
-          p2 = teams[i]->players[j];
-          t2 = i;
+        if (p1 && p2) break;
+      }
+      if (t1 == t2 || t1 < 0 || t2 < 0) continue;
+      // Finds player to swap
+      for (int i = 0; i < TEAM_SIZE; i++) {
+        player* maybeSwapP = teams[t1]->players[i];
+        if (maybeSwapP->id == p1->id) continue;
+        // Makes sure the player has no combos with anyone on the team
+        char hasCombo = 0;
+        for (int j = 0; j < TEAM_SIZE; j++) {
+          if ((hasCombo = isCombo(prefCombos, maybeSwapP, teams[t1]->players[j]))) break;
+        }
+        if (hasCombo) continue;
+        else {
+          pToSwap = maybeSwapP;
+          break;
         }
       }
-      if (p1 && p2) break;
+      if (pToSwap) swapPlayers(pToSwap, p2);
     }
-    if (t1 == t2 || t1 < 0 || t2 < 0) continue;
-    // Finds player to swap
-    for (int i = 0; i < TEAM_SIZE; i++) {
-      player* maybeSwapP = teams[t1]->players[i];
-      if (maybeSwapP->id == p1->id) continue;
-      // Makes sure the player has no combos with anyone on the team
-      char hasCombo = 0;
-      for (int j = 0; j < TEAM_SIZE; j++) {
-        if ((hasCombo = isCombo(prefCombos, maybeSwapP, teams[t1]->players[j]))) break;
-      }
-      if (hasCombo) continue;
-      else {
-        pToSwap = maybeSwapP;
-        break;
-      }
-    }
-    if (pToSwap) swapPlayers(pToSwap, p2);
   }
 }
 
@@ -828,7 +835,9 @@ int main(int argc, char** argv) {
       break;
   }
 
-  int maxSize = maxTeamFromPrefCombos(prefCombos);
+  // TODO:
+  // int maxSize = maxTeamFromPrefCombos(prefCombos);
+  int maxSize = 0;
   if (maxSize > TEAM_SIZE) {
     // TODO: handle somehow
     char msg[100];
