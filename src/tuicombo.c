@@ -283,17 +283,18 @@ void ctuiRenderCombosArea(tui_combos* tui) {
   int line = 2;
   int len = getListAreaLen(tui->combos_area, tui->term, line);
 
-  if (tui->mode == CTUI_COMBO_LIST) {
-    make_borders_color(tui->render, col, 0, tui->combos_area->width, len + 4, BLUE_FG);
-  } else {
-    make_borders(tui->render, col, 0, tui->combos_area->width, len + 4);
+  int ind = tui->combos_area->selected;
+  int sel_combo_len = 0;
+  if (ind >= 0) {
+    combo* sel_combo = tui->combos->items[ind];
+    sel_combo_len = sel_combo->ids->n;
   }
-  put_text(tui->render, 0, col + 3, "%s", "Combos");
+
+  size_t border_height = len + 4 + sel_combo_len;
 
   char combo_text[100];
   combo_text[0] = '\0';
 
-  // TODO: display all players
   for (int i = tui->combos_area->first_ind; i < tui->combos_area->first_ind + len; i++) {
     combo* combo = tui->combos->items[i];
     const char *name1 =
@@ -311,7 +312,6 @@ void ctuiRenderCombosArea(tui_combos* tui) {
     if (tui->combos_area->selected == i) {
       tui->combos_area->selected_term_row = line + 1;
       put_text(tui->render, line++, col + 2, "\033[7m %s\033[27m", combo_text);
-      // TODO: calculate max and border height
       for (size_t j = 0; j < combo->ids->n; j++) {
         player* p = getPlayerInList(tui->players, *((int*)combo->ids->items[j]));
         put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", p->firstName);
@@ -321,6 +321,14 @@ void ctuiRenderCombosArea(tui_combos* tui) {
     }
     combo_text[0] = '\0';
   }
+
+  if (tui->mode == CTUI_COMBO_LIST) {
+    make_borders_color(tui->render, col, 0, tui->combos_area->width, border_height, BLUE_FG);
+  } else {
+    make_borders(tui->render, col, 0, tui->combos_area->width, border_height);
+  }
+  put_text(tui->render, 0, col + 3, "%s", "Combos");
+
 }
 
 

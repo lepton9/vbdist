@@ -219,7 +219,8 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
     print_len = available_space;
   }
 
-  shift_esc_seq(r->screen.s[row], r->real_width, print_col, len);
+  // TODO: probably useless
+  // shift_esc_seq(r->screen.s[row], r->real_width, print_col, len);
 
   if (len > print_len && print_col < r->screen.print_line_len[row]) {
     size_t shift = len - print_len;
