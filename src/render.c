@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 
 renderer* init_renderer(FILE* out) {
@@ -160,26 +161,32 @@ const char* find_printable_start(const char* str, size_t start) {
   return NULL;
 }
 
+// Takes a substring while preserving any escape sequences
 char* printable_substr(const char* str, size_t start, size_t length) {
-  const char *substr_start = find_printable_start(str, start);
+  const char *substr_start = (start == 0) ? str : find_printable_start(str, start);
   if (!substr_start || length == 0) return strdup("");
 
-  size_t max_print_len = printable_length(substr_start);
-  size_t effective_length = (length > max_print_len) ? max_print_len : length;
+  size_t max_print_len = min_int(printable_length(substr_start), length);
 
   char *result = malloc(strlen(substr_start) + 1);
   if (!result) return strdup("");
 
   char *out = result;
+  const char *ptr = substr_start;
   size_t print_count = 0;
 
-  while (*substr_start && print_count < effective_length) {
-    substr_start = skip_escape(substr_start);
-    if (*substr_start) {
-      *out++ = *substr_start++;
+  while (*ptr) {
+    const char *next_ptr = skip_escape(ptr);
+    if (next_ptr != ptr) { // Gap is escape sequence
+      while (ptr < next_ptr) *out++ = *ptr++;
+    } else if (print_count < max_print_len && isprint((unsigned char)*ptr)) {
+      *out++ = *ptr++;
       print_count++;
+    } else {
+      ptr++;
     }
   }
+
   *out = '\0';
   return result;
 }
@@ -210,8 +217,6 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
   if (real_col < 0) return 0;
 
 
-  // TODO: cut only printable chars
-  // keep the escape sequences
   char* cut = NULL;
   if (print_len > available_space && print_col >= line_print_len) {
     cut = printable_substr(line, 0, available_space);
