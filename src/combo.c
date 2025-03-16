@@ -77,7 +77,7 @@ int isInSomeCombo(dlist* combos, player* a) {
 char isCombo(dlist* combos, player* a, player* b) {
   for (size_t i = 0; i < combos->n; i++) {
     combo* combo = combos->items[i];
-    if (isInCombo(combo, a) && isInCombo(combo, b)) {
+    if (a->id != b->id && isInCombo(combo, a) && isInCombo(combo, b)) {
       return 1;
     }
   }
