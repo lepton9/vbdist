@@ -11,7 +11,7 @@ tui_combos* init_tui_combo(sqldb* db, dlist* players) {
 
   tui->mode = CTUI_PLAYER_LIST;
 
-  tui->cur_combo = init_list();
+  tui->cur_combo = NULL;
   tui->recording_combo = 0;
 
   tui->combos = fetchAllCombos(db);
@@ -30,7 +30,7 @@ void free_tui_combo(tui_combos* tui) {
   free_list_area(tui->players_area);
   free_list_area(tui->combos_area);
   freeCombos(tui->combos);
-  free_list(tui->cur_combo);
+  if (tui->cur_combo) freeCombo(tui->cur_combo);
   free(tui);
 }
 
@@ -44,49 +44,47 @@ void changeComboTuiMode(tui_combos* tui) {
 }
 
 void start_combo(tui_combos* tui, comboType type) {
-  if (tui->recording_combo) return;
+  if (tui->recording_combo || tui->cur_combo) return;
+  tui->cur_combo = initCombo(type, -1);
   tui->recording_combo = 1;
-  tui->cur_combo_type = type;
   tui->mode = CTUI_PLAYER_LIST;
 }
 
 void end_combo(tui_combos* tui) {
-  if (!tui->recording_combo) return;
+  if (!tui->recording_combo || ! tui->cur_combo) return;
   tui->recording_combo = 0;
-  if (tui->cur_combo->n == 0) return;
-  insert_cur_combo(tui);
-
-  for (size_t i = 0; i < tui->cur_combo->n; i++) {
-    free(tui->cur_combo->items[i]);
-    tui->cur_combo->items[i] = NULL;
+  if (tui->cur_combo->ids->n > 1) {
+    insert_cur_combo(tui);
   }
-  tui->cur_combo->n = 0;
+  freeCombo(tui->cur_combo);
+  tui->cur_combo = NULL;
 }
 
 // TODO:
 void insert_cur_combo(tui_combos* tui) {
-  for (size_t i = 0; i < tui->cur_combo->n; i++) {
+  for (size_t i = 0; i < tui->cur_combo->ids->n; i++) {
 
   }
 }
 
-int inCurCombo(dlist* ids, int id) {
-  for (size_t i = 0; i < ids->n; i++) {
-    if (*((int*)ids->items[i]) == id) return i;
+int inCurCombo(combo* combo, int id) {
+  if (!combo) return -1;
+  for (size_t i = 0; i < combo->ids->n; i++) {
+    if (*((int*)combo->ids->items[i]) == id) return i;
   }
   return -1;
 }
 
 void ctuiSelectPlayer(tui_combos* tui) {
-  if (!tui->recording_combo || tui->mode != CTUI_PLAYER_LIST) return;
+  if (!tui->recording_combo || tui->mode != CTUI_PLAYER_LIST || !tui->cur_combo) return;
   player* p = tui->players->items[tui->players_area->selected];
   int i = inCurCombo(tui->cur_combo, p->id);
   if (i >= 0) {
-    free(pop_elem(tui->cur_combo, i));
+    free(pop_elem(tui->cur_combo->ids, i));
   } else {
     int* id = malloc(sizeof(int));
     *id = p->id;
-    list_add(tui->cur_combo, id);
+    list_add(tui->cur_combo->ids, id);
   }
 }
 

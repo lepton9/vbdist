@@ -25,7 +25,7 @@ typedef struct {
 
   int recording_combo;
   comboType cur_combo_type;
-  dlist* cur_combo; // Player ids
+  combo* cur_combo;
 } tui_combos;
 
 tui_combos* init_tui_combo(sqldb* db, dlist* players);

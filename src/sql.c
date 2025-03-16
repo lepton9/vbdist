@@ -173,12 +173,10 @@ dlist* fetchPlayerList(sqldb* db) {
   return list;
 }
 
-// TODO:
 int insertCombo(sqldb* db, combo* combo) {
-  // if (comboExists(db, combo)) {
-  //   return 0;
-  // }
-  return 0;
+  if (combo->combo_id >= 0) {
+    return 0;
+  }
   char sql[200];
   sprintf(sql, "INSERT INTO Combo (combo_type) VALUES ('%s');",
           comboTypeString(combo->type));
@@ -196,6 +194,7 @@ int insertCombo(sqldb* db, combo* combo) {
 
     if (execQuery(db->sqlite, sql, NULL, NULL)) {
       log_sql("Inserted Combo %s (%d players)", comboTypeString(combo->type), (int)combo->ids->n);
+      combo->combo_id = combo_id;
       return 1;
     }
   }
@@ -210,25 +209,24 @@ int insertCombos(sqldb* db, dlist* combos) {
   return r;
 }
 
-int comboExists(sqldb* db, combo* combo) {
-  char sql[300];
-  // sprintf(sql,
-  //         "SELECT combo_id FROM Combo "
-  //         "WHERE combo_type = '%s' "
-  //         "AND combo_id IN ("
-  //         "    SELECT combo_id FROM InCombo "
-  //         "    WHERE player_id IN (%d, %d) "
-  //         "    GROUP BY combo_id "
-  //         "    HAVING COUNT(DISTINCT player_id) = 2"
-  //         ");",
-  //         comboTypeString(combo->type), combo->pidA, combo->pidB);
-
-  // TODO: make work
-  // sprintf(sql, "SELECT c.combo_id FROM Combo c JOIN InCombo ic ON c.combo_id = ic.combo_id WHERE c.combo_type = '%s' AND COUNT(c.combo_id) = %d AND");
-
-  int found = 0;
-  execQuery(db->sqlite, sql, cb_found, &found);
-  return found;
+int updateCombo(sqldb* db, combo* combo) {
+  if (combo->combo_id < 0) {
+    return 0;
+  }
+  int inserted = 0;
+  char sql[200];
+  for (size_t i = 0; i < combo->ids->n; i++) {
+    int id = *(int*)combo->ids->items[i];
+    sprintf(sql,
+            "IF NOT EXISTS (SELECT player_id FROM InCombo WHERE combo_id = %d "
+            "AND player_id = %d) INSERT INTO InCombo (combo_id, player_id) "
+            "VALUES (%d, %d);",
+            combo->combo_id, id, combo->combo_id, id);
+    if (execQuery(db->sqlite, sql, NULL, NULL)) {
+      inserted++;
+    }
+  }
+  return inserted;
 }
 
 int fetchCombo(sqldb* db, combo* combo) {
