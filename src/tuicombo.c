@@ -53,18 +53,21 @@ void start_combo(tui_combos* tui, comboType type) {
 void end_combo(tui_combos* tui) {
   if (!tui->recording_combo || ! tui->cur_combo) return;
   tui->recording_combo = 0;
+  int added = 0;
   if (tui->cur_combo->ids->n > 1) {
-    insert_cur_combo(tui);
+    added = insert_cur_combo(tui);
   }
-  freeCombo(tui->cur_combo);
+  if (!added) freeCombo(tui->cur_combo);
   tui->cur_combo = NULL;
 }
 
-// TODO:
-void insert_cur_combo(tui_combos* tui) {
-  for (size_t i = 0; i < tui->cur_combo->ids->n; i++) {
-
+int insert_cur_combo(tui_combos* tui) {
+  int r = insertCombo(tui->db, tui->cur_combo);
+  if (r) {
+    list_add(tui->combos, tui->cur_combo);
+    update_list_len(tui->combos_area, tui->combos->n);
   }
+  return r;
 }
 
 int inCurCombo(combo* combo, int id) {
@@ -226,7 +229,7 @@ void ctuiRenderPlayersArea(tui_combos* tui) {
   }
   put_text(tui->render, 0, 3, "%s", "Selected players");
   if (tui->recording_combo) {
-    put_text(tui->render, 0, 22, "(%s)", comboTypeString(tui->cur_combo_type));
+    put_text(tui->render, 0, 22, "(%s)", comboTypeString(tui->cur_combo->type));
   }
 
   char player_text[100];
@@ -240,9 +243,9 @@ void ctuiRenderPlayersArea(tui_combos* tui) {
       put_text(tui->render, line++, col, "\033[7m %-20s\033[27m", player_text);
     }
     else if (tui->recording_combo && inCurCombo(tui->cur_combo, p->id) >= 0) {
-      if (tui->cur_combo_type == BAN) {
+      if (tui->cur_combo->type == BAN) {
         put_text(tui->render, line++, col-1, "*\033[31m %-20s\033[0m", player_text);
-      } else if (tui->cur_combo_type == PAIR) {
+      } else if (tui->cur_combo->type == PAIR) {
         put_text(tui->render, line++, col-1, "*\033[32m %-20s\033[0m", player_text);
       }
     } else {
