@@ -43,6 +43,15 @@ void changeComboTuiMode(tui_combos* tui) {
   }
 }
 
+void start_edit_combo(tui_combos* tui) {
+  if (tui->recording_combo || tui->cur_combo) return;
+  int ind = tui->combos_area->selected;
+  if (ind < 0 || tui->combos->n == 0) return;
+  tui->cur_combo = tui->combos->items[ind];
+  tui->recording_combo = 1;
+  tui->mode = CTUI_PLAYER_LIST;
+}
+
 void start_combo(tui_combos* tui, comboType type) {
   if (tui->recording_combo || tui->cur_combo) return;
   tui->cur_combo = initCombo(type, -1);
@@ -51,13 +60,22 @@ void start_combo(tui_combos* tui, comboType type) {
 }
 
 void end_combo(tui_combos* tui) {
-  if (!tui->recording_combo || ! tui->cur_combo) return;
+  if (!tui->recording_combo || !tui->cur_combo) return;
   tui->recording_combo = 0;
   int added = 0;
-  if (tui->cur_combo->ids->n > 1) {
-    added = insert_cur_combo(tui);
+  if (tui->cur_combo->combo_id >= 0) {
+    if (tui->cur_combo->ids->n < 2) {
+      deleteCurCombo(tui);
+    } else {
+      updateCombo(tui->db, tui->cur_combo);
+    }
+    tui->mode = CTUI_COMBO_LIST;
+  } else {
+    if (tui->cur_combo->ids->n > 1) {
+      added = insert_cur_combo(tui);
+    }
+    if (!added) freeCombo(tui->cur_combo);
   }
-  if (!added) freeCombo(tui->cur_combo);
   tui->cur_combo = NULL;
 }
 
@@ -173,9 +191,14 @@ void handleComboTuiInput(tui_combos* tui, int c) {
     case 'p': // TODO: new keymaps?
       start_combo(tui, PAIR);
       break;
-    case 'e': // TODO: new keymaps?
-      end_combo(tui);
+    case 'e': {
+      if (tui->recording_combo) {
+        end_combo(tui);
+      } else if (tui->mode == CTUI_COMBO_LIST) {
+        start_edit_combo(tui);
+      }
       break;
+    }
 
     case 'R': case 'r':
       break;
@@ -273,11 +296,17 @@ void ctuiRenderCombosArea(tui_combos* tui) {
   // TODO: display all players
   for (int i = tui->combos_area->first_ind; i < tui->combos_area->first_ind + len; i++) {
     combo* combo = tui->combos->items[i];
-    player* p1 = getPlayerInList(tui->players, *((int*)combo->ids->items[0]));
-    player* p2 = getPlayerInList(tui->players, *((int*)combo->ids->items[1]));
+    const char *name1 =
+        (combo->ids->n > 0)
+            ? getPlayerInList(tui->players, *((int *)combo->ids->items[0]))->firstName
+            : "";
+    const char *name2 =
+        (combo->ids->n > 1)
+            ? getPlayerInList(tui->players, *((int *)combo->ids->items[1]))->firstName
+            : "";
 
-    sprintf(combo_text, "(%s) %s - %s%s", comboTypeString(combo->type),
-            p1->firstName, p2->firstName, (combo->ids->n > 2) ? " - ..." : "");
+    sprintf(combo_text, "(%s) %s - %s%s", comboTypeString(combo->type), name1,
+            name2, (combo->ids->n > 2) ? " - ..." : "");
 
     if (tui->combos_area->selected == i) {
       tui->combos_area->selected_term_row = line + 1;

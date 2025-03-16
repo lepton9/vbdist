@@ -41,9 +41,11 @@ void handleComboTuiInput(tui_combos* tui, int c);
 
 void ctuiSelectPlayer(tui_combos* tui);
 
+void start_edit_combo(tui_combos* tui);
 void start_combo(tui_combos* tui, comboType type);
 void end_combo(tui_combos* tui);
 int insert_cur_combo(tui_combos* tui);
+void deleteCurCombo(tui_combos* tui);
 
 void renderComboTui(tui_combos* tui);
 void ctuiRenderPlayersArea(tui_combos* tui);
