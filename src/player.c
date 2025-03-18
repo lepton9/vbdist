@@ -15,15 +15,26 @@ player* initPlayer() {
   return p;
 }
 
+void freeSkills(dlist* skills) {
+  for (size_t i = 0; i < skills->n; i++) {
+    freeSkill(skills->items[i]);
+  }
+  free_list(skills);
+}
+
+void freePositions(dlist* positions) {
+  for (size_t i = 0; i < positions->n; i++) {
+    freePosition(positions->items[i]);
+  }
+  free_list(positions);
+}
+
 void freePlayer(player* p) {
   if (!p) return;
   if (p->firstName) free(p->firstName);
   if (p->surName) free(p->surName);
-  for (size_t i = 0; i < p->skills->n; i++) {
-    freeSkill(p->skills->items[i]);
-  }
-  free_list(p->skills);
-  free_list(p->positions);
+  freeSkills(p->skills);
+  freePositions(p->positions);
   free(p);
 }
 

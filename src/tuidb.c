@@ -423,6 +423,17 @@ void renderPlayerInfo(tuidb* tui) {
   }
 
   put_text(tui->render, line++, startCol, "%-15s %.2f", "Overall", rating(p));
+
+  line++;
+  put_text(tui->render, line++, startCol, "%-15s %d", "Positions:", p->positions->n);
+
+  for (size_t i = 0; i < p->positions->n; i++) {
+    position * pos = p->positions->items[i];
+    put_text(tui->render, line++, startCol,
+             "%d %-15s", pos->priority, pos->name);
+  }
+
+
   put_text(tui->render, ++line, startCol, "Former teammates:");
   line += 2;
 

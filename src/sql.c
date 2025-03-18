@@ -188,6 +188,7 @@ dlist* fetchPlayerList(sqldb* db) {
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
     fetchPlayerSkills(db, list->items[i]);
+    fetchPlayerPositions(db, list->items[i]);
   }
   log_sql("Found player list with %d players", list->n);
   return list;
@@ -301,6 +302,7 @@ dlist* fetchPlayers(sqldb* db) {
   execQuery(db->sqlite, sql, cb_players, list);
   for (int i = 0; i < (int)list->n; i++) {
     fetchPlayerSkills(db, list->items[i]);
+    fetchPlayerPositions(db, list->items[i]);
   }
   return list;
 }
@@ -322,8 +324,8 @@ dlist* fetchPositions(sqldb* db) {
 int fetchPlayerPositions(sqldb* db, player* player) {
   char sql[200];
   sprintf(sql,
-          "SELECT pp.position_id, p.name, pp.priority FROM PlayerPosition pp INNER JOIN "
-          "Position p ON pp.player_id = %d AND pp.position_id = p.position_id ORDER BY pp.priority ASC;",
+          "SELECT p.position_id, p.name, pp.priority_value FROM PlayerPosition pp INNER JOIN "
+          "Position p ON pp.player_id = %d AND pp.position_id = p.position_id ORDER BY pp.priority_value ASC;",
           player->id);
   int result = execQuery(db->sqlite, sql, cb_player_position, player->positions);
   return result;
@@ -385,6 +387,7 @@ int fetchPlayer(sqldb* db, player* player) {
   sprintf(sql, "SELECT name FROM Player WHERE player_id = %d;", player->id);
   execQuery(db->sqlite, sql, cb_player, player);
   fetchPlayerSkills(db, player);
+  fetchPlayerPositions(db, player);
   return player->found;
 }
 
