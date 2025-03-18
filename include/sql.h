@@ -34,6 +34,7 @@ dlist* fetchPlayerList(sqldb* db);
 
 int fetchPlayer(sqldb* db, player* player);
 int fetchPlayerSkills(sqldb* db, player* player);
+int fetchPlayerPositions(sqldb* db, player* player);
 dlist* fetchPlayers(sqldb* db);
 dlist* fetchTeams(sqldb* db);
 dlist* fetchPlayerTeams(sqldb* db, player* player);
@@ -50,6 +51,7 @@ dlist* fetchAllCombos(sqldb* db);
 int deleteCombo(sqldb* db, combo* combo);
 int updateCombo(sqldb* db, combo* combo);
 
+dlist* fetchPositions(sqldb* db);
 dlist* fetchSkills(sqldb* db);
 int insertSkill(sqldb* db, skill* skill);
 int deleteSkill(sqldb* db, skill* skill);

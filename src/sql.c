@@ -55,6 +55,26 @@ int cb_player(void* p, int argc, char **argv, char **colName) {
   return 0;
 }
 
+int cb_positions(void* list, int count, char **data, char **columns) {
+  assert(count == 2);
+  int id = atoi(data[0]);
+  const char* name = data[1];
+  position* p = initPosition(id, name);
+  list_add(list, p);
+  return 0;
+}
+
+int cb_player_position(void* positions, int count, char **data, char **columns) {
+  assert(count == 3);
+  int id = atoi(data[0]);
+  const char* name = data[1];
+  int priority = atoi(data[2]);
+  position* p = initPosition(id, name);
+  setPriority(p, priority);
+  list_add(positions, p);
+  return 0;
+}
+
 int cb_player_skill(void* skills, int count, char **data, char **columns) {
   assert(count == 3);
   int id = atoi(data[0]);
@@ -290,6 +310,23 @@ dlist* fetchTeams(sqldb* db) {
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_teams, list);
   return list;
+}
+
+dlist* fetchPositions(sqldb* db) {
+  char* sql = "SELECT position_id, name FROM Position;";
+  dlist* list = init_list();
+  execQuery(db->sqlite, sql, cb_positions, list);
+  return list;
+}
+
+int fetchPlayerPositions(sqldb* db, player* player) {
+  char sql[200];
+  sprintf(sql,
+          "SELECT pp.position_id, p.name, pp.priority FROM PlayerPosition pp INNER JOIN "
+          "Position p ON pp.player_id = %d AND pp.position_id = p.position_id ORDER BY pp.priority ASC;",
+          player->id);
+  int result = execQuery(db->sqlite, sql, cb_player_position, player->positions);
+  return result;
 }
 
 int fetchPlayerSkills(sqldb* db, player* player) {

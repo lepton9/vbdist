@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "../include/dlist.h"
 #include "../include/skill.h"
+#include "../include/position.h"
 #include "../include/ansicodes.h"
 
 typedef struct {
@@ -16,6 +17,7 @@ typedef struct {
   char* surName;
   int id;
   dlist* skills;
+  dlist* positions;
   int found;
   mark marker;
 } player;
