@@ -65,6 +65,4 @@ int deleteTeam(sqldb* db, team* team);
 int insertTeam(sqldb* db, team* team);
 int insertPlayerTeam(sqldb* db, player* player, team* team);
 
-int randintRange(const int min, const int max);
-
 #endif

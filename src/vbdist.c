@@ -326,11 +326,11 @@ int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* 
   int failures = 0;
 
   while(failures < MAX_FAILURES && swaps < MAX_SWAPS) {
-    int teamA = randintRange(0, TEAMS_N - 1);
-    int teamB = randintRange(0, TEAMS_N - 1);
-    while(teamB == teamA) teamB = randintRange(0, TEAMS_N - 1);
-    player* pA = teams[teamA]->players[randintRange(0, TEAM_SIZE - 1)];
-    player* pB = teams[teamB]->players[randintRange(0, TEAM_SIZE - 1)];
+    int teamA = rand_int(0, TEAMS_N - 1);
+    int teamB = rand_int(0, TEAMS_N - 1);
+    while(teamB == teamA) teamB = rand_int(0, TEAMS_N - 1);
+    player* pA = teams[teamA]->players[rand_int(0, TEAM_SIZE - 1)];
+    player* pB = teams[teamB]->players[rand_int(0, TEAM_SIZE - 1)];
 
     double ratingTeamA = team_rating_filter(teams[teamA], skills);
     double ratingTeamB = team_rating_filter(teams[teamB], skills);
@@ -402,7 +402,7 @@ int getPlayerOfPosition(dlist* players, position* pos) {
 int findPosPlayerOrRand(dlist* players, position* pos) {
   int player_ind = getPlayerOfPosition(players, pos);
   if (player_ind < 0 && players->n > 0) {
-    return randintRange(0, players->n - 1);
+    return rand_int(0, players->n - 1);
   }
   return player_ind;
 }
@@ -481,8 +481,8 @@ team** balanceTeamsRand(dlist* players) {
   for (int i = 0; i < TEAMS_N; i++) teamCounters[i] = 0;
 
   for (int i = 0; i < (int)players->n; i++) {
-    int ind = randintRange(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
-    while(inTeam[ind]) ind = randintRange(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
+    int ind = rand_int(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
+    while(inTeam[ind]) ind = rand_int(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
     inTeam[ind] = 1;
 
     teams[teamI]->players[teamCounters[teamI]++] = players->items[ind];

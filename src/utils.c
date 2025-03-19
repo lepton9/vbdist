@@ -1,5 +1,6 @@
 #include "../include/utils.h"
 #include <ctype.h>
+#include <stdlib.h>
 
 #ifdef __linux__
 #include <ncurses.h>
@@ -41,5 +42,9 @@ int min_int(int a, int b) {
 
 int max_int(int a, int b) {
   return (a > b) ? a : b;
+}
+
+int rand_int(const int min, const int max) {
+  return rand() % (max + 1 - min) + min;
 }
 

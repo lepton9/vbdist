@@ -2,8 +2,6 @@
 #include "../include/log.h"
 #include <assert.h>
 #include <limits.h>
-#include <sqlite3.h>
-#include <stdlib.h>
 #include <string.h>
 
 
@@ -491,10 +489,6 @@ int insertPlayerTeam(sqldb* db, player* player, team* team) {
     log_sql("Inserted Player (%d) '%s' to Team (%d) '%s'", player->id, player->firstName, team->id, team->name);
   }
   return r;
-}
-
-int randintRange(const int min, const int max) {
-  return rand() % (max + 1 - min) + min;
 }
 
 int createDB(sqldb* db) {

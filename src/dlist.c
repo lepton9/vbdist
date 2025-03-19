@@ -1,4 +1,5 @@
 #include "../include/dlist.h"
+#include "../include/utils.h"
 
 dlist *init_list() {
   dlist *list = init_list_size(sizeof(void*));
@@ -58,5 +59,16 @@ dlist *list_from(void **items, int item_size, int n) {
   list->size = n;
   list->items = items;
   return list;
+}
+
+void shuffle(dlist* list) {
+  if (list->n > 1) {
+    for (size_t i = 0; i < list->n - 1; i++) {
+      size_t j = rand_int(i, list->n - 1);
+      void* t = list->items[j];
+      list->items[j] = list->items[i];
+      list->items[i] = t;
+    }
+  }
 }
 
