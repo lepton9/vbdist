@@ -37,6 +37,7 @@ int TEAMS_N = 0;
 int TEAM_SIZE = 0;
 dataSource SOURCE = NO_SOURCE;
 printMode PRINT_MODE = PRINT_MINIMAL;
+int POSITIONS = 0;
 
 
 int comboRelevant(dlist* players, combo* combo) {
@@ -369,6 +370,97 @@ int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* 
   return swaps;
 }
 
+int getPlayerOfPosition(dlist* players, position* pos) {
+  int a = 0;
+  int b = players->n - 1;
+  int best_priority = -1;
+  int player_ind = -1;
+
+  for (; a <= b; a++, b--) {
+    player* p_a = players->items[a];
+    player* p_b = players->items[b];
+    int ipos_a = hasPosition(p_a, pos);
+    int ipos_b = hasPosition(p_b, pos);
+    if (ipos_a > 0) {
+      position* pos_a = p_a->positions->items[ipos_a];
+      if (best_priority < 0 || pos_a->priority < best_priority) {
+        best_priority = pos_a->priority;
+        player_ind = a;
+      }
+    }
+    if (ipos_b > 0) {
+      position* pos_b = p_b->positions->items[ipos_b];
+      if (best_priority < 0 || pos_b->priority < best_priority) {
+        best_priority = pos_b->priority;
+        player_ind = b;
+      }
+    }
+  }
+  return player_ind;
+}
+
+int findPosPlayerOrRand(dlist* players, position* pos) {
+  int player_ind = getPlayerOfPosition(players, pos);
+  if (player_ind < 0 && players->n > 0) {
+    return randintRange(0, players->n - 1);
+  }
+  return player_ind;
+}
+
+team** makeRandTeamsPositions(dlist* players, dlist* positions) {
+  assert((int)players->n == TEAM_SIZE * TEAMS_N);
+
+  team** teams = malloc(sizeof(team*) * TEAMS_N);
+  for (int i = 0; i < TEAMS_N; i++) {
+    char tName[20];
+    sprintf(tName, "Team %d", i + 1);
+    teams[i] = initTeam(tName, TEAM_SIZE);
+  }
+
+  // TODO: shuffle players
+
+  dlist* remaining_players = init_list();
+  for (size_t i = 0; i < players->n; i++) {
+    list_add(remaining_players, players->items[i]);
+  }
+
+  int team_sizes[TEAMS_N];
+  for (int i = 0; i < TEAMS_N; i++) team_sizes[i] = 0;
+
+  // Set one of every position to every team
+  for (size_t i = 0; i < positions->n && (int)i < TEAM_SIZE; i++) {
+    position* p = positions->items[i];
+    for (int t = 0; t < TEAMS_N; t++) {
+      int ind = team_sizes[t];
+      if (ind < TEAM_SIZE) {
+        int p_ind = findPosPlayerOrRand(remaining_players, p);
+        if (p_ind > 0) {
+          player* player = pop_elem(remaining_players, p_ind);
+          teams[t]->players[ind] = player;
+          team_sizes[t]++;
+        }
+      }
+    }
+  }
+
+  // Put remaining players into teams
+  int t_i = 0;
+  for (int i = remaining_players->n - 1; i >= 0; i--) {
+    while (team_sizes[t_i] == TEAM_SIZE) {
+      t_i = (t_i + 1) % TEAMS_N;
+    }
+    if (team_sizes[t_i] < TEAM_SIZE) {
+      teams[t_i]->players[team_sizes[t_i]] = pop_elem(remaining_players, i);
+      team_sizes[t_i]++;
+    }
+  }
+
+  assert((int)remaining_players->n == 0);
+
+  free_list(remaining_players);
+  return teams;
+}
+
 team** balanceTeamsRand(dlist* players) {
   team** teams = malloc(sizeof(team*) * TEAMS_N);
   for (int i = 0; i < TEAMS_N; i++) {
@@ -562,8 +654,14 @@ int generateTeams(sqldb *db, dlist *players, dlist *bannedCombos,
   printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
   printf("Preferred combinations: %d\n", (int)prefCombos->n);
 
-  team** teams = balanceTeamsRand(players);
-  setPreferredCombos(teams, prefCombos);
+  team** teams = NULL;
+  if (POSITIONS) {
+    dlist* positions = fetchPositions(db);
+    teams = makeRandTeamsPositions(players, positions);
+  } else {
+    teams = balanceTeamsRand(players);
+    setPreferredCombos(teams, prefCombos);
+  }
 
   if (clustering) {
     printf("\nBalancing teams..\n");
@@ -635,6 +733,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
     printf(" [p] Team size: %d\n", TEAM_SIZE);
     printf(" [s] Skills %d/%d\n", (int)selected_skills->n, (int)allSkills->n);
     printf(" [c] Combos\n");
+    printf(" [o] Positions: %s\n", (POSITIONS) ? "TRUE" : "FALSE");
     printf(" [q] Quit\n");
 
     printf("\n\033[31m%s\033[0m\n", error_msg);
@@ -679,6 +778,9 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
       case 'C': case 'c':
         runTuiCombo(tui->db, players);
         updatePlayerCombos(tui->db, players, bpcs, prefCombos);
+        break;
+      case 'O': case 'o':
+        POSITIONS ^= 1;
         break;
       default: {
         break;

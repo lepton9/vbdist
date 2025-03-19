@@ -117,6 +117,14 @@ double rating_filter(player* p, dlist* skill_ids) {
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
+int hasPosition(player* player, position* pos) {
+  for (size_t i = 0; i < player->positions->n; i++) {
+    position* p = player->positions->items[i];
+    if (p->id == pos->id) return i;
+  }
+  return -1;
+}
+
 int cmpPlayers(const void* a, const void* b) {
   player* ap = *(player**)a;
   player* bp = *(player**)b;

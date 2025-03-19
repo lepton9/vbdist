@@ -30,6 +30,7 @@ int cmpPlayers(const void* a, const void* b);
 void swapPlayers(player* a, player* b);
 double rating(player* p);
 double rating_filter(player* p, dlist* skill_ids);
+int hasPosition(player* player, position* pos);
 void markPlayer(player* p, color_fg color);
 void unmarkPlayer(player* p);
 void printPlayer(FILE* out, player* p);
