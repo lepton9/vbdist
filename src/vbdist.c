@@ -320,6 +320,52 @@ void setPreferredCombos(team** teams, dlist* prefCombos) {
   }
 }
 
+int getPlayerOfPosition(player** players, size_t n, position* pos) {
+  int a = 0;
+  int b = n - 1;
+  int best_priority = -1;
+  int player_ind = -1;
+
+  for (; a <= b; a++, b--) {
+    player* p_a = players[a];
+    player* p_b = players[b];
+    if (pos) {
+      int ipos_a = hasPosition(p_a, pos);
+      int ipos_b = hasPosition(p_b, pos);
+      if (ipos_a > 0) {
+        position* pos_a = p_a->positions->items[ipos_a];
+        if (best_priority < 0 || pos_a->priority < best_priority) {
+          best_priority = pos_a->priority;
+          player_ind = a;
+        }
+      }
+      if (ipos_b > 0) {
+        position* pos_b = p_b->positions->items[ipos_b];
+        if (best_priority < 0 || pos_b->priority < best_priority) {
+          best_priority = pos_b->priority;
+          player_ind = b;
+        }
+      }
+    } else {
+      if (p_a->positions->n == 0) {
+        return a;
+      }
+      if (p_b->positions->n == 0) {
+        return b;
+      }
+    }
+  }
+  return player_ind;
+}
+
+int findPlayerOfPosRand(player** players, size_t n, position* pos) {
+  int player_ind = getPlayerOfPosition(players, n, pos);
+  if (player_ind < 0 && n > 0) {
+    return rand_int(0, n - 1);
+  }
+  return player_ind;
+}
+
 int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* prefCombos, dlist* skills) {
   double avgR = averageRating(teams, prefCombos, skills);
   int swaps = 0;
@@ -330,7 +376,15 @@ int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* 
     int teamB = rand_int(0, TEAMS_N - 1);
     while(teamB == teamA) teamB = rand_int(0, TEAMS_N - 1);
     player* pA = teams[teamA]->players[rand_int(0, TEAM_SIZE - 1)];
-    player* pB = teams[teamB]->players[rand_int(0, TEAM_SIZE - 1)];
+    player* pB = NULL;
+
+    if (POSITIONS) {
+      position* pos = (pA->positions->n > 0) ? pA->positions->items[0] : NULL;
+      int ind = findPlayerOfPosRand(teams[teamB]->players, TEAM_SIZE, pos);
+      pB = teams[teamB]->players[ind];
+    } else {
+      pB = teams[teamB]->players[rand_int(0, TEAM_SIZE - 1)];
+    }
 
     double ratingTeamA = team_rating_filter(teams[teamA], skills);
     double ratingTeamB = team_rating_filter(teams[teamB], skills);
@@ -361,50 +415,18 @@ int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* 
     #endif
   }
 
-  for (int i = 0; i < TEAMS_N; i++) {
-    qsort(teams[i]->players, TEAM_SIZE, sizeof(player*), cmpPlayers);
+  if (POSITIONS) {
+    // TODO: sort by positions
+
+  } else {
+    for (int i = 0; i < TEAMS_N; i++) {
+      qsort(teams[i]->players, TEAM_SIZE, sizeof(player*), cmpPlayers);
+    }
   }
 
   if (swaps >= MAX_SWAPS && oneSideValidation) swaps += balancedClustering(teams, 0, bpcs, prefCombos, skills);
 
   return swaps;
-}
-
-int getPlayerOfPosition(dlist* players, position* pos) {
-  int a = 0;
-  int b = players->n - 1;
-  int best_priority = -1;
-  int player_ind = -1;
-
-  for (; a <= b; a++, b--) {
-    player* p_a = players->items[a];
-    player* p_b = players->items[b];
-    int ipos_a = hasPosition(p_a, pos);
-    int ipos_b = hasPosition(p_b, pos);
-    if (ipos_a > 0) {
-      position* pos_a = p_a->positions->items[ipos_a];
-      if (best_priority < 0 || pos_a->priority < best_priority) {
-        best_priority = pos_a->priority;
-        player_ind = a;
-      }
-    }
-    if (ipos_b > 0) {
-      position* pos_b = p_b->positions->items[ipos_b];
-      if (best_priority < 0 || pos_b->priority < best_priority) {
-        best_priority = pos_b->priority;
-        player_ind = b;
-      }
-    }
-  }
-  return player_ind;
-}
-
-int findPosPlayerOrRand(dlist* players, position* pos) {
-  int player_ind = getPlayerOfPosition(players, pos);
-  if (player_ind < 0 && players->n > 0) {
-    return rand_int(0, players->n - 1);
-  }
-  return player_ind;
 }
 
 team** makeRandTeamsPositions(dlist* players, dlist* positions) {
@@ -417,7 +439,7 @@ team** makeRandTeamsPositions(dlist* players, dlist* positions) {
     teams[i] = initTeam(tName, TEAM_SIZE);
   }
 
-  // TODO: shuffle players
+  shuffle(players);
 
   dlist* remaining_players = init_list();
   for (size_t i = 0; i < players->n; i++) {
@@ -433,7 +455,8 @@ team** makeRandTeamsPositions(dlist* players, dlist* positions) {
     for (int t = 0; t < TEAMS_N; t++) {
       int ind = team_sizes[t];
       if (ind < TEAM_SIZE) {
-        int p_ind = findPosPlayerOrRand(remaining_players, p);
+        int p_ind = findPlayerOfPosRand((player **)remaining_players->items,
+                                        remaining_players->n, p);
         if (p_ind > 0) {
           player* player = pop_elem(remaining_players, p_ind);
           teams[t]->players[ind] = player;
