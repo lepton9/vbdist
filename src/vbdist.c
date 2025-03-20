@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
@@ -16,6 +15,7 @@
 #include "../include/log.h"
 #include "../include/utils.h"
 #include "../include/config.h"
+#include "../include/generate.h"
 
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
@@ -240,296 +240,6 @@ void printTeams(FILE *out, team **teams, const int printWidth,
   }
 }
 
-double averageRating(team** teams, dlist* prefCombos, dlist* skill_ids) {
-  int n = TEAMS_N * TEAM_SIZE;
-  if (teams == NULL) return 0.0;
-  double sumRating = 0.0;
-  for (int t = 0; t < TEAMS_N; t++) {
-    for (int p = 0; p < TEAM_SIZE; p++) {
-      sumRating += rating_filter(teams[t]->players[p], skill_ids);
-    }
-  }
-  return (n <= 0) ? 0.0 : sumRating / n;
-}
-
-int validateSwap(double a, double b, double aNew, double bNew, double avg, int oneSideValidation) {
-  if (fabs(avg) < 1e-6f) return 1;
-  int valid = 0;
-  if (fabs(aNew - avg) < fabs(a - avg)) valid++;
-  if (fabs(bNew - avg) < fabs(b - avg)) valid++;
-  return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
-}
-
-int maxTeamFromPrefCombos(dlist* prefCombos) {
-  int biggest_size = 0;
-  for (size_t i = 0; i < prefCombos->n; i++) {
-    combo* c = prefCombos->items[i];
-    if ((int)c->ids->n > biggest_size) {
-      biggest_size = (int)c->ids->n;
-    }
-  }
-  return biggest_size;
-}
-
-void setPreferredCombos(team** teams, dlist* prefCombos) {
-  for (size_t c = 0; c < prefCombos->n; c++) {
-    combo* combo = prefCombos->items[c];
-
-    if (combo->ids->n < 2) continue;
-    for (size_t ind = 0; ind < combo->ids->n - 1; ind++) {
-      int id_a = *((int*)combo->ids->items[ind]);
-      int id_b = *((int*)combo->ids->items[ind + 1]);
-
-      int t1 = -1;
-      int t2 = -1;
-      player* p1 = NULL;
-      player* p2 = NULL;
-      player* pToSwap = NULL;
-      // Finds the players in the combo and their teams
-      for (int i = 0; i < TEAMS_N; i++) {
-        for (int j = 0; j < TEAM_SIZE; j++) {
-          if (teams[i]->players[j]->id == id_a) {
-            p1 = teams[i]->players[j];
-            t1 = i;
-          }
-          else if (teams[i]->players[j]->id == id_b) {
-            p2 = teams[i]->players[j];
-            t2 = i;
-          }
-        }
-        if (p1 && p2) break;
-      }
-      if (t1 == t2 || t1 < 0 || t2 < 0) continue;
-      // Finds player to swap
-      for (int i = 0; i < TEAM_SIZE; i++) {
-        player* maybeSwapP = teams[t1]->players[i];
-        if (maybeSwapP->id == p1->id) continue;
-        // Makes sure the player has no combos with anyone on the team
-        char hasCombo = 0;
-        for (int j = 0; j < TEAM_SIZE; j++) {
-          if ((hasCombo = isCombo(prefCombos, maybeSwapP, teams[t1]->players[j]))) break;
-        }
-        if (hasCombo) continue;
-        else {
-          pToSwap = maybeSwapP;
-          break;
-        }
-      }
-      if (pToSwap) swapPlayers(pToSwap, p2);
-    }
-  }
-}
-
-int getPlayerOfPosition(player** players, size_t n, position* pos) {
-  int a = 0;
-  int b = n - 1;
-  int best_priority = -1;
-  int player_ind = -1;
-
-  for (; a <= b; a++, b--) {
-    player* p_a = players[a];
-    player* p_b = players[b];
-    if (pos) {
-      int ipos_a = hasPosition(p_a, pos);
-      int ipos_b = hasPosition(p_b, pos);
-      if (ipos_a > 0) {
-        position* pos_a = p_a->positions->items[ipos_a];
-        if (best_priority < 0 || pos_a->priority < best_priority) {
-          best_priority = pos_a->priority;
-          player_ind = a;
-        }
-      }
-      if (ipos_b > 0) {
-        position* pos_b = p_b->positions->items[ipos_b];
-        if (best_priority < 0 || pos_b->priority < best_priority) {
-          best_priority = pos_b->priority;
-          player_ind = b;
-        }
-      }
-    } else {
-      if (p_a->positions->n == 0) {
-        return a;
-      }
-      if (p_b->positions->n == 0) {
-        return b;
-      }
-    }
-  }
-  return player_ind;
-}
-
-int findPlayerOfPosRand(player** players, size_t n, position* pos) {
-  int player_ind = getPlayerOfPosition(players, n, pos);
-  if (player_ind < 0 && n > 0) {
-    return rand_int(0, n - 1);
-  }
-  return player_ind;
-}
-
-int balancedClustering(team** teams, int oneSideValidation, dlist* bpcs, dlist* prefCombos, dlist* skills) {
-  double avgR = averageRating(teams, prefCombos, skills);
-  int swaps = 0;
-  int failures = 0;
-
-  while(failures < MAX_FAILURES && swaps < MAX_SWAPS) {
-    int teamA = rand_int(0, TEAMS_N - 1);
-    int teamB = rand_int(0, TEAMS_N - 1);
-    while(teamB == teamA) teamB = rand_int(0, TEAMS_N - 1);
-    player* pA = teams[teamA]->players[rand_int(0, TEAM_SIZE - 1)];
-    player* pB = NULL;
-
-    if (POSITIONS) {
-      position* pos = (pA->positions->n > 0) ? pA->positions->items[0] : NULL;
-      int ind = findPlayerOfPosRand(teams[teamB]->players, TEAM_SIZE, pos);
-      pB = teams[teamB]->players[ind];
-    } else {
-      pB = teams[teamB]->players[rand_int(0, TEAM_SIZE - 1)];
-    }
-
-    double ratingTeamA = team_rating_filter(teams[teamA], skills);
-    double ratingTeamB = team_rating_filter(teams[teamB], skills);
-
-    swapPlayers(pA, pB);
-
-    double ratingTeamA_new = team_rating_filter(teams[teamA], skills);
-    double ratingTeamB_new = team_rating_filter(teams[teamB], skills);
-
-    int valid = validateSwap(ratingTeamA, ratingTeamB, ratingTeamA_new, ratingTeamB_new, avgR, oneSideValidation);
-
-    if (comboInTeam(prefCombos, teams[teamB], pA) || comboInTeam(prefCombos, teams[teamA], pB)) valid = 0;
-
-    if (valid) {
-      if (comboInTeam(bpcs, teams[teamA], pA) || comboInTeam(bpcs, teams[teamB], pB)) {
-        failures++;
-        swapPlayers(pA, pB);
-      } else {
-        swaps++;
-        failures = 0;
-      }
-    } else {
-      failures++;
-      swapPlayers(pA, pB);
-    }
-    #ifdef __linux__
-      printf("%3d/%3d | %d\r", failures, MAX_FAILURES, swaps);
-    #endif
-  }
-
-  if (POSITIONS) {
-    // TODO: sort by positions
-
-  } else {
-    for (int i = 0; i < TEAMS_N; i++) {
-      qsort(teams[i]->players, TEAM_SIZE, sizeof(player*), cmpPlayers);
-    }
-  }
-
-  if (swaps >= MAX_SWAPS && oneSideValidation) swaps += balancedClustering(teams, 0, bpcs, prefCombos, skills);
-
-  return swaps;
-}
-
-team** makeRandTeamsPositions(dlist* players, dlist* positions) {
-  assert((int)players->n == TEAM_SIZE * TEAMS_N);
-
-  team** teams = malloc(sizeof(team*) * TEAMS_N);
-  for (int i = 0; i < TEAMS_N; i++) {
-    char tName[20];
-    sprintf(tName, "Team %d", i + 1);
-    teams[i] = initTeam(tName, TEAM_SIZE);
-  }
-
-  shuffle(players);
-
-  dlist* remaining_players = init_list();
-  for (size_t i = 0; i < players->n; i++) {
-    list_add(remaining_players, players->items[i]);
-  }
-
-  int team_sizes[TEAMS_N];
-  for (int i = 0; i < TEAMS_N; i++) team_sizes[i] = 0;
-
-  // Set one of every position to every team
-  for (size_t i = 0; i < positions->n && (int)i < TEAM_SIZE; i++) {
-    position* p = positions->items[i];
-    for (int t = 0; t < TEAMS_N; t++) {
-      int ind = team_sizes[t];
-      if (ind < TEAM_SIZE) {
-        int p_ind = findPlayerOfPosRand((player **)remaining_players->items,
-                                        remaining_players->n, p);
-        if (p_ind > 0) {
-          player* player = pop_elem(remaining_players, p_ind);
-          teams[t]->players[ind] = player;
-          team_sizes[t]++;
-        }
-      }
-    }
-  }
-
-  // Put remaining players into teams
-  int t_i = 0;
-  for (int i = remaining_players->n - 1; i >= 0; i--) {
-    while (team_sizes[t_i] == TEAM_SIZE) {
-      t_i = (t_i + 1) % TEAMS_N;
-    }
-    if (team_sizes[t_i] < TEAM_SIZE) {
-      teams[t_i]->players[team_sizes[t_i]] = pop_elem(remaining_players, i);
-      team_sizes[t_i]++;
-    }
-  }
-
-  assert((int)remaining_players->n == 0);
-
-  free_list(remaining_players);
-  return teams;
-}
-
-team** balanceTeamsRand(dlist* players) {
-  team** teams = malloc(sizeof(team*) * TEAMS_N);
-  for (int i = 0; i < TEAMS_N; i++) {
-    char tName[20];
-    sprintf(tName, "Team %d", i + 1);
-    teams[i] = initTeam(tName, TEAM_SIZE);
-  }
-
-  qsort(players->items, players->n, sizeof(player*), cmpPlayers);
-  srand(time(0));
-
-  int group = 0;
-  int inTeam[TEAMS_N * TEAM_SIZE];
-  for (int i = 0; i < TEAMS_N * TEAM_SIZE; i++) inTeam[i] = 0;
-
-  int teamI = 0;
-  int teamCounters[TEAMS_N];
-  for (int i = 0; i < TEAMS_N; i++) teamCounters[i] = 0;
-
-  for (int i = 0; i < (int)players->n; i++) {
-    int ind = rand_int(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
-    while(inTeam[ind]) ind = rand_int(group * TEAMS_N, (group + 1) * TEAMS_N - 1);
-    inTeam[ind] = 1;
-
-    teams[teamI]->players[teamCounters[teamI]++] = players->items[ind];
-    teamI = (teamI + 1) % TEAMS_N;
-    if (teamI == 0) group++;
-  }
-  return teams;
-}
-
-team* balanceTeams(dlist* players, const int n) {
-  team* teams = malloc(TEAMS_N * (sizeof(team)));
-  qsort(players, n, sizeof(player*), cmpPlayers);
-
-  int teamI = 0;
-  int teamCounters[TEAMS_N];
-  for (int i = 0; i < TEAMS_N; i++) teamCounters[i] = 0;
-
-  for (int i = 0; i < n; i++) {
-    teams[teamI].players[teamCounters[teamI]++] = players->items[i];
-    teamI = (teamI + 1) % TEAMS_N;
-  }
-  return teams;
-}
-
 void writeTeamsToFile(team** teams, const char* teamsFile) {
   FILE* fp = fopen(teamsFile, "a");
   fprintf(fp, "\n");
@@ -668,27 +378,27 @@ int askUpdateParamNum(const char* query, int current) {
   return (strcmp(new, "") == 0) ? current : atoi(new);
 }
 
-int generateTeams(sqldb *db, dlist *players, dlist *bannedCombos,
-                  dlist *prefCombos, dlist *skills) {
+int generateTeams(sqldb *db, dlist *players, context* ctx) {
   int saved = 0;
   int clustering = 1;
   cls(stdout);
   if (PRINT_MODE == PRINT_ALL) printPlayers(players);
-  printf("\nBanned combinations: %d\n", (int)bannedCombos->n);
-  printf("Preferred combinations: %d\n", (int)prefCombos->n);
+  printf("\nBanned combinations: %d\n", (int)ctx->banned_combos->n);
+  printf("Preferred combinations: %d\n", (int)ctx->pref_combos->n);
 
   team** teams = NULL;
   if (POSITIONS) {
     dlist* positions = fetchPositions(db);
-    teams = makeRandTeamsPositions(players, positions);
+    teams = makeRandTeamsPositions(players, ctx->teams_dim, positions);
+    // TODO: set combos
   } else {
-    teams = balanceTeamsRand(players);
-    setPreferredCombos(teams, prefCombos);
+    teams = balanceTeamsRand(players, ctx->teams_dim);
+    setPreferredCombos(teams, ctx->teams_dim, ctx->pref_combos);
   }
 
   if (clustering) {
     printf("\nBalancing teams..\n");
-    int swaps = balancedClustering(teams, 1, bannedCombos, prefCombos, skills);
+    int swaps = balancedClustering(teams, 1, ctx);
     printf("Total swaps: %d\n", swaps);
   }
 
@@ -701,7 +411,7 @@ int generateTeams(sqldb *db, dlist *players, dlist *bannedCombos,
   printf("\033[2K\n");
   if (ans == 'y' || ans == 'Y') {
     curHide();
-    changeMode(teams, bannedCombos);
+    changeMode(teams, ctx->pref_combos);
     curShow();
   }
 
@@ -736,8 +446,9 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   insertCombos(db, prefCombos);
 }
 
-void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dlist* allSkills, char* err) {
+void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, char* err) {
   dlist* selected_skills = initSelectedSkills(allSkills);
+  ctx->skills = selected_skills;
   int teams_added = 0;
   char error_msg[1000];
   strcpy(error_msg, err);
@@ -746,8 +457,8 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
     cls(stdout);
     curSet(1, 1);
     printf("\n Players selected: %d/%d\n", (int)players->n, TEAMS_N * TEAM_SIZE);
-    printf("\n Banned combinations: %d\n", (int)bpcs->n);
-    printf(" Preferred combinations: %d\n", (int)prefCombos->n);
+    printf("\n Banned combinations: %d\n", (int)ctx->banned_combos->n);
+    printf(" Preferred combinations: %d\n", (int)ctx->pref_combos->n);
     printf("\n");
 
     printf(" [g] Generate teams\n");
@@ -767,7 +478,8 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
           sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
         } else {
-          teams_added = generateTeams((tui) ? tui->db : NULL, players, bpcs, prefCombos, selected_skills);
+          ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
+          teams_added = generateTeams((tui) ? tui->db : NULL, players, ctx);
         }
         break;
       case 'T': case 't':
@@ -781,7 +493,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
         curHide();
         break;
       case 'Q': case 'q':
-        saveToDB(tui->db, players, bpcs, prefCombos);
+        saveToDB(tui->db, players, ctx->banned_combos, ctx->pref_combos);
         freeSelectedSkills(selected_skills);
         cls(stdout);
         return;
@@ -792,7 +504,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
           }
           updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
           runTuiDB(tui);
-          updatePlayerCombos(tui->db, players, bpcs, prefCombos);
+          updatePlayerCombos(tui->db, players, ctx->banned_combos, ctx->pref_combos);
         }
         break;
       case 'S': case 's':
@@ -800,7 +512,7 @@ void runBeginTui(tuidb* tui, dlist* players, dlist* bpcs, dlist* prefCombos, dli
         break;
       case 'C': case 'c':
         runTuiCombo(tui->db, players);
-        updatePlayerCombos(tui->db, players, bpcs, prefCombos);
+        updatePlayerCombos(tui->db, players, ctx->banned_combos, ctx->pref_combos);
         break;
       case 'O': case 'o':
         POSITIONS ^= 1;
@@ -859,6 +571,8 @@ int main(int argc, char** argv) {
 
   dlist* bannedCombos = init_list();
   dlist* prefCombos = init_list();
+  dlist* skills = NULL;
+  dlist* positions = NULL;
   sqldb* db = NULL;
   dlist* players = NULL;
 
@@ -905,6 +619,8 @@ int main(int argc, char** argv) {
           i++;
         }
       }
+      skills = fetchSkills(db);
+      positions = fetchPositions(db);
       break;
     }
     case TEXT_FILE: {
@@ -939,11 +655,16 @@ int main(int argc, char** argv) {
     tui->players = players;
   }
 
-  dlist* skills = fetchSkills(db);
+  context* ctx = makeContext();
+  ctx->banned_combos = bannedCombos;
+  ctx->pref_combos = prefCombos;
+  ctx->skills = NULL;
+  ctx->positions = positions;
+  ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
 
   curHide();
   altBufferEnable();
-  runBeginTui(tui, players, bannedCombos, prefCombos, skills, err_msg);
+  runBeginTui(tui, players, ctx, skills, err_msg);
   altBufferDisable();
   curShow();
 
@@ -952,10 +673,18 @@ int main(int argc, char** argv) {
   write_config(cfg);
   free(cfg);
 
-  for (size_t i = 0; i < skills->n; i++) {
-    freeSkill(skills->items[i]);
+  if (skills) {
+    for (size_t i = 0; i < skills->n; i++) {
+      freeSkill(skills->items[i]);
+    }
+    free_list(skills);
   }
-  free_list(skills);
+  if (positions) {
+    for (size_t i = 0; i < positions->n; i++) {
+      freePosition(positions->items[i]);
+    }
+    free_list(positions);
+  }
 
   for (int i = 0; i < (int)players->n; i++) {
     freePlayer(players->items[i]);
@@ -967,6 +696,7 @@ int main(int argc, char** argv) {
   freeTuiDB(tui);
   freeCombos(bannedCombos);
   freeCombos(prefCombos);
+  freeContext(ctx);
 
   return 0;
 }
