@@ -17,8 +17,6 @@
 #include "../include/config.h"
 #include "../include/generate.h"
 
-#define MAX_FAILURES 300
-#define MAX_SWAPS 1000000
 #define TEAMS_FILE "teams.txt"
 
 typedef enum {
@@ -37,7 +35,6 @@ int TEAMS_N = 0;
 int TEAM_SIZE = 0;
 dataSource SOURCE = NO_SOURCE;
 printMode PRINT_MODE = PRINT_MINIMAL;
-int POSITIONS = 0;
 
 
 int comboRelevant(dlist* players, combo* combo) {
@@ -224,13 +221,15 @@ void printTeams(FILE *out, team **teams, const int printWidth,
     fprintf(out, "\n");
     for(int j = 0; j < TEAM_SIZE; j++) {
       for(int i = t; i < TEAMS_N && i - t < teamsOnLine; i++) {
+        player* p = teams[i]->players[j];
         if (PRINT_MODE == PRINT_ALL) {
-          sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "",
-                  teams[i]->players[j]->firstName,
-                  rating(teams[i]->players[j]));
+          sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "", p->firstName,
+                  rating(p));
           fprintf(out, "%-*s", printWidth, str);
         } else {
-          sprintf(str, "%s%-10s", (indent) ? "  " : "", teams[i]->players[j]->firstName);
+          // TODO: print pos
+          position* pos = assignedPosition(p);
+          sprintf(str, "%s%-10s %s", (indent) ? "  " : "", p->firstName, (pos) ? pos->name : "");
           fprintf(out, "%-*s", printWidth, str);
         }
       }
@@ -387,9 +386,8 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
   printf("Preferred combinations: %d\n", (int)ctx->pref_combos->n);
 
   team** teams = NULL;
-  if (POSITIONS) {
-    dlist* positions = fetchPositions(db);
-    teams = makeRandTeamsPositions(players, ctx->teams_dim, positions);
+  if (ctx->use_positions) {
+    teams = makeRandTeamsPositions(players, ctx->teams_dim, ctx->positions);
     // TODO: set combos
   } else {
     teams = balanceTeamsRand(players, ctx->teams_dim);
@@ -467,7 +465,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, cha
     printf(" [p] Team size: %d\n", TEAM_SIZE);
     printf(" [s] Skills %d/%d\n", (int)selected_skills->n, (int)allSkills->n);
     printf(" [c] Combos\n");
-    printf(" [o] Positions: %s\n", (POSITIONS) ? "TRUE" : "FALSE");
+    printf(" [o] Positions: %s\n", (ctx->use_positions) ? "TRUE" : "FALSE");
     printf(" [q] Quit\n");
 
     printf("\n\033[31m%s\033[0m\n", error_msg);
@@ -515,7 +513,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, cha
         updatePlayerCombos(tui->db, players, ctx->banned_combos, ctx->pref_combos);
         break;
       case 'O': case 'o':
-        POSITIONS ^= 1;
+        ctx->use_positions ^= 1;
         break;
       default: {
         break;

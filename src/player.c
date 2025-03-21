@@ -11,6 +11,7 @@ player* initPlayer() {
   p->found = 0;
   p->skills = init_list();
   p->positions = init_list();
+  p->assigned_pos = -1;
   unmarkPlayer(p);
   return p;
 }
@@ -117,14 +118,6 @@ double rating_filter(player* p, dlist* skill_ids) {
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
-int hasPosition(player* player, position* pos) {
-  for (size_t i = 0; i < player->positions->n; i++) {
-    position* p = player->positions->items[i];
-    if (p->id == pos->id) return i;
-  }
-  return -1;
-}
-
 int cmpPlayers(const void* a, const void* b) {
   player* ap = *(player**)a;
   player* bp = *(player**)b;
@@ -172,6 +165,40 @@ player* getPlayerInList(dlist* list, int player_id) {
     return list->items[i];
   }
   return NULL;
+}
+
+position* firstPosition(player* p) {
+  return (p->positions->n > 0) ? p->positions->items[0] : NULL;
+}
+
+int hasPosition(player* player, position* pos) {
+  for (size_t i = 0; i < player->positions->n; i++) {
+    position* p = player->positions->items[i];
+    if (p->id == pos->id) return i;
+  }
+  return -1;
+}
+
+position* assignedPosition(player* p) {
+  if (p->assigned_pos < 0 || p->positions->n == 0 || p->assigned_pos >= (int)p->positions->n) {
+    return NULL;
+  }
+  return p->positions->items[p->assigned_pos];
+}
+
+int setPlayerPosition(player* p, position* pos) {
+  int i = hasPosition(p, pos);
+  if (i >= 0) {
+    assignPosition(p, i);
+    return 1;
+  }
+  return 0;
+}
+
+void assignPosition(player* p, int index) {
+  if (index >= 0 && index < (int)p->positions->n) {
+    p->assigned_pos = index;
+  }
 }
 
 color_fg getMarkColor(const int key) {

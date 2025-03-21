@@ -107,6 +107,25 @@ void setPreferredCombos(team** teams, dimensions* dim, dlist* prefCombos) {
   }
 }
 
+int getPlayerOfPosAsgn(player** players, size_t n, position* pos) {
+  int a = 0;
+  int b = n - 1;
+
+  for (; a <= b; a++, b--) {
+    player* p_a = players[a];
+    player* p_b = players[b];
+    position* pos_a = assignedPosition(p_a);
+    position* pos_b = assignedPosition(p_b);
+    if (pos_a && pos && pos_a->id == pos->id) {
+      return a;
+    }
+    if (pos_b && pos && pos_b->id == pos->id) {
+      return b;
+    }
+  }
+  return -1;
+}
+
 int getPlayerOfPosition(player** players, size_t n, position* pos) {
   int a = 0;
   int b = n - 1;
@@ -119,16 +138,16 @@ int getPlayerOfPosition(player** players, size_t n, position* pos) {
     if (pos) {
       int ipos_a = hasPosition(p_a, pos);
       int ipos_b = hasPosition(p_b, pos);
-      if (ipos_a > 0) {
+      if (ipos_a >= 0) {
         position* pos_a = p_a->positions->items[ipos_a];
-        if (best_priority < 0 || pos_a->priority < best_priority) {
+        if (best_priority < 0 || pos_a->priority < best_priority || p_a->positions->n == 1) {
           best_priority = pos_a->priority;
           player_ind = a;
         }
       }
-      if (ipos_b > 0) {
+      if (ipos_b >= 0) {
         position* pos_b = p_b->positions->items[ipos_b];
-        if (best_priority < 0 || pos_b->priority < best_priority) {
+        if (best_priority < 0 || pos_b->priority < best_priority || p_b->positions->n == 1) {
           best_priority = pos_b->priority;
           player_ind = b;
         }
@@ -153,6 +172,14 @@ int findPlayerOfPosRand(player** players, size_t n, position* pos) {
   return player_ind;
 }
 
+int findPlayerOfPosAsngRand(player** players, size_t n, position* pos) {
+  int player_ind = getPlayerOfPosAsgn(players, n, pos);
+  if (player_ind < 0 && n > 0) {
+    return rand_int(0, n - 1);
+  }
+  return player_ind;
+}
+
 int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
   double avgR = averageRating(teams, ctx->teams_dim, ctx->skills);
   int swaps = 0;
@@ -162,13 +189,19 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
     int teamA = rand_int(0, ctx->teams_dim->teams_n - 1);
     int teamB = rand_int(0, ctx->teams_dim->teams_n - 1);
     while(teamB == teamA) teamB = rand_int(0, ctx->teams_dim->teams_n - 1);
+    // TODO: when getting players handle when has no position
     player* pA = teams[teamA]->players[rand_int(0, ctx->teams_dim->team_size - 1)];
     player* pB = NULL;
 
     if (ctx->use_positions) {
-      position* pos = (pA->positions->n > 0) ? pA->positions->items[0] : NULL;
-      int ind = findPlayerOfPosRand(teams[teamB]->players, ctx->teams_dim->team_size, pos);
+      position* pos = firstPosition(pA);
+      // TODO: find from assigned positions
+      int ind = findPlayerOfPosAsngRand(teams[teamB]->players, ctx->teams_dim->team_size, pos);
       pB = teams[teamB]->players[ind];
+      // if (pos) {
+      //   setPlayerPosition(pA, pos);
+      //   setPlayerPosition(pB, pos);
+      // }
     } else {
       pB = teams[teamB]->players[rand_int(0, ctx->teams_dim->team_size - 1)];
     }
@@ -216,6 +249,29 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
   return swaps;
 }
 
+// TODO: temporary
+void printTeamsTemp(FILE *out, team **teams, const int printWidth,
+                const int teamsOnLine, const char indent) {
+  char str[printWidth];
+  for (int t = 0; t < 4; t += teamsOnLine) {
+    for (int i = t; i < t + teamsOnLine && i < 4; i++) {
+      sprintf(str, "%s | %.2f:", teams[i]->name, avgRating(teams[i]));
+      fprintf(out, "%-*s", printWidth, str);
+    }
+    fprintf(out, "\n");
+    for(int j = 0; j < 6; j++) {
+      for(int i = t; i < 4 && i - t < teamsOnLine; i++) {
+        player* p = teams[i]->players[j];
+        position* pos = assignedPosition(p);
+        sprintf(str, "%s%-10s %s", (indent) ? "  " : "", p->firstName, (pos) ? pos->name : "");
+        fprintf(out, "%-*s", printWidth, str);
+      }
+      fprintf(out, "\n");
+    }
+    fprintf(out, "\n");
+  }
+}
+
 team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions) {
   assert(players->n == dim->team_size * dim->teams_n);
 
@@ -238,14 +294,15 @@ team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions)
 
   // Set one of every position to every team
   for (size_t i = 0; i < positions->n && i < dim->team_size; i++) {
-    position* p = positions->items[i];
+    position* pos = positions->items[i];
     for (size_t t = 0; t < dim->teams_n; t++) {
       size_t ind = team_sizes[t];
       if (ind < dim->team_size) {
         int p_ind = findPlayerOfPosRand((player **)remaining_players->items,
-                                        remaining_players->n, p);
+                                        remaining_players->n, pos);
         if (p_ind > 0) {
           player* player = pop_elem(remaining_players, p_ind);
+          setPlayerPosition(player, pos);
           teams[t]->players[ind] = player;
           team_sizes[t]++;
         }
@@ -266,6 +323,12 @@ team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions)
   }
 
   assert(remaining_players->n == 0);
+
+  // TODO: make sure the initial teams are correct
+  // every player should have a position assigned
+
+  printTeamsTemp(stdout, teams, 20, 3, 2);
+  exit(0);
 
   free_list(remaining_players);
   return teams;

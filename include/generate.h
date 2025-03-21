@@ -34,6 +34,10 @@ void setPreferredCombos(team** teams, dimensions* dim, dlist* prefCombos);
 
 int getPlayerOfPosition(player** players, size_t n, position* pos);
 int findPlayerOfPosRand(player** players, size_t n, position* pos);
+int getPlayerOfPosAsgn(player** players, size_t n, position* pos);
+int findPlayerOfPosAsngRand(player** players, size_t n, position* pos);
+
+
 int balancedClustering(team** teams, int oneSideValidation, context* ctx);
 
 team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions);
