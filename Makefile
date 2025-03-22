@@ -19,7 +19,7 @@ MAIN := vbdist
 TESTS := ./tests
 TEST_TARGETS := 
 
-OBJ := player team tui tuiswap tuidb tuiskills combo args sql dlist log utils render skill listarea tuicombo config position generate
+OBJ := player team tui tuiswap tuidb tuiskills combo args sql dlist log utils render skill listarea tuicombo config position generate tuipositions
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
 $(MAIN): $(OBJECT_FILES) $(LIB)/sqlite3.o | $(BIN)

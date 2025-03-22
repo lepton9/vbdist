@@ -9,6 +9,7 @@
 #include "../include/tuicombo.h"
 #include "../include/tuidb.h"
 #include "../include/tuiskills.h"
+#include "../include/tuipositions.h"
 #include "../include/tui.h"
 #include "../include/args.h"
 #include "../include/sql.h"
@@ -444,9 +445,12 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   insertCombos(db, prefCombos);
 }
 
-void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, char* err) {
+void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dlist* allPositions, char* err) {
   dlist* selected_skills = initSelectedSkills(allSkills);
+  dlist* selected_positions = fetchPositions(tui->db);
   ctx->skills = selected_skills;
+  ctx->positions = selected_positions;
+
   int teams_added = 0;
   char error_msg[1000];
   strcpy(error_msg, err);
@@ -475,6 +479,8 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, cha
       case 'G': case 'g':
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
           sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
+        } else if (ctx->use_positions && ctx->positions->n != TEAM_SIZE) {
+          sprintf(error_msg, "Amount of positions should equal team size (%d/%d)", (int)ctx->positions->n, TEAM_SIZE);
         } else {
           ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
           teams_added = generateTeams((tui) ? tui->db : NULL, players, ctx);
@@ -513,6 +519,8 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, cha
         updatePlayerCombos(tui->db, players, ctx->banned_combos, ctx->pref_combos);
         break;
       case 'O': case 'o':
+        // TODO: positions tui
+        runTuiPositions(tui->db, allPositions, selected_positions);
         ctx->use_positions ^= 1;
         break;
       default: {
@@ -657,12 +665,12 @@ int main(int argc, char** argv) {
   ctx->banned_combos = bannedCombos;
   ctx->pref_combos = prefCombos;
   ctx->skills = NULL;
-  ctx->positions = positions;
+  ctx->positions = NULL;
   ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
 
   curHide();
   altBufferEnable();
-  runBeginTui(tui, players, ctx, skills, err_msg);
+  runBeginTui(tui, players, ctx, skills, positions, err_msg);
   altBufferDisable();
   curShow();
 

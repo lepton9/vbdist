@@ -274,6 +274,7 @@ void printTeamsTemp(FILE *out, team **teams, const int printWidth,
 
 team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions) {
   assert(players->n == dim->team_size * dim->teams_n);
+  assert(positions->n == dim->team_size);
 
   team** teams = malloc(sizeof(team*) * dim->teams_n);
   for (size_t i = 0; i < dim->teams_n; i++) {

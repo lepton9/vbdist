@@ -1,0 +1,119 @@
+#include "../include/tuipositions.h"
+#include "../include/utils.h"
+#include <stdlib.h>
+
+tui_pos* init_tui_positions(sqldb* db, dlist* positions, dlist* selected_positions) {
+  tui_pos* tui = malloc(sizeof(tui_pos));
+  tui->db = db;
+
+  tui->term = malloc(sizeof(term_size));
+  getTermSize(tui->term);
+  tui->render = init_renderer(stdout);
+
+  tui->positions_area = init_list_area(tui->term->cols, tui->term->rows);
+  tui->positions = positions;
+  tui->selected_positions= selected_positions;
+  update_list_len(tui->positions_area, tui->positions->n);
+
+  return tui;
+}
+
+void free_tui_positions(tui_pos* tui) {
+  free(tui->term);
+  free_renderer(tui->render);
+  free_list_area(tui->positions_area);
+  free(tui);
+}
+
+void handle_positions_input(tui_pos *tui, int c) {
+  switch (c) {
+    case 13: case '\n': case ' ':
+#ifdef __linux__
+    case KEY_ENTER:
+#endif
+      break;
+    case 27: {  // Esc
+      break;
+    }
+    case 9: // Tab
+      break;
+    case 'R': case 'r':
+      break;
+    case 'A': case 'a':
+      break;
+    case 'X': case 'x':
+      break;
+    case 'K': case 'W':
+    case 'k': case 'w':
+#ifdef __linux__
+    case KEY_UP:
+#endif
+      list_up(tui->positions_area);
+      break;
+    case 'j': case 's':
+#ifdef __linux__
+    case KEY_DOWN:
+#endif
+      list_down(tui->positions_area);
+      break;
+    default: {
+      break;
+    }
+  }
+}
+
+position* get_selected_pos(tui_pos* tui) {
+  if (tui->positions_area->selected < 0) return NULL;
+  return tui->positions->items[tui->positions_area->selected];
+}
+
+void update_positions_area(tui_pos* tui) {
+  getTermSize(tui->term);
+  int rows = tui->term->rows - 5;
+  int cols = tui->term->cols;
+  update_list_area(tui->positions_area, cols, rows);
+}
+
+void render_pos_tui(tui_pos* tui) {
+  put_text(tui->render, 1, 2, "\033[4m %s \033[24m", "Positions");
+
+  int line = 3;
+  int len = min_int(min_int(tui->term->rows - line, (int)tui->positions_area->max_shown), (int)tui->positions->n - (tui->positions_area->first_ind));
+  if (tui->positions->n == 0) len = 0;
+
+  for (int i = tui->positions_area->first_ind; i < tui->positions_area->first_ind + len; i++) {
+    position* cur_position = tui->positions->items[i];
+
+    append_line(tui->render, line, "  ");
+    if (tui->positions_area->selected == i) {
+      tui->positions_area->selected_term_row = line + 1;
+      append_line(tui->render, line, "\033[7m");
+    }
+
+    // TODO: amount of times selected position
+
+    append_line(tui->render, line, " %-20s", cur_position->name);
+    if (tui->positions_area->selected == i) {
+      append_line(tui->render, line, "\033[27m");
+    }
+    line++;
+  }
+  make_borders(tui->render, 0, 0, 30, len + 5);
+  render(tui->render);
+}
+
+void runTuiPositions(sqldb* db, dlist* all_positions, dlist* selected_positions) {
+  tui_pos* tui = init_tui_positions(db, all_positions, selected_positions);
+  curHide();
+  refresh_screen(tui->render);
+  int c = 0;
+  while (c != 'q') {
+    check_selected(tui->positions_area);
+    update_positions_area(tui);
+    render_pos_tui(tui);
+    c = keyPress();
+    handle_positions_input(tui, c);
+  }
+}
+
+
