@@ -293,6 +293,11 @@ team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions)
   size_t team_sizes[dim->teams_n];
   for (size_t i = 0; i < dim->teams_n; i++) team_sizes[i] = 0;
 
+  // TODO: first take the players of position that are found
+  // dont take random
+  // at the end fill the remaining spots in the teams with positions
+  // assign them the positions
+
   // Set one of every position to every team
   for (size_t i = 0; i < positions->n && i < dim->team_size; i++) {
     position* pos = positions->items[i];

@@ -133,6 +133,7 @@ void runTuiCombo(sqldb* db, dlist* players) {
     c = keyPress();
     handleComboTuiInput(tui, c);
   }
+  free_tui_combo(tui);
 }
 
 void updateTuiComboAreas(tui_combos* tui) {

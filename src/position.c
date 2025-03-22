@@ -20,3 +20,8 @@ void setPriority(position* p, int priority) {
   p->priority = priority;
 }
 
+position* copy_position(position* p) {
+  position* copy = initPosition(p->id, p->name);
+  return copy;
+}
+

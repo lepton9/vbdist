@@ -252,6 +252,7 @@ void runTuiSkills(sqldb* db, dlist* allSkills, dlist* selectedSkills) {
     c = keyPress();
     handleSkillsInput(tui, c);
   }
+  free_tui_skills(tui);
 }
 
 

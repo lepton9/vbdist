@@ -11,6 +11,7 @@ position* initPosition(int id, const char* name);
 void freePosition(position* p);
 void setPriority(position* p, int priority);
 
+position* copy_position(position* p);
 
 #endif
 

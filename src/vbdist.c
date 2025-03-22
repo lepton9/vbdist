@@ -479,7 +479,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
       case 'G': case 'g':
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
           sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
-        } else if (ctx->use_positions && ctx->positions->n != TEAM_SIZE) {
+        } else if (ctx->use_positions && (int)ctx->positions->n != TEAM_SIZE) {
           sprintf(error_msg, "Amount of positions should equal team size (%d/%d)", (int)ctx->positions->n, TEAM_SIZE);
         } else {
           ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
@@ -520,8 +520,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
         break;
       case 'O': case 'o':
         // TODO: positions tui
-        runTuiPositions(tui->db, allPositions, selected_positions);
-        ctx->use_positions ^= 1;
+        ctx->use_positions = runTuiPositions(tui->db, allPositions, selected_positions, ctx->use_positions);
         break;
       default: {
         break;
