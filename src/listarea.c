@@ -33,6 +33,9 @@ int list_down(list_area* la) {
 }
 
 void fit_screen(list_area* la) {
+  if (la->first_ind < 0) {
+    la->first_ind = 0;
+  }
   if (la->selected < la->first_ind) {
     la->first_ind = la->selected;
   }
