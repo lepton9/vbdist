@@ -391,8 +391,9 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
     teams = makeRandTeamsPositions(players, ctx->teams_dim, ctx->positions);
     // TODO: set combos
   } else {
-    teams = balanceTeamsRand(players, ctx->teams_dim);
-    setPreferredCombos(teams, ctx->teams_dim, ctx->pref_combos);
+    teams = initialTeams(players, ctx->teams_dim, ctx);
+    // teams = balanceTeamsRand(players, ctx->teams_dim);
+    // setPreferredCombos(teams, ctx->teams_dim, ctx->pref_combos);
   }
 
   if (clustering) {
@@ -410,7 +411,7 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
   printf("\033[2K\n");
   if (ans == 'y' || ans == 'Y') {
     curHide();
-    changeMode(teams, ctx->pref_combos);
+    changeMode(teams, ctx->banned_combos);
     curShow();
   }
 

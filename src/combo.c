@@ -75,7 +75,7 @@ int isInSomeCombo(dlist* combos, player* a) {
 }
 
 char isCombo(dlist* combos, player* a, player* b) {
-  if (a->id != b->id) return 0;
+  if (a->id == b->id) return 0;
   for (size_t i = 0; i < combos->n; i++) {
     combo* combo = combos->items[i];
     if (isInCombo(combo, a) && isInCombo(combo, b)) {
@@ -87,6 +87,13 @@ char isCombo(dlist* combos, player* a, player* b) {
 
 char comboInTeam(dlist* combos, team* t, player* p) {
   for (size_t i = 0; i < t->size; i++) {
+    if (isCombo(combos, p, t->players[i])) return 1;
+  }
+  return 0;
+}
+
+char comboInTeamSize(dlist* combos, team* t, size_t team_size, player* p) {
+  for (size_t i = 0; i < team_size; i++) {
     if (isCombo(combos, p, t->players[i])) return 1;
   }
   return 0;

@@ -33,5 +33,6 @@ int isInCombo(combo* combo, player* a);
 int isInSomeCombo(dlist* combos, player* a);
 char isCombo(dlist* combos, player* a, player* b);
 char comboInTeam(dlist* combos, team* t, player* p);
+char comboInTeamSize(dlist* combos, team* t, size_t team_size, player* p);
 
 #endif

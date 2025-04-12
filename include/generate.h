@@ -42,6 +42,7 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx);
 
 team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions);
 team** balanceTeamsRand(dlist* players, dimensions* dim);
+team** initialTeams(dlist* players, dimensions* dim, context* ctx);
 
 #endif
 
