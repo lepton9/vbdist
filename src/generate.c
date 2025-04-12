@@ -58,6 +58,7 @@ int maxTeamFromPrefCombos(dlist* prefCombos) {
   return biggest_size;
 }
 
+// TODO: deprecated
 void setPreferredCombos(team** teams, dimensions* dim, dlist* prefCombos) {
   for (size_t c = 0; c < prefCombos->n; c++) {
     combo* combo = prefCombos->items[c];
@@ -376,9 +377,64 @@ void putPrefComboToTeam(team* t, size_t n, combo* c, dlist* players) {
   for (size_t i = 0; i < c->ids->n; i++) {
     int id = *((int*)c->ids->items[i]);
     int ind = playerInList(players, id);
-    player* p = pop_elem(players, ind);
-    if (p) {
-      t->players[n++] = p;
+    if (ind >= 0) {
+      t->players[n++] = pop_elem(players, ind);
+    }
+  }
+}
+
+void initPrefCsToTeams(team** teams, size_t* team_sizes, context* ctx, dlist* players) {
+  int last_team = 0;
+  for (size_t c = 0; c < ctx->pref_combos->n; c++) {
+    combo* combo = ctx->pref_combos->items[c];
+    if (combo->ids->n < 2) continue;
+
+    // Get team to insert to
+    int misses = 0;
+    while (misses < (int)ctx->teams_dim->teams_n && (ctx->teams_dim->team_size - team_sizes[last_team] < combo->ids->n)) {
+      last_team = (last_team + 1) % ctx->teams_dim->teams_n;
+      misses++;
+    }
+    if (ctx->teams_dim->team_size - team_sizes[last_team] >= combo->ids->n) {
+      int rem = players->n;
+      putPrefComboToTeam(teams[last_team], team_sizes[last_team], combo, players);
+      team_sizes[last_team] += rem - players->n;
+    } else {
+      for (size_t i = 0; i < combo->ids->n; i++) {
+        int id = *((int*)combo->ids->items[i]);
+        int ind = playerInList(players, id);
+        if (ind >= 0) {
+          while ((team_sizes[last_team] >= ctx->teams_dim->team_size)) {
+            last_team = (last_team + 1) % ctx->teams_dim->teams_n;
+          }
+          player* p = pop_elem(players, ind);
+          teams[last_team]->players[team_sizes[last_team]++] = p;
+        }
+      }
+    }
+  }
+}
+
+void initBpcsToTeams(team** teams, size_t* team_sizes, context* ctx, dlist* players) {
+  int last_team = 0;
+  for (size_t c = 0; c < ctx->banned_combos->n; c++) {
+    combo* combo = ctx->banned_combos->items[c];
+    if (combo->ids->n < 2) continue;
+    for (size_t i = 0; i < combo->ids->n; i++) {
+      int id = *((int*)combo->ids->items[i]);
+      int ind = playerInList(players, id);
+      player* p = players->items[ind];
+      if (ind >= 0 && p) {
+        int misses = 0;
+        while (misses < (int)ctx->teams_dim->teams_n && (team_sizes[last_team] >= ctx->teams_dim->team_size ||
+               comboInTeamSize(ctx->banned_combos, teams[last_team],
+                               team_sizes[last_team], p))) {
+          last_team = (last_team + 1) % ctx->teams_dim->teams_n;
+          misses++;
+        }
+        teams[last_team]->players[team_sizes[last_team]++] = pop_elem(players, ind);
+        last_team = (last_team + 1) % ctx->teams_dim->teams_n;
+      }
     }
   }
 }
@@ -404,58 +460,15 @@ team** initialTeams(dlist* players, dimensions* dim, context* ctx) {
 
   int last_team = 0;
 
-  // Set banned combos to teams
-  for (size_t c = 0; c < ctx->banned_combos->n; c++) {
-    combo* combo = ctx->banned_combos->items[c];
-    if (combo->ids->n < 2) continue;
-    for (size_t i = 0; i < combo->ids->n; i++) {
-      int id = *((int*)combo->ids->items[i]);
-      int ind = playerInList(remaining_players, id);
-      player* p = remaining_players->items[ind];
-      // player* p = getPlayerInList(remaining_players, id);
-      if (ind >= 0 && p) {
-        int misses = 0;
-        while (misses < dim->teams_n && (team_sizes[last_team] >= dim->team_size ||
-               comboInTeamSize(ctx->banned_combos, teams[last_team],
-                               team_sizes[last_team], p))) {
-          last_team = (last_team + 1) % dim->teams_n;
-          misses++;
-        }
-        teams[last_team]->players[team_sizes[last_team]++] = pop_elem(remaining_players, ind);
-        last_team++;
-      }
-    }
-  }
-
   // Set preferred combos to teams
-  for (size_t c = 0; c < ctx->pref_combos->n; c++) {
-    combo* combo = ctx->pref_combos->items[c];
-    if (combo->ids->n < 2) continue;
+  initPrefCsToTeams(teams, team_sizes, ctx, remaining_players);
 
-    // Get team to insert to
-    int misses = 0;
-    while (misses < dim->teams_n && (dim->team_size - team_sizes[last_team] < combo->ids->n)) {
-      last_team = (last_team + 1) % dim->teams_n;
-      misses++;
-    }
-    if (dim->team_size - team_sizes[last_team] >= combo->ids->n) {
-      putPrefComboToTeam(teams[last_team], team_sizes[last_team], combo, remaining_players);
-      team_sizes[last_team] += combo->ids->n;
-    } else {
-      for (size_t i = 0; i < combo->ids->n; i++) {
-        int id = *((int*)combo->ids->items[i]);
-        int ind = playerInList(remaining_players, id);
-        if (ind >= 0) {
-          while ((team_sizes[last_team] >= dim->team_size)) {
-            last_team = (last_team + 1) % dim->teams_n;
-          }
-          player* p = pop_elem(remaining_players, ind);
-          teams[last_team]->players[team_sizes[last_team]++] = p;
-        }
-      }
+  // Set banned combos to teams
+  initBpcsToTeams(teams, team_sizes, ctx, remaining_players);
 
-    }
-  }
+  size_t sum = 0;
+  for (size_t i = 0; i < dim->teams_n; i++) sum += team_sizes[i];
+  assert(dim->teams_n * dim->team_size - remaining_players->n == sum);
 
   // Set rest of the players into teams
   while(remaining_players->n > 0) {

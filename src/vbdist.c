@@ -389,7 +389,7 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
   team** teams = NULL;
   if (ctx->use_positions) {
     teams = makeRandTeamsPositions(players, ctx->teams_dim, ctx->positions);
-    // TODO: set combos
+    // TODO: set combos, or make initialTeams() to handle positions
   } else {
     teams = initialTeams(players, ctx->teams_dim, ctx);
     // teams = balanceTeamsRand(players, ctx->teams_dim);
@@ -639,15 +639,6 @@ int main(int argc, char** argv) {
     }
     default:
       break;
-  }
-
-  int maxSize = maxTeamFromPrefCombos(prefCombos);
-  if (maxSize > TEAM_SIZE) {
-    // TODO: handle somehow
-    char msg[100];
-    sprintf(msg, "Trying to put %d players into the same team, but team size is %d\n", maxSize, TEAM_SIZE);
-    err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
-    strcat(err_msg, msg);
   }
 
   qsort(players->items, players->n, sizeof(player*), cmpPlayers);
