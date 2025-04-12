@@ -27,6 +27,37 @@ void ctxUpdateDimensions(context* ctx, size_t teams_n, size_t team_size) {
   ctx->teams_dim->team_size = team_size;
 }
 
+dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* skill_ids) {
+  dlist* avg_skills = init_list();
+  int* psw_skills = calloc(skill_ids->n, sizeof(int));
+  for (size_t i = 0; i < skill_ids->n; i++) {
+    skill* s = skill_ids->items[i];
+    list_add(avg_skills, initSkill(s->id, s->name, 0));
+  }
+
+  int n = dim->teams_n * dim->team_size;
+  for (size_t t_i = 0; t_i < dim->teams_n; t_i++) {
+    for (size_t p_i = 0; p_i < dim->team_size; p_i++) {
+      player* p = teams[t_i]->players[p_i];
+      for (size_t s_i = 0; s_i < avg_skills->n; s_i++) {
+        skill* s = avg_skills->items[s_i];
+        double val = get_skill_value(p, s);
+        if (fabs(val) > 1e-6f) {
+          s->value += val;
+          psw_skills[s_i]++;
+        }
+      }
+    }
+  }
+
+  for (size_t s_i = 0; s_i < avg_skills->n; s_i++) {
+    skill* s = avg_skills->items[s_i];
+    s->value = s->value / ((psw_skills[s_i] > 0) ? psw_skills[s_i] : 1);
+  }
+  free(psw_skills);
+  return avg_skills;
+}
+
 double averageRating(team** teams, dimensions* dim, dlist* skill_ids) {
   int n = dim->teams_n * dim->team_size;
   if (teams == NULL) return 0.0;

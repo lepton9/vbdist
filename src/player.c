@@ -118,6 +118,15 @@ double rating_filter(player* p, dlist* skill_ids) {
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
+double get_skill_value(player* p, skill* s) {
+  if (!p || !s) return 0.0;
+  for (size_t i = 0; i < p->skills->n; i++) {
+    skill* p_s = p->skills->items[i];
+    if (p_s->id == s->id) return p_s->value;
+  }
+  return 0.0;
+}
+
 int cmpPlayers(const void* a, const void* b) {
   player* ap = *(player**)a;
   player* bp = *(player**)b;
