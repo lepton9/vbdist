@@ -499,7 +499,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
         break;
       case 'Q': case 'q':
         saveToDB(tui->db, players, ctx->banned_combos, ctx->pref_combos);
-        freeSelectedSkills(selected_skills);
+        freeSkills(selected_skills);
         cls(stdout);
         return;
       case 'D': case 'd':
@@ -670,12 +670,7 @@ int main(int argc, char** argv) {
   write_config(cfg);
   free(cfg);
 
-  if (skills) {
-    for (size_t i = 0; i < skills->n; i++) {
-      freeSkill(skills->items[i]);
-    }
-    free_list(skills);
-  }
+  if (skills) freeSkills(skills);
   if (positions) {
     for (size_t i = 0; i < positions->n; i++) {
       freePosition(positions->items[i]);

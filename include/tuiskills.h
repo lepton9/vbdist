@@ -11,7 +11,7 @@
 
 typedef struct {
   dlist* skills;
-  dlist* selected_skill_ids;
+  dlist* selected_skills;
   list_area* skills_area;
   sqldb* db;
   term_size* term;

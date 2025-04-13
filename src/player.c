@@ -16,13 +16,6 @@ player* initPlayer() {
   return p;
 }
 
-void freeSkills(dlist* skills) {
-  for (size_t i = 0; i < skills->n; i++) {
-    freeSkill(skills->items[i]);
-  }
-  free_list(skills);
-}
-
 void freePositions(dlist* positions) {
   for (size_t i = 0; i < positions->n; i++) {
     freePosition(positions->items[i]);

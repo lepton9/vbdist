@@ -12,9 +12,8 @@ tui_skills* init_tui_skills(sqldb* db, dlist* skills, dlist* selectedSkills) {
 
   tui->skills_area = init_list_area(tui->term->cols, tui->term->rows);
   tui->skills = skills;
-  tui->selected_skill_ids = selectedSkills;
+  tui->selected_skills = selectedSkills;
   update_list_len(tui->skills_area, tui->skills->n);
-  // tui->skills = fetchSkills(db);
 
   return tui;
 }
@@ -74,14 +73,12 @@ skill* get_selected_skill(tui_skills* tui) {
 
 void toggle_selected_skill(tui_skills* tui) {
   skill* selected = get_selected_skill(tui);
-  int i = is_selected_skill(selected, tui->selected_skill_ids);
+  int i = is_selected_skill(selected, tui->selected_skills);
   if (i >= 0) {
-    int* id = pop_elem(tui->selected_skill_ids, i);
-    free(id);
+    skill* s = pop_elem(tui->selected_skills, i);
+    freeSkill(s);
   } else {
-    int* id = malloc(sizeof(int));
-    *id = selected->id;
-    list_add(tui->selected_skill_ids, id);
+    list_add(tui->selected_skills, copySkill(selected));
   }
 }
 
@@ -226,7 +223,7 @@ void renderSkillsTui(tui_skills* tui) {
       tui->skills_area->selected_term_row = line + 1;
       append_line(tui->render, line, "\033[7m");
     }
-    if (is_selected_skill(cur_skill, tui->selected_skill_ids) >= 0) {
+    if (is_selected_skill(cur_skill, tui->selected_skills) >= 0) {
       append_line(tui->render, line, ">");
     }
 

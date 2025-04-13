@@ -11,10 +11,14 @@ typedef struct {
 
 skill* initSkill(const int id, const char* name, const float value);
 void freeSkill(skill* skill);
-dlist* initSelectedSkills(dlist* allSkills);
-void freeSelectedSkills(dlist* selected_skills);
 
-int is_selected_skill(skill* skill, dlist* selected_ids);
+skill* copySkillVal(skill* s, float value);
+skill* copySkill(skill* s);
+
+dlist* initSelectedSkills(dlist* allSkills);
+void freeSkills(dlist* skills);
+
+int is_selected_skill(skill* s, dlist* selected_skills);
 
 #endif
 
