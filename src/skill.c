@@ -6,7 +6,7 @@
 skill* initSkill(const int id, const char* name, const float value) {
   skill* s = malloc(sizeof(skill));
   s->id = id;
-  s->name = strdup(name);
+  s->name = (name) ? strdup(name) : NULL;
   s->value = value;
   return s;
 }

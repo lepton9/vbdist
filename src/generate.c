@@ -35,7 +35,6 @@ dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* skill_ids) {
     list_add(avg_skills, initSkill(s->id, s->name, 0));
   }
 
-  int n = dim->teams_n * dim->team_size;
   for (size_t t_i = 0; t_i < dim->teams_n; t_i++) {
     for (size_t p_i = 0; p_i < dim->team_size; p_i++) {
       player* p = teams[t_i]->players[p_i];
@@ -213,9 +212,25 @@ int findPlayerOfPosAsngRand(player** players, size_t n, position* pos) {
 }
 
 int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
+  // TODO: use the skill averages as the average to compare
+  // compare all the skills to each other
+  // calculate dlist of average skills for both A and B team and compare skill values
+  dlist* avg_skills = averageSkillRatings(teams, ctx->teams_dim, ctx->skills);
   double avgR = averageRating(teams, ctx->teams_dim, ctx->skills);
   int swaps = 0;
   int failures = 0;
+
+  dlist* ta_rating = init_list();
+  dlist* tb_rating = init_list();
+  dlist* ta_rating_new = init_list();
+  dlist* tb_rating_new = init_list();
+  for (size_t i = 0; i < avg_skills->n; i++) {
+    skill* s = avg_skills->items[i];
+    list_add(ta_rating, initSkill(s->id, s->name, 0));
+    list_add(tb_rating, initSkill(s->id, s->name, 0));
+    list_add(ta_rating_new, initSkill(s->id, s->name, 0));
+    list_add(tb_rating_new, initSkill(s->id, s->name, 0));
+  }
 
   while(failures < MAX_FAILURES && swaps < MAX_SWAPS) {
     int teamA = rand_int(0, ctx->teams_dim->teams_n - 1);
@@ -265,6 +280,14 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
     #ifdef __linux__
       printf("%3d/%3d | %d\r", failures, MAX_FAILURES, swaps);
     #endif
+
+    // Reset team ratings
+    for (size_t i = 0; i < avg_skills->n; i++) {
+      ((skill*)ta_rating->items[i])->value = 0.0;
+      ((skill*)tb_rating->items[i])->value = 0.0;
+      ((skill*)ta_rating_new->items[i])->value = 0.0;
+      ((skill*)tb_rating_new->items[i])->value = 0.0;
+    }
   }
 
   if (ctx->use_positions) {
@@ -275,6 +298,19 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
       qsort(teams[i]->players, ctx->teams_dim->team_size, sizeof(player*), cmpPlayers);
     }
   }
+
+  for (size_t i = 0; i < avg_skills->n; i++) {
+    freeSkill(avg_skills->items[i]);
+    freeSkill(ta_rating->items[i]);
+    freeSkill(tb_rating->items[i]);
+    freeSkill(ta_rating_new->items[i]);
+    freeSkill(tb_rating_new->items[i]);
+  }
+  free_list(avg_skills);
+  free_list(ta_rating);
+  free_list(tb_rating);
+  free_list(ta_rating_new);
+  free_list(tb_rating_new);
 
   if (swaps >= MAX_SWAPS && oneSideValidation) swaps += balancedClustering(teams, 0, ctx);
 
