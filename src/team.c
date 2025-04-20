@@ -49,7 +49,7 @@ double team_rating_filter(team* t, dlist* skill_ids) {
 
 void team_average_skills(team* t, dlist* skills) {
   if (t == NULL) return;
-  for (size_t s_i = 0; s_i < t->size; s_i++) {
+  for (size_t s_i = 0; s_i < skills->n; s_i++) {
     skill* s = skills->items[s_i];
     int n = 0;
     for (size_t p_i = 0; p_i < t->size; p_i++) {
