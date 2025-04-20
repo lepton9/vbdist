@@ -471,6 +471,9 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
     printf(" [s] Skills %d/%d\n", (int)selected_skills->n, (int)allSkills->n);
     printf(" [c] Combos\n");
     printf(" [o] Positions: %s\n", (ctx->use_positions) ? "TRUE" : "FALSE");
+    printf(" [m] Comparison method: %s | %s\n",
+           (ctx->compare == OV_AVERAGE) ? ">\033[4mOVERALL_AVG\033[0m<" : "OVERALL_AVG",
+           (ctx->compare == SKILL_AVERAGE) ? ">\033[4mSKILL_AVG\033[0m<" : "SKILL_AVG");
     printf(" [q] Quit\n");
 
     printf("\n\033[31m%s\033[0m\n", error_msg);
@@ -522,6 +525,9 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
       case 'O': case 'o':
         // TODO: positions tui
         ctx->use_positions = runTuiPositions(tui->db, allPositions, selected_positions, ctx->use_positions);
+        break;
+      case 'M': case 'm':
+        changeComparison(&ctx->compare);
         break;
       default: {
         break;

@@ -7,6 +7,11 @@
 #define MAX_FAILURES 300
 #define MAX_SWAPS 1000000
 
+typedef enum {
+  OV_AVERAGE = 0,
+  SKILL_AVERAGE,
+} comparison;
+
 typedef struct {
   size_t teams_n;
   size_t team_size;
@@ -18,6 +23,7 @@ typedef struct {
   dlist* skills;
   dlist* positions;
 
+  comparison compare;
   dimensions* teams_dim;
   int use_positions;
 } context;
@@ -25,9 +31,12 @@ typedef struct {
 context* makeContext();
 void freeContext(context* ctx);
 void ctxUpdateDimensions(context* ctx, size_t teams_n, size_t team_size);
+void changeComparison(comparison* c);
 
 double averageRating(team** teams, dimensions* dim, dlist* skill_ids);
+dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* skill_ids);
 int validateSwap(double a, double b, double aNew, double bNew, double avg, int oneSideValidation);
+int validateSwapSkills(dlist* a, dlist* b, dlist* aNew, dlist* bNew, dlist* avg);
 
 int maxTeamFromPrefCombos(dlist* prefCombos);
 void setPreferredCombos(team** teams, dimensions* dim, dlist* prefCombos);
@@ -36,7 +45,6 @@ int getPlayerOfPosition(player** players, size_t n, position* pos);
 int findPlayerOfPosRand(player** players, size_t n, position* pos);
 int getPlayerOfPosAsgn(player** players, size_t n, position* pos);
 int findPlayerOfPosAsngRand(player** players, size_t n, position* pos);
-
 
 int balancedClustering(team** teams, int oneSideValidation, context* ctx);
 

@@ -14,6 +14,8 @@ context* makeContext() {
   ctx->pref_combos = NULL;
   ctx->skills = NULL;
   ctx->positions = NULL;
+  ctx->compare = OV_AVERAGE;
+  ctx->use_positions = 0;
   return ctx;
 }
 
@@ -25,6 +27,10 @@ void freeContext(context* ctx) {
 void ctxUpdateDimensions(context* ctx, size_t teams_n, size_t team_size) {
   ctx->teams_dim->teams_n = teams_n;
   ctx->teams_dim->team_size = team_size;
+}
+
+void changeComparison(comparison* c) {
+  *c = (*c == OV_AVERAGE) ? SKILL_AVERAGE : OV_AVERAGE;
 }
 
 dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* skill_ids) {
@@ -232,17 +238,15 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
   int swaps = 0;
   int failures = 0;
 
-  // Make bool in context
-  int use_skill_avg = 1;
-
   double avgR = averageRating(teams, ctx->teams_dim, ctx->skills);
+
   dlist* avg_skills = NULL;
   dlist* ta_rating = NULL;
   dlist* tb_rating = NULL;
   dlist* ta_rating_new = NULL;
   dlist* tb_rating_new = NULL;
 
-  if (use_skill_avg) {
+  if (ctx->compare == SKILL_AVERAGE) {
     avg_skills = averageSkillRatings(teams, ctx->teams_dim, ctx->skills);
     ta_rating = init_list();
     tb_rating = init_list();
@@ -250,10 +254,10 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
     tb_rating_new = init_list();
     for (size_t i = 0; i < avg_skills->n; i++) {
       skill* s = avg_skills->items[i];
-      list_add(ta_rating, initSkill(s->id, s->name, 0));
-      list_add(tb_rating, initSkill(s->id, s->name, 0));
-      list_add(ta_rating_new, initSkill(s->id, s->name, 0));
-      list_add(tb_rating_new, initSkill(s->id, s->name, 0));
+      list_add(ta_rating, copySkillVal(s, 0));
+      list_add(tb_rating, copySkillVal(s, 0));
+      list_add(ta_rating_new, copySkillVal(s, 0));
+      list_add(tb_rating_new, copySkillVal(s, 0));
     }
   }
 
@@ -279,7 +283,7 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
     }
 
     int valid = 0;
-    if (use_skill_avg) {
+    if (ctx->compare == SKILL_AVERAGE) {
       team_average_skills(teams[teamA], ta_rating);
       team_average_skills(teams[teamB], tb_rating);
 
@@ -289,7 +293,6 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
       team_average_skills(teams[teamB], tb_rating_new);
 
       valid = validateSwapSkills(ta_rating, tb_rating, ta_rating_new, tb_rating_new, avg_skills);
-
     } else {
       double ratingTeamA = team_rating_filter(teams[teamA], ctx->skills);
       double ratingTeamB = team_rating_filter(teams[teamB], ctx->skills);
@@ -321,7 +324,7 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
     #endif
 
     // Reset team ratings
-    if (use_skill_avg) {
+    if (ctx->compare == SKILL_AVERAGE) {
       for (size_t i = 0; i < avg_skills->n; i++) {
         ((skill*)ta_rating->items[i])->value = 0.0;
         ((skill*)tb_rating->items[i])->value = 0.0;
@@ -340,7 +343,7 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
     }
   }
 
-  if (use_skill_avg) {
+  if (ctx->compare == SKILL_AVERAGE) {
     for (size_t i = 0; i < avg_skills->n; i++) {
       freeSkill(avg_skills->items[i]);
       freeSkill(ta_rating->items[i]);
