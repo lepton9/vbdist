@@ -6,7 +6,7 @@ BUILD := $(BIN)/build
 OBJS := ./objs
 INC := -I$(INCLUDE) -I$(LIB)
 FLAGS := -O3 -Wextra -Wall -Wno-unused-parameter
-LINK := -L$(LIB)
+LINK := -L$(LIB) -lm
 
 PLATFORM := $(shell uname)
 ifeq  ($(PLATFORM),Linux)

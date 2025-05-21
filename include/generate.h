@@ -35,6 +35,8 @@ void changeComparison(comparison* c);
 
 double averageRating(team** teams, dimensions* dim, dlist* skill_ids);
 dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* skill_ids);
+
+double team_skill_distance(dlist* team_skills, dlist* avg);
 int validateSwap(double a, double b, double aNew, double bNew, double avg, int oneSideValidation);
 int validateSwapSkills(dlist* a, dlist* b, dlist* aNew, dlist* bNew, dlist* avg);
 

@@ -47,20 +47,36 @@ double team_rating_filter(team* t, dlist* skill_ids) {
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
+double team_average_skill(team* t, skill* skill) {
+  double sum = 0;
+  int n = 0;
+  for (size_t p_i = 0; p_i < t->size; p_i++) {
+    player* p = t->players[p_i];
+    double val = get_skill_value(p, skill);
+    if (fabs(val) > 1e-6f) {
+      sum += val;
+      n++;
+    }
+  }
+  return (n > 0) ? sum / n : sum;
+}
+
 void team_average_skills(team* t, dlist* skills) {
   if (t == NULL) return;
   for (size_t s_i = 0; s_i < skills->n; s_i++) {
     skill* s = skills->items[s_i];
-    int n = 0;
-    for (size_t p_i = 0; p_i < t->size; p_i++) {
-      player* p = t->players[p_i];
-      double val = get_skill_value(p, s);
-      if (fabs(val) > 1e-6f) {
-        s->value += val;
-        n++;
-      }
-    }
-    s->value = (n > 0) ? s->value / n : s->value;
+    s->value = team_average_skill(t, s);
+    // s->value = 0;
+    // int n = 0;
+    // for (size_t p_i = 0; p_i < t->size; p_i++) {
+    //   player* p = t->players[p_i];
+    //   double val = get_skill_value(p, s);
+    //   if (fabs(val) > 1e-6f) {
+    //     s->value += val;
+    //     n++;
+    //   }
+    // }
+    // s->value = (n > 0) ? s->value / n : s->value;
   }
 }
 

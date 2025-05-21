@@ -83,21 +83,20 @@ int validateSwap(double a, double b, double aNew, double bNew, double avg, int o
   return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
 }
 
-int validateSwapSkills(dlist* a, dlist* b, dlist* aNew, dlist* bNew, dlist* avg) {
-  int a_improved = 0;
-  int b_improved = 0;
-
+// Calc L2 norm
+double team_skill_distance(dlist* team_skills, dlist* avg) {
+  double dist = 0.0;
   for (size_t i = 0; i < avg->n; i++) {
-    skill* avg_s = avg->items[i];
-    skill* a_s = a->items[i];
-    skill* aNew_s = aNew->items[i];
-    skill* b_s = b->items[i];
-    skill* bNew_s = bNew->items[i];
-
-    if (fabs(aNew_s->value - avg_s->value) < fabs(a_s->value - avg_s->value)) a_improved++;
-    if (fabs(bNew_s->value - avg_s->value) < fabs(b_s->value - avg_s->value)) b_improved++;
+    double delta = ((skill*)team_skills->items[i])->value - ((skill*)avg->items[i])->value;
+    dist += delta * delta;
   }
-  return (a_improved + b_improved >= (int)(avg->n / 2));
+  return sqrt(dist);
+}
+
+int validateSwapSkills(dlist* a, dlist* b, dlist* aNew, dlist* bNew, dlist* avg) {
+  double oldDist = team_skill_distance(a, avg) + team_skill_distance(b, avg);
+  double newDist = team_skill_distance(aNew, avg) + team_skill_distance(bNew, avg);
+  return newDist < oldDist;
 }
 
 int maxTeamFromPrefCombos(dlist* prefCombos) {

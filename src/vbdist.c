@@ -229,6 +229,27 @@ void printTeams(FILE *out, team **teams, const int printWidth,
   }
 }
 
+void printSkills(FILE *out, team **teams, dlist* skills, const int printWidth,
+                const int onLine, const char indent) {
+  char str[printWidth];
+  for (int t = 0; t < TEAMS_N; t += onLine) {
+    for (int i = t; i < t + onLine && i < TEAMS_N; i++) {
+      sprintf(str, "%s | %.2f:", teams[i]->name, avgRating(teams[i]));
+      fprintf(out, "%-*s", printWidth, str);
+    }
+    fprintf(out, "\n");
+    for(size_t j = 0; j < skills->n; j++) {
+      for(int i = t; i < TEAMS_N && i - t < onLine; i++) {
+        skill* s = skills->items[j];
+        sprintf(str, "%s%-10s %.1f", (indent) ? "  " : "", s->name, team_average_skill(teams[i], s));
+        fprintf(out, "%-*s", printWidth, str);
+      }
+      fprintf(out, "\n");
+    }
+    fprintf(out, "\n");
+  }
+}
+
 void writeTeamsToFile(team** teams, const char* teamsFile) {
   FILE* fp = fopen(teamsFile, "a");
   fprintf(fp, "\n");
@@ -391,7 +412,11 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
     printf("Total swaps: %d\n", swaps);
   }
 
-  if (PRINT_MODE != PRINT_MINIMAL) printTeams(stdout, teams, 30, 2, 1);
+  if (PRINT_MODE != PRINT_MINIMAL) {
+    printTeams(stdout, teams, 30, 4, 1);
+    printf("\n");
+    printSkills(stdout, teams, ctx->skills, 30, 4, 1);
+  }
 
   curShow();
   printf("\nManually change teams? [y/N] ");
@@ -405,7 +430,7 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
   }
 
   log_log("Generated %d teams of %d players", TEAMS_N, TEAM_SIZE);
-  printTeams(stdout, teams, 20, 3, 0);
+  printTeams(stdout, teams, 20, 4, 0);
 
   switch (SOURCE) {
     case TEXT_FILE: {
