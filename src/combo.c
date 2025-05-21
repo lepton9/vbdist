@@ -37,10 +37,11 @@ combo* initCombo(comboType type, int combo_id) {
 }
 
 void freeCombo(combo* combo) {
+  if (!combo) return;
   for (size_t i = 0; i < combo->ids->n; i++) {
     free(combo->ids->items[i]);
   }
-  free_list(combo->ids);
+  if (combo->ids) free_list(combo->ids);
   free(combo);
 }
 
@@ -97,5 +98,16 @@ char comboInTeamSize(dlist* combos, team* t, size_t team_size, player* p) {
     if (isCombo(combos, p, t->players[i])) return 1;
   }
   return 0;
+}
+
+int comboRelevant(dlist* players, combo* combo) {
+  int match = 0;
+  for (int i = 0; i < (int)players->n; i++) {
+    player* p = players->items[i];
+    if (isInCombo(combo, p)) {
+      match++;
+    }
+  }
+  return match == (int)combo->ids->n;
 }
 

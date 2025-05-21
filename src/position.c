@@ -12,7 +12,7 @@ position* initPosition(int id, const char* name) {
 
 void freePosition(position* p) {
   if (!p) return;
-  free(p->name);
+  if (p->name) free(p->name);
   free(p);
 }
 

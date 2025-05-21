@@ -38,17 +38,6 @@ dataSource SOURCE = NO_SOURCE;
 printMode PRINT_MODE = PRINT_MINIMAL;
 
 
-int comboRelevant(dlist* players, combo* combo) {
-  int match = 0;
-  for (int i = 0; i < (int)players->n; i++) {
-    player* p = players->items[i];
-    if (isInCombo(combo, p)) {
-      match++;
-    }
-  }
-  return match == (int)combo->ids->n;
-}
-
 void updateCombos(sqldb* db, dlist* players, dlist* combos, comboType combo_type) {
   for (int i = 0; i < (int)combos->n; i++) {
     free(combos->items[i]);
@@ -73,7 +62,7 @@ void updateCombos(sqldb* db, dlist* players, dlist* combos, comboType combo_type
 
   for (int i = combos->n - 1; i >= 0; i--) {
     if (!comboRelevant(players, combos->items[i])) {
-      free(pop_elem(combos, i));
+      freeCombo(pop_elem(combos, i));
     }
   }
 }

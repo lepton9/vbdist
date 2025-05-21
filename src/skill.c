@@ -35,6 +35,7 @@ dlist* initSelectedSkills(dlist* allSkills) {
 }
 
 void freeSkills(dlist* skills) {
+  if (!skills) return;
   for (size_t i = 0; i < skills->n; i++) {
     freeSkill(skills->items[i]);
   }

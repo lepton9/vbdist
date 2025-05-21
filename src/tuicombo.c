@@ -17,6 +17,12 @@ tui_combos* init_tui_combo(sqldb* db, dlist* players) {
   tui->combos = fetchAllCombos(db);
   tui->players = players;
 
+  for (int i = tui->combos->n - 1; i >= 0; i--) {
+    if (!comboRelevant(tui->players, tui->combos->items[i])) {
+      freeCombo(pop_elem(tui->combos, i));
+    }
+  }
+
   tui->combos_area = init_list_area(tui->term->cols, tui->term->rows);
   tui->players_area = init_list_area(tui->term->cols, tui->term->rows);
   update_list_len(tui->players_area, tui->players->n);
@@ -298,14 +304,14 @@ void ctuiRenderCombosArea(tui_combos* tui) {
 
   for (int i = tui->combos_area->first_ind; i < tui->combos_area->first_ind + len; i++) {
     combo* combo = tui->combos->items[i];
-    const char *name1 =
-        (combo->ids->n > 0)
-            ? getPlayerInList(tui->players, *((int *)combo->ids->items[0]))->firstName
-            : "";
-    const char *name2 =
-        (combo->ids->n > 1)
-            ? getPlayerInList(tui->players, *((int *)combo->ids->items[1]))->firstName
-            : "";
+    const char *name1 = "";
+    const char *name2 = "";
+    if (combo->ids->n > 1) {
+      player* p1 = getPlayerInList(tui->players, *((int *)combo->ids->items[0]));
+      player* p2 = getPlayerInList(tui->players, *((int *)combo->ids->items[1]));
+      name1 = (p1 && p1->firstName) ? p1->firstName : "";
+      name2 = (p2 && p2->firstName) ? p2->firstName : "";
+    }
 
     sprintf(combo_text, "(%s) %s - %s%s", comboTypeString(combo->type), name1,
             name2, (combo->ids->n > 2) ? " - ..." : "");
@@ -315,7 +321,7 @@ void ctuiRenderCombosArea(tui_combos* tui) {
       put_text(tui->render, line++, col + 2, "\033[7m %s\033[27m", combo_text);
       for (size_t j = 0; j < combo->ids->n; j++) {
         player* p = getPlayerInList(tui->players, *((int*)combo->ids->items[j]));
-        put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", p->firstName);
+        put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", (p && p->firstName) ? p->firstName : "NotFound");
       }
     } else {
       put_text(tui->render, line++, col + 2, "%s", combo_text);
