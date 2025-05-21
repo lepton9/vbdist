@@ -17,6 +17,7 @@ player* initPlayer() {
 }
 
 void freePositions(dlist* positions) {
+  if (!positions) return;
   for (size_t i = 0; i < positions->n; i++) {
     freePosition(positions->items[i]);
   }
@@ -34,14 +35,22 @@ void freePlayer(player* p) {
 
 player* copyPlayer(player* p) {
   player* copy = initPlayer();
-  *copy = *p;
-  copy->firstName = strdup(p->firstName);
+  copy->id = p->id;
+  if (p->firstName) copy->firstName = strdup(p->firstName);
   if (p->surName) copy->surName = strdup(p->surName);
+  copy->assigned_pos = p->assigned_pos;
+
   copy->skills = init_list();
   for (size_t i = 0; i < p->skills->n; i++) {
     skill* s = p->skills->items[i];
     skill* s_copy = initSkill(s->id, s->name, s->value);
     list_add(copy->skills, s_copy);
+  }
+  for (size_t i = 0; i < p->positions->n; i++) {
+    position* pos = p->positions->items[i];
+    position* pos_copy = copy_position(pos);
+    setPriority(pos_copy, pos->priority);
+    list_add(copy->positions, pos_copy);
   }
   return copy;
 }
