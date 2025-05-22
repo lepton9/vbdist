@@ -74,20 +74,22 @@ int cb_player_position(void* positions, int count, char **data, char **columns) 
 }
 
 int cb_player_skill(void* skills, int count, char **data, char **columns) {
-  assert(count == 3);
+  assert(count == 4);
   int id = atoi(data[0]);
   float value = atof(data[1]);
   const char* name = data[2];
   skill* s = initSkill(id, name, value);
+  setWeight(s, atof(data[3]));
   list_add(skills, s);
   return 0;
 }
 
 int cb_skill(void* skills, int count, char **data, char **columns) {
-  assert(count == 2);
+  assert(count == 3);
   int id = atoi(data[0]);
   const char* name = data[1];
   skill* s = initSkill(id, name, 0);
+  setWeight(s, atof(data[2]));
   list_add(skills, s);
   return 0;
 }
@@ -332,7 +334,7 @@ int fetchPlayerPositions(sqldb* db, player* player) {
 int fetchPlayerSkills(sqldb* db, player* player) {
   char sql[200];
   sprintf(sql,
-          "SELECT ps.skill_id, ps.value, s.name FROM PlayerSkill ps INNER JOIN "
+          "SELECT ps.skill_id, ps.value, s.name, s.weight FROM PlayerSkill ps INNER JOIN "
           "Skill s ON ps.player_id = %d AND ps.skill_id = s.skill_id;",
           player->id);
   int result = execQuery(db->sqlite, sql, cb_player_skill, player->skills);
@@ -342,7 +344,7 @@ int fetchPlayerSkills(sqldb* db, player* player) {
 dlist* fetchSkills(sqldb* db) {
   char sql[200];
   dlist* skills = init_list();
-  sprintf(sql, "SELECT skill_id, name FROM Skill;");
+  sprintf(sql, "SELECT skill_id, name, weight FROM Skill;");
   execQuery(db->sqlite, sql, cb_skill, skills);
   return skills;
 }
@@ -350,7 +352,7 @@ dlist* fetchSkills(sqldb* db) {
 
 int insertSkill(sqldb* db, skill* skill) {
   char sql[100];
-  sprintf(sql, "INSERT INTO Skill (name) VALUES ('%s');", skill->name);
+  sprintf(sql, "INSERT INTO Skill (name, weight) VALUES ('%s', %f);", skill->name, skill->weight);
   int r = execQuery(db->sqlite, sql, NULL, NULL);
   if (r) {
     int skill_id = sqlite3_last_insert_rowid(db->sqlite);
@@ -376,6 +378,16 @@ int renameSkill(sqldb* db, skill* skill, const char* name) {
   int r = execQuery(db->sqlite, sql, 0, 0);
   if (r) {
     log_sql("Renamed Skill (%d) '%s' -> '%s'", skill->id, skill->name, name);
+  }
+  return r;
+}
+
+int updateSkillWeight(sqldb* db, skill* skill) {
+  char sql[100];
+  sprintf(sql, "UPDATE Skill SET weight = %f WHERE skill_id = %d;", skill->weight, skill->id);
+  int r = execQuery(db->sqlite, sql, 0, 0);
+  if (r) {
+    log_sql("Updated weight Skill (%d) '%.2f'", skill->id, skill->weight);
   }
   return r;
 }
@@ -500,7 +512,8 @@ int createDB(sqldb* db) {
       ""
       "CREATE TABLE IF NOT EXISTS Skill ("
       "  skill_id INTEGER PRIMARY KEY AUTOINCREMENT,"
-      "  name TEXT"
+      "  name TEXT,"
+      "  weight REAL DEFAULT 1.0"
       ");"
       ""
       "CREATE TABLE IF NOT EXISTS PlayerSkill ("

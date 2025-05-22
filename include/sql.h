@@ -56,6 +56,7 @@ dlist* fetchSkills(sqldb* db);
 int insertSkill(sqldb* db, skill* skill);
 int deleteSkill(sqldb* db, skill* skill);
 int renameSkill(sqldb* db, skill* skill, const char* name);
+int updateSkillWeight(sqldb* db, skill* skill);
 
 int renamePlayer(sqldb* db, player* player, const char* name);
 int renameTeam(sqldb* db, team* team, const char* name);

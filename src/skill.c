@@ -8,6 +8,7 @@ skill* initSkill(const int id, const char* name, const float value) {
   s->id = id;
   s->name = (name) ? strdup(name) : NULL;
   s->value = value;
+  s->weight = 1.0;
   return s;
 }
 
@@ -16,8 +17,27 @@ void freeSkill(skill* s) {
   free(s);
 }
 
+float skillValue(skill* skill) {
+  return skill->value * skill->weight;
+}
+
+void setWeight(skill* skill, float value) {
+  skill->weight = value;
+}
+
+void incWeight(skill* skill) {
+  skill->weight += WEIGHT_INCREMENT;
+}
+
+void decWeight(skill* skill) {
+  if (skill->weight > WEIGHT_INCREMENT) {
+    skill->weight -= WEIGHT_INCREMENT;
+  }
+}
+
 skill* copySkillVal(skill* s, float value) {
   skill* s_c = initSkill(s->id, s->name, value);
+  setWeight(s_c, s->weight);
   return s_c;
 }
 
