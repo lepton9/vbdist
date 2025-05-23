@@ -33,11 +33,11 @@ void changeComparison(comparison* c) {
   *c = (*c == OV_AVERAGE) ? SKILL_AVERAGE : OV_AVERAGE;
 }
 
-dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* skill_ids) {
+dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* sel_skills) {
   dlist* avg_skills = init_list();
-  int* psw_skills = calloc(skill_ids->n, sizeof(int));
-  for (size_t i = 0; i < skill_ids->n; i++) {
-    skill* s = skill_ids->items[i];
+  int* psw_skills = calloc(sel_skills->n, sizeof(int));
+  for (size_t i = 0; i < sel_skills->n; i++) {
+    skill* s = sel_skills->items[i];
     list_add(avg_skills, initSkill(s->id, s->name, 0));
   }
 
@@ -63,13 +63,13 @@ dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* skill_ids) {
   return avg_skills;
 }
 
-double averageRating(team** teams, dimensions* dim, dlist* skill_ids) {
+double averageRating(team** teams, dimensions* dim, dlist* sel_skills) {
   int n = dim->teams_n * dim->team_size;
   if (teams == NULL) return 0.0;
   double sumRating = 0.0;
   for (size_t t = 0; t < dim->teams_n; t++) {
     for (size_t p = 0; p < dim->team_size; p++) {
-      sumRating += rating_filter(teams[t]->players[p], skill_ids);
+      sumRating += rating_filter(teams[t]->players[p], sel_skills);
     }
   }
   return (n <= 0) ? 0.0 : sumRating / n;

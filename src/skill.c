@@ -62,10 +62,10 @@ void freeSkills(dlist* skills) {
   free_list(skills);
 }
 
-int is_selected_skill(skill* s, dlist* selected_skills) {
-  for (size_t i = 0; i < selected_skills->n; i++) {
-    skill* sel_s = selected_skills->items[i];
-    if (s->id == sel_s->id) {
+int findSkill(skill* s, dlist* skills) {
+  for (size_t i = 0; i < skills->n; i++) {
+    skill* skill = skills->items[i];
+    if (s->id == skill->id) {
       return i;
     }
   }

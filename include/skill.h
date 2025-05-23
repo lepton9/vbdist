@@ -26,7 +26,7 @@ skill* copySkill(skill* s);
 dlist* initSelectedSkills(dlist* allSkills);
 void freeSkills(dlist* skills);
 
-int is_selected_skill(skill* s, dlist* selected_skills);
+int findSkill(skill* s, dlist* selected_skills);
 
 #endif
 

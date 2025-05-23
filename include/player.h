@@ -34,7 +34,7 @@ int cmpPlayers(const void* a, const void* b);
 void swapPlayers(player* a, player* b);
 
 double rating(player* p);
-double rating_filter(player* p, dlist* skill_ids);
+double rating_filter(player* p, dlist* skills);
 double get_skill_value(player* p, skill* s);
 
 void markPlayer(player* p, color_fg color);

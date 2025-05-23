@@ -14,6 +14,7 @@ tui_skills* init_tui_skills(sqldb* db, dlist* skills, dlist* selectedSkills) {
   tui->skills = skills;
   tui->selected_skills = selectedSkills;
   update_list_len(tui->skills_area, tui->skills->n);
+  tui->modified = 0;
 
   return tui;
 }
@@ -40,6 +41,12 @@ void handleSkillsInput(tui_skills *tui, int c) {
       break;
     case 'R': case 'r':
       rename_selected_skill(tui);
+      break;
+    case 'h': case '-': case 4: // Ctrl + D
+      decrement_selected_skill(tui);
+      break;
+    case 'l': case '+': case 21: // Ctrl + U
+      increment_selected_skill(tui);
       break;
     case 'A': case 'a':
       add_skill(tui);
@@ -73,7 +80,7 @@ skill* get_selected_skill(tui_skills* tui) {
 
 void toggle_selected_skill(tui_skills* tui) {
   skill* selected = get_selected_skill(tui);
-  int i = is_selected_skill(selected, tui->selected_skills);
+  int i = findSkill(selected, tui->selected_skills);
   if (i >= 0) {
     skill* s = pop_elem(tui->selected_skills, i);
     freeSkill(s);
@@ -124,6 +131,20 @@ void rename_selected_skill(tui_skills* tui) {
   }
   curHide();
   refresh_screen(tui->render);
+}
+
+void decrement_selected_skill(tui_skills* tui) {
+  skill* selected = get_selected_skill(tui);
+  if (!selected) return;
+  decWeight(selected);
+  tui->modified = 1;
+}
+
+void increment_selected_skill(tui_skills* tui) {
+  skill* selected = get_selected_skill(tui);
+  if (!selected) return;
+  incWeight(selected);
+  tui->modified = 1;
 }
 
 int delete_skill(tui_skills* tui, int index) {
@@ -223,11 +244,11 @@ void renderSkillsTui(tui_skills* tui) {
       tui->skills_area->selected_term_row = line + 1;
       append_line(tui->render, line, "\033[7m");
     }
-    if (is_selected_skill(cur_skill, tui->selected_skills) >= 0) {
+    if (findSkill(cur_skill, tui->selected_skills) >= 0) {
       append_line(tui->render, line, ">");
     }
 
-    append_line(tui->render, line, " %-20s", cur_skill->name);
+    append_line(tui->render, line, " %-18s %.2f", cur_skill->name, cur_skill->weight);
     if (tui->skills_area->selected == i) {
       append_line(tui->render, line, "\033[27m");
     }
@@ -235,6 +256,18 @@ void renderSkillsTui(tui_skills* tui) {
   }
   make_borders(tui->render, 0, 0, 30, len + 5);
   render(tui->render);
+}
+
+void updateWeights(sqldb* db, dlist* allSkills, dlist* selectedSkills) {
+  updateSkillWeights(db, allSkills);
+  for (size_t i = 0; i < selectedSkills->n; i++) {
+    skill* selSkill = selectedSkills->items[i];
+    int i = findSkill(selSkill, allSkills);
+    if (i >= 0) {
+      skill* s = allSkills->items[i];
+      selSkill->weight = s->weight;
+    }
+  }
 }
 
 void runTuiSkills(sqldb* db, dlist* allSkills, dlist* selectedSkills) {
@@ -249,7 +282,9 @@ void runTuiSkills(sqldb* db, dlist* allSkills, dlist* selectedSkills) {
     c = keyPress();
     handleSkillsInput(tui, c);
   }
+  if (tui->modified) {
+    updateWeights(db, allSkills, selectedSkills);
+  }
   free_tui_skills(tui);
 }
-
 

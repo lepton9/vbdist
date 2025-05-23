@@ -103,13 +103,14 @@ double rating(player* p) {
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
-double rating_filter(player* p, dlist* skill_ids) {
+double rating_filter(player* p, dlist* skills) {
   if (!p) return 0.0;
   double sum = 0;
   int ratings_n = 0;
   for (size_t i = 0; i < p->skills->n; i++) {
     skill* s = p->skills->items[i];
-    if (is_selected_skill(s, skill_ids) >= 0) {
+    if (findSkill(s, skills) >= 0) {
+      // TODO: calc with weight
       float r = s->value;
       if (fabsf(r) > 1e-6f) {
         sum += r;
@@ -124,6 +125,7 @@ double get_skill_value(player* p, skill* s) {
   if (!p || !s) return 0.0;
   for (size_t i = 0; i < p->skills->n; i++) {
     skill* p_s = p->skills->items[i];
+      // TODO: calc with weight
     if (p_s->id == s->id) return p_s->value;
   }
   return 0.0;

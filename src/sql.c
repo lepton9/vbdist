@@ -387,7 +387,15 @@ int updateSkillWeight(sqldb* db, skill* skill) {
   sprintf(sql, "UPDATE Skill SET weight = %f WHERE skill_id = %d;", skill->weight, skill->id);
   int r = execQuery(db->sqlite, sql, 0, 0);
   if (r) {
-    log_sql("Updated weight Skill (%d) '%.2f'", skill->id, skill->weight);
+    log_sql("Updated weight Skill (%d) '%s' '%.2f'", skill->id, skill->name, skill->weight);
+  }
+  return r;
+}
+
+int updateSkillWeights(sqldb* db, dlist* skills) {
+  int r = 1;
+  for (size_t i = 0; i < skills->n; i++) {
+    r = r && updateSkillWeight(db, skills->items[i]);
   }
   return r;
 }

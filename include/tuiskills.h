@@ -16,6 +16,7 @@ typedef struct {
   sqldb* db;
   term_size* term;
   renderer* render;
+  int modified;
 } tui_skills;
 
 tui_skills* init_tui_skills(sqldb* db, dlist* skills, dlist* selectedSkills);
@@ -31,7 +32,10 @@ void toggle_selected_skill(tui_skills* tui);
 int delete_skill(tui_skills* tui, int index);
 void delete_selected_skill(tui_skills* tui);
 void rename_selected_skill(tui_skills* tui);
+void decrement_selected_skill(tui_skills* tui);
+void increment_selected_skill(tui_skills* tui);
 void add_skill(tui_skills* tui);
+void updateWeights(sqldb* db, dlist* allSkills, dlist* selectedSkills);
 
 void renderSkillsTui(tui_skills* tui);
 

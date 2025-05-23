@@ -33,8 +33,8 @@ void freeContext(context* ctx);
 void ctxUpdateDimensions(context* ctx, size_t teams_n, size_t team_size);
 void changeComparison(comparison* c);
 
-double averageRating(team** teams, dimensions* dim, dlist* skill_ids);
-dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* skill_ids);
+double averageRating(team** teams, dimensions* dim, dlist* sel_skills);
+dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* sel_skills);
 
 double team_skill_distance(dlist* team_skills, dlist* avg);
 int validateSwap(double a, double b, double aNew, double bNew, double avg, int oneSideValidation);
