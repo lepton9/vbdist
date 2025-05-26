@@ -11,6 +11,7 @@ tuiswap* initTuiSwap(const int team_size, const int team_n) {
   unselect(tui->selected);
   tui->cur->team = 0;
   tui->cur->player = 0;
+  tui->renderSkills = 0;
 
   tui->teams = NULL;
   tui->skills = NULL;
@@ -151,7 +152,7 @@ int renderTuiSwapTeams(tuiswap* tui) {
 void renderTuiSwap(tuiswap* tui) {
   append_line(tui->render, 0, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q");
   int lastLine = renderTuiSwapTeams(tui);
-  renderTuiSwapSkills(tui, lastLine + 5);
+  if (tui->renderSkills) renderTuiSwapSkills(tui, lastLine + 5);
   render(tui->render);
 }
 
@@ -168,6 +169,9 @@ void handleTuiSwapInput(tuiswap* tui, int c) {
     break;
     case 27: // Esc
       unselect(tui->selected);
+      break;
+    case 'T': case 't':
+      tui->renderSkills ^= 1;
       break;
     case 'K': case 'W':
     case 'k': case 'w':
