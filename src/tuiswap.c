@@ -99,7 +99,31 @@ void markCurPlayer(tuiswap* tui, team** teams, color_fg color) {
   else markPlayer(p, color);
 }
 
-void renderTuiSwapTeams(tuiswap* tui) {
+void renderTuiSwapSkills(tuiswap* tui, int begLine) {
+  const int printWidth = 30;
+  const char indent = 0;
+  int line = begLine;
+  int col = 0;
+  for (int t = 0; t < tui->team_n; t += MAX_HOR_TEAMS) {
+    for (int i = t; i < t + MAX_HOR_TEAMS && i < tui->team_n; i++) {
+      put_text(tui->render, line, col, "\033[4m%s | %.2f\033[24m", tui->teams[i]->name, avgRating(tui->teams[i]));
+      col += printWidth;
+    }
+    line++;
+    for(size_t j = 0; j < tui->skills->n; j++) {
+      col = 0;
+      for(int i = t; i < tui->team_n && i - t < MAX_HOR_TEAMS; i++) {
+        skill* s = tui->skills->items[j];
+        put_text(tui->render, line, col, "%s%-12s %.1f", (indent) ? "  " : "", s->name, team_average_skill(tui->teams[i], s));
+        col += 30;
+      }
+      line++;
+    }
+    line++;
+  }
+}
+
+int renderTuiSwapTeams(tuiswap* tui) {
   int width = 15;
   int line = 0;
   for (int t = 0; t < tui->team_n; t += MAX_HOR_TEAMS) {
@@ -121,11 +145,13 @@ void renderTuiSwapTeams(tuiswap* tui) {
       col += width + 2;
     }
   }
+  return line;
 }
 
 void renderTuiSwap(tuiswap* tui) {
   append_line(tui->render, 0, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q");
-  renderTuiSwapTeams(tui);
+  int lastLine = renderTuiSwapTeams(tui);
+  renderTuiSwapSkills(tui, lastLine + 5);
   render(tui->render);
 }
 

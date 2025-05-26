@@ -5,7 +5,7 @@
 #include "render.h"
 #include "tui.h"
 
-#define MAX_HOR_TEAMS 3
+#define MAX_HOR_TEAMS 4
 
 typedef struct {
   int team;
@@ -38,7 +38,7 @@ void cur_right(tuiswap* t);
 char highlight(const tuiswap* tui, const int team, const int player);
 
 void handleTuiSwapInput(tuiswap* tui, int c);
-void renderTuiSwapTeams(tuiswap* tui);
+int renderTuiSwapTeams(tuiswap* tui);
 void renderTuiSwap(tuiswap* tui);
 void runTuiSwap(team** teams, size_t teams_n, size_t team_size, dlist* skills, dlist* bpcs);
 
