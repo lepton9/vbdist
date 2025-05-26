@@ -262,71 +262,6 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
   fclose(fp);
 }
 
-void changeMode(team** teams, dlist* bpcs) {
-  tuiswap* tui = initTuiSwap(TEAM_SIZE, TEAMS_N);
-  int c = 0;
-  renderer* renderer = init_renderer(stdout);
-
-  refresh_screen(renderer);
-  while (c != 'q') {
-    updateTuiSwap(renderer, tui, teams, bpcs);
-    render(renderer);
-    c = keyPress();
-    switch (c) {
-      case 13: case '\n': case ' ':
-#ifdef __linux__
-      case KEY_ENTER:
-#endif
-        if (selectCur(tui)) {
-          switchPos(tui, teams);
-          unselect(tui->selected);
-        }
-        break;
-      case 27: // Esc
-        unselect(tui->selected);
-        break;
-      case 'K': case 'W':
-      case 'k': case 'w':
-#ifdef __linux__
-      case KEY_UP:
-#endif
-        cur_up(tui);
-        break;
-      case 'J': case 'S':
-      case 'j': case 's':
-#ifdef __linux__
-      case KEY_DOWN:
-#endif
-        cur_down(tui);
-        break;
-      case 'H': case 'A':
-      case 'h': case 'a':
-#ifdef __linux__
-      case KEY_LEFT:
-#endif
-        cur_left(tui);
-        break;
-      case 'L': case 'D':
-      case 'l': case 'd':
-#ifdef __linux__
-      case KEY_RIGHT:
-#endif
-        cur_right(tui);
-        break;
-      default: {
-        if (isdigit(c)) {
-          int d = c - '0';
-          markCurPlayer(tui, teams, getMarkColor(d));
-        }
-        break;
-      }
-    }
-  }
-  cls(stdout);
-  free_renderer(renderer);
-  freeTuiSwap(tui);
-}
-
 int askSaveToFile(char* fileName, team** teams) {
   printf("\nSave teams to a file? [y/N] ");
   fflush(stdout);
@@ -425,7 +360,7 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
   printf("\033[2K\n");
   if (ans == 'y' || ans == 'Y') {
     curHide();
-    changeMode(teams, ctx->banned_combos);
+    runTuiSwap(teams, TEAMS_N, TEAM_SIZE, ctx->skills, ctx->banned_combos);
     curShow();
   }
 

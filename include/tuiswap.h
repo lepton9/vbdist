@@ -1,8 +1,9 @@
 #ifndef TUISWAP_H
 #define TUISWAP_H
 
-#include "../include/combo.h"
-#include "../include/render.h"
+#include "combo.h"
+#include "render.h"
+#include "tui.h"
 
 #define MAX_HOR_TEAMS 3
 
@@ -16,6 +17,10 @@ typedef struct {
   cursor* cur;
   int team_size;
   int team_n;
+  team** teams;
+  dlist* skills;
+  dlist* bannedCombos;
+  renderer* render;
 } tuiswap;
 
 tuiswap* initTuiSwap(const int team_size, const int team_n);
@@ -31,6 +36,10 @@ void cur_down(tuiswap* t);
 void cur_left(tuiswap* t);
 void cur_right(tuiswap* t);
 char highlight(const tuiswap* tui, const int team, const int player);
-void updateTuiSwap(renderer* render, tuiswap* tui, team** teams, dlist* bpcs);
+
+void handleTuiSwapInput(tuiswap* tui, int c);
+void renderTuiSwapTeams(tuiswap* tui);
+void renderTuiSwap(tuiswap* tui);
+void runTuiSwap(team** teams, size_t teams_n, size_t team_size, dlist* skills, dlist* bpcs);
 
 #endif

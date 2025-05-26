@@ -1,19 +1,27 @@
 #include "../include/tuiswap.h"
 #include <stdlib.h>
+#include <ctype.h>
 
 tuiswap* initTuiSwap(const int team_size, const int team_n) {
-  tuiswap* t = malloc(sizeof(tuiswap));
-  t->team_size = team_size;
-  t->team_n = team_n;
-  t->selected = malloc(sizeof(cursor));
-  t->cur = malloc(sizeof(cursor));
-  unselect(t->selected);
-  t->cur->team = 0;
-  t->cur->player = 0;
-  return t;
+  tuiswap* tui = malloc(sizeof(tuiswap));
+  tui->team_size = team_size;
+  tui->team_n = team_n;
+  tui->selected = malloc(sizeof(cursor));
+  tui->cur = malloc(sizeof(cursor));
+  unselect(tui->selected);
+  tui->cur->team = 0;
+  tui->cur->player = 0;
+
+  tui->teams = NULL;
+  tui->skills = NULL;
+  tui->bannedCombos = NULL;
+
+  tui->render = init_renderer(stdout);
+  return tui;
 }
 
 void freeTuiSwap(tuiswap* tui) {
+  free_renderer(tui->render);
   free(tui->selected);
   free(tui->cur);
   free(tui);
@@ -91,27 +99,102 @@ void markCurPlayer(tuiswap* tui, team** teams, color_fg color) {
   else markPlayer(p, color);
 }
 
-void updateTuiSwap(renderer* render, tuiswap* tui, team** teams, dlist* bpcs) {
-  append_line(render, 0, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q");
+void renderTuiSwapTeams(tuiswap* tui) {
   int width = 15;
+  int line = 0;
   for (int t = 0; t < tui->team_n; t += MAX_HOR_TEAMS) {
     int col = 0;
     for (int i = t; i < t + MAX_HOR_TEAMS && i < tui->team_n; i++) {
-      int line = 2 + (t / MAX_HOR_TEAMS) * (tui->team_size + 2);
-      put_text(render, line++, col, "\033[34m%-*.2f\033[0m", width, avgRating(teams[i]));
+      line = 2 + (t / MAX_HOR_TEAMS) * (tui->team_size + 2);
+      put_text(tui->render, line++, col, "\033[34m%-*.2f\033[0m", width, avgRating(tui->teams[i]));
       for(int j = 0; j < tui->team_size; j++) {
-        player *p = teams[i]->players[j];
+        player *p = tui->teams[i]->players[j];
         if (highlight(tui, i, j)) {
-          put_text(render, line++, col, "\033[%d;7m%-*s\033[0m",
+          put_text(tui->render, line++, col, "\033[%d;7m%-*s\033[0m",
                       p->marker.color, width, p->firstName);
-        } else if (comboInTeam(bpcs, teams[i], p)) {
-          put_text(render, line++, col, "\033[%dm%-*s\033[0m", RED_FG, width, p->firstName);
+        } else if (comboInTeam(tui->bannedCombos, tui->teams[i], p)) {
+          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", RED_FG, width, p->firstName);
         } else {
-          put_text(render, line++, col, "\033[%dm%-*s\033[0m", p->marker.color, width, p->firstName);
+          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", p->marker.color, width, p->firstName);
         }
       }
       col += width + 2;
     }
   }
+}
+
+void renderTuiSwap(tuiswap* tui) {
+  append_line(tui->render, 0, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q");
+  renderTuiSwapTeams(tui);
+  render(tui->render);
+}
+
+void handleTuiSwapInput(tuiswap* tui, int c) {
+  switch (c) {
+    case 13: case '\n': case ' ':
+#ifdef __linux__
+    case KEY_ENTER:
+#endif
+    if (selectCur(tui)) {
+      switchPos(tui, tui->teams);
+      unselect(tui->selected);
+    }
+    break;
+    case 27: // Esc
+      unselect(tui->selected);
+      break;
+    case 'K': case 'W':
+    case 'k': case 'w':
+#ifdef __linux__
+    case KEY_UP:
+#endif
+    cur_up(tui);
+    break;
+    case 'J': case 'S':
+    case 'j': case 's':
+#ifdef __linux__
+    case KEY_DOWN:
+#endif
+    cur_down(tui);
+    break;
+    case 'H': case 'A':
+    case 'h': case 'a':
+#ifdef __linux__
+    case KEY_LEFT:
+#endif
+    cur_left(tui);
+    break;
+    case 'L': case 'D':
+    case 'l': case 'd':
+#ifdef __linux__
+    case KEY_RIGHT:
+#endif
+    cur_right(tui);
+    break;
+    default: {
+      if (isdigit(c)) {
+        int d = c - '0';
+        markCurPlayer(tui, tui->teams, getMarkColor(d));
+      }
+      break;
+    }
+  }
+}
+
+void runTuiSwap(team** teams, size_t teams_n, size_t team_size, dlist* skills, dlist* bpcs) {
+  tuiswap* tui = initTuiSwap(team_size, teams_n);
+  tui->teams = teams;
+  tui->skills = skills;
+  tui->bannedCombos = bpcs;
+
+  int c = 0;
+  refresh_screen(tui->render);
+  while (c != 'q') {
+    renderTuiSwap(tui);
+    c = keyPress();
+    handleTuiSwapInput(tui, c);
+  }
+  cls(stdout);
+  freeTuiSwap(tui);
 }
 
