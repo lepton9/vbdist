@@ -37,8 +37,7 @@ dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* sel_skills) {
   dlist* avg_skills = init_list();
   int* psw_skills = calloc(sel_skills->n, sizeof(int));
   for (size_t i = 0; i < sel_skills->n; i++) {
-    skill* s = sel_skills->items[i];
-    list_add(avg_skills, initSkill(s->id, s->name, 0));
+    list_add(avg_skills, copySkillVal(sel_skills->items[i], 0));
   }
 
   for (size_t t_i = 0; t_i < dim->teams_n; t_i++) {
