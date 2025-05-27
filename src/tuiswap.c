@@ -18,6 +18,13 @@ tuiswap* initTuiSwap(const int team_size, const int team_n) {
   tui->bannedCombos = NULL;
 
   tui->render = init_renderer(stdout);
+
+  tui->old_skills_a = NULL;
+  tui->old_skills_b = NULL;
+  tui->ind_team_a = -1;
+  tui->ind_team_b = -1;
+  tui->avg_a = 0.0;
+  tui->avg_b = 0.0;
   return tui;
 }
 
@@ -25,6 +32,8 @@ void freeTuiSwap(tuiswap* tui) {
   free_renderer(tui->render);
   free(tui->selected);
   free(tui->cur);
+  if (tui->old_skills_a) freeSkills(tui->old_skills_a);
+  if (tui->old_skills_b) freeSkills(tui->old_skills_b);
   free(tui);
 }
 
@@ -41,11 +50,21 @@ char samePos(cursor* a, cursor* b) {
   return (a->team == b->team && a->player == b->player);
 }
 
-void switchPos(tuiswap* tui, team** teams) {
-  player* a = teams[tui->selected->team]->players[tui->selected->player];
-  player* b = teams[tui->cur->team]->players[tui->cur->player];
+void switchPos(tuiswap* tui) {
+  player* a = tui->teams[tui->selected->team]->players[tui->selected->player];
+  player* b = tui->teams[tui->cur->team]->players[tui->cur->player];
   swapPlayers(a, b);
   unselect(tui->selected);
+}
+
+void saveOldSkills(tuiswap* tui) {
+  if (tui->selected->team < 0 || tui->cur->team < 0) return;
+  tui->ind_team_a = tui->selected->team;
+  tui->ind_team_b = tui->cur->team;
+  team_average_skills(tui->teams[tui->ind_team_a], tui->old_skills_a);
+  team_average_skills(tui->teams[tui->ind_team_b], tui->old_skills_b);
+  tui->avg_a = avgRating(tui->teams[tui->ind_team_a]);
+  tui->avg_b = avgRating(tui->teams[tui->ind_team_b]);
 }
 
 // Returns 1 if need to switch, 0 if not
@@ -107,7 +126,16 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
   int col = 0;
   for (int t = 0; t < tui->team_n; t += MAX_HOR_TEAMS) {
     for (int i = t; i < t + MAX_HOR_TEAMS && i < tui->team_n; i++) {
-      put_text(tui->render, line, col, "\033[4m%s | %.2f\033[24m", tui->teams[i]->name, avgRating(tui->teams[i]));
+      if (i == tui->ind_team_a || i == tui->ind_team_b) {
+        double rating_new = avgRating(tui->teams[i]);
+        double avg_old = (i == tui->ind_team_a) ? tui->avg_a : tui->avg_b;
+        int color = (rating_new > avg_old) ? GREEN_FG : RED_FG;
+        put_text(tui->render, line, col,
+                 "\033[4m%s | %.2f\033[24m -> \033[%dm%.2f\033[0m",
+                 tui->teams[i]->name, avg_old, color, rating_new);
+      } else {
+        put_text(tui->render, line, col, "\033[4m%s | %.2f\033[24m", tui->teams[i]->name, avgRating(tui->teams[i]));
+      }
       col += printWidth;
     }
     line++;
@@ -115,7 +143,20 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
       col = 0;
       for(int i = t; i < tui->team_n && i - t < MAX_HOR_TEAMS; i++) {
         skill* s = tui->skills->items[j];
-        put_text(tui->render, line, col, "%s%-12s %.1f", (indent) ? "  " : "", s->name, team_average_skill(tui->teams[i], s));
+        if (i == tui->ind_team_a || i == tui->ind_team_b) {
+          double value_new = team_average_skill(tui->teams[i], s);
+          double value_old =
+              (i == tui->ind_team_a)
+                  ? ((skill *)tui->old_skills_a->items[j])->value
+                  : ((skill *)tui->old_skills_b->items[j])->value;
+          int color = (value_new > value_old) ? GREEN_FG : RED_FG;
+          put_text(tui->render, line, col,
+                   "%s%-12s %.1f -> \033[%dm%.1f\033[0m", (indent) ? "  " : "",
+                   s->name, value_old, color, value_new);
+        } else {
+          put_text(tui->render, line, col, "%s%-12s %.1f", (indent) ? "  " : "",
+                   s->name, team_average_skill(tui->teams[i], s));
+        }
         col += 30;
       }
       line++;
@@ -150,7 +191,7 @@ int renderTuiSwapTeams(tuiswap* tui) {
 }
 
 void renderTuiSwap(tuiswap* tui) {
-  append_line(tui->render, 0, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Exit: q");
+  append_line(tui->render, 0, "Cursor movement: w,a,s,d | Select: enter/space | Unselect: Esc | Mark: 1-5 | Toggle skills: t | Exit: q");
   int lastLine = renderTuiSwapTeams(tui);
   if (tui->renderSkills) renderTuiSwapSkills(tui, lastLine + 5);
   render(tui->render);
@@ -163,7 +204,8 @@ void handleTuiSwapInput(tuiswap* tui, int c) {
     case KEY_ENTER:
 #endif
     if (selectCur(tui)) {
-      switchPos(tui, tui->teams);
+      saveOldSkills(tui);
+      switchPos(tui);
       unselect(tui->selected);
     }
     break;
@@ -216,6 +258,8 @@ void runTuiSwap(team** teams, size_t teams_n, size_t team_size, dlist* skills, d
   tui->teams = teams;
   tui->skills = skills;
   tui->bannedCombos = bpcs;
+  tui->old_skills_a = copySkills(skills);
+  tui->old_skills_b = copySkills(skills);
 
   int c = 0;
   refresh_screen(tui->render);

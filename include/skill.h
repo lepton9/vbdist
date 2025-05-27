@@ -23,7 +23,7 @@ void decWeight(skill* skill);
 skill* copySkillVal(skill* s, float value);
 skill* copySkill(skill* s);
 
-dlist* initSelectedSkills(dlist* allSkills);
+dlist* copySkills(dlist* allSkills);
 void freeSkills(dlist* skills);
 
 int findSkill(skill* s, dlist* selected_skills);

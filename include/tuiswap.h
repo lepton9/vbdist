@@ -13,6 +13,7 @@ typedef struct {
 } cursor;
 
 typedef struct {
+  renderer* render;
   cursor* selected;
   cursor* cur;
   char renderSkills;
@@ -21,7 +22,13 @@ typedef struct {
   team** teams;
   dlist* skills;
   dlist* bannedCombos;
-  renderer* render;
+
+  dlist* old_skills_a;
+  dlist* old_skills_b;
+  int ind_team_a;
+  int ind_team_b;
+  double avg_a;
+  double avg_b;
 } tuiswap;
 
 tuiswap* initTuiSwap(const int team_size, const int team_n);
@@ -29,7 +36,8 @@ void freeTuiSwap(tuiswap* tui);
 char isActive(cursor* c);
 void unselect(cursor* c);
 char samePos(cursor* a, cursor* b);
-void switchPos(tuiswap* tui, team** teams);
+void switchPos(tuiswap* tui);
+void saveOldSkills(tuiswap* tui);
 char selectCur(tuiswap* tui);
 void markCurPlayer(tuiswap* tui, team** teams, color_fg color);
 void cur_up(tuiswap* t);

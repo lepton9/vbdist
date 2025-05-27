@@ -45,11 +45,10 @@ skill* copySkill(skill* s) {
   return copySkillVal(s, s->value);
 }
 
-dlist* initSelectedSkills(dlist* allSkills) {
+dlist* copySkills(dlist* allSkills) {
   dlist* skills = init_list();
   for (size_t i = 0; i < allSkills->n; i++) {
-    skill* s = allSkills->items[i];
-    list_add(skills, copySkill(s));
+    list_add(skills, copySkill(allSkills->items[i]));
   }
   return skills;
 }

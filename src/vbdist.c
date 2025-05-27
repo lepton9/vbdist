@@ -396,7 +396,7 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
 }
 
 void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dlist* allPositions, char* err) {
-  dlist* selected_skills = initSelectedSkills(allSkills);
+  dlist* selected_skills = copySkills(allSkills);
   dlist* selected_positions = fetchPositions(tui->db);
   ctx->skills = selected_skills;
   ctx->positions = selected_positions;
