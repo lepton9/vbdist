@@ -17,6 +17,7 @@ typedef struct {
   cursor* selected;
   cursor* cur;
   char renderSkills;
+  char showHelp;
   int team_size;
   int team_n;
   team** teams;
