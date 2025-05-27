@@ -35,6 +35,7 @@ tuiswap* initTuiSwap(const int team_size, const int team_n);
 void freeTuiSwap(tuiswap* tui);
 char isActive(cursor* c);
 void unselect(cursor* c);
+void resetTeamInds(tuiswap* tui);
 char samePos(cursor* a, cursor* b);
 void switchPos(tuiswap* tui);
 void saveOldSkills(tuiswap* tui);

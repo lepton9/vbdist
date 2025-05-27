@@ -46,6 +46,11 @@ void unselect(cursor* c) {
   c->player = -1;
 }
 
+void resetTeamInds(tuiswap* tui) {
+  tui->ind_team_a = -1;
+  tui->ind_team_b = -1;
+}
+
 char samePos(cursor* a, cursor* b) {
   return (a->team == b->team && a->player == b->player);
 }
@@ -59,6 +64,10 @@ void switchPos(tuiswap* tui) {
 
 void saveOldSkills(tuiswap* tui) {
   if (tui->selected->team < 0 || tui->cur->team < 0) return;
+  if (tui->selected->team == tui->cur->team) {
+    resetTeamInds(tui);
+    return;
+  }
   tui->ind_team_a = tui->selected->team;
   tui->ind_team_b = tui->cur->team;
   team_average_skills(tui->teams[tui->ind_team_a], tui->old_skills_a);
@@ -207,10 +216,13 @@ void handleTuiSwapInput(tuiswap* tui, int c) {
       saveOldSkills(tui);
       switchPos(tui);
       unselect(tui->selected);
+    } else {
+      resetTeamInds(tui);
     }
     break;
     case 27: // Esc
       unselect(tui->selected);
+      resetTeamInds(tui);
       break;
     case 'T': case 't':
       tui->renderSkills ^= 1;
