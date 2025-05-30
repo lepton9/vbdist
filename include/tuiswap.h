@@ -5,8 +5,6 @@
 #include "render.h"
 #include "tui.h"
 
-#define MAX_HOR_TEAMS 4
-
 typedef struct {
   int team;
   int player;
@@ -16,6 +14,7 @@ typedef struct {
   renderer* render;
   cursor* selected;
   cursor* cur;
+  int teamsInline;
   char renderSkills;
   char showHelp;
   int team_size;

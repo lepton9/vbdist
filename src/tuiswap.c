@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#define TEAM_PRINT_WIDTH 25
+
 tuiswap* initTuiSwap(const int team_size, const int team_n) {
   tuiswap* tui = malloc(sizeof(tuiswap));
   tui->team_size = team_size;
@@ -13,6 +15,7 @@ tuiswap* initTuiSwap(const int team_size, const int team_n) {
   tui->cur->player = 0;
   tui->renderSkills = 0;
   tui->showHelp = 0;
+  tui->teamsInline = 1;
 
   tui->teams = NULL;
   tui->skills = NULL;
@@ -92,28 +95,28 @@ char selectCur(tuiswap* tui) {
 
 void cur_up(tuiswap* t) {
   if (t->cur->player > 0) t->cur->player--;
-  else if (t->cur->team >= MAX_HOR_TEAMS) {
-    t->cur->team -= MAX_HOR_TEAMS;
+  else if (t->cur->team >= t->teamsInline) {
+    t->cur->team -= t->teamsInline;
     t->cur->player = t->team_size - 1;
   }
 }
 
 void cur_down(tuiswap* t) {
   if (t->cur->player < t->team_size - 1) t->cur->player++;
-  else if (t->cur->team + MAX_HOR_TEAMS < t->team_n) {
-    t->cur->team += MAX_HOR_TEAMS;
+  else if (t->cur->team + t->teamsInline < t->team_n) {
+    t->cur->team += t->teamsInline;
     t->cur->player = 0;
   }
 }
 
 void cur_left(tuiswap* t) {
-  if (t->cur->team % MAX_HOR_TEAMS > 0) {
+  if (t->cur->team % t->teamsInline > 0) {
     t->cur->team--;
   }
 }
 
 void cur_right(tuiswap* t) {
-  if (t->cur->team % MAX_HOR_TEAMS < MAX_HOR_TEAMS - 1 &&
+  if (t->cur->team % t->teamsInline < t->teamsInline - 1 &&
       t->cur->team < t->team_n - 1) {
     t->cur->team++;
   }
@@ -129,13 +132,19 @@ void markCurPlayer(tuiswap* tui, team** teams, color_fg color) {
   else markPlayer(p, color);
 }
 
+int calcTeamsInline(const size_t screenWidth, const size_t printWidth) {
+  if (printWidth == 0) return 1;
+  size_t teamsInline = screenWidth / printWidth;
+  return teamsInline > 0 ? teamsInline : 1;
+}
+
 void renderTuiSwapSkills(tuiswap* tui, int begLine) {
-  const int printWidth = 30;
   const char indent = 0;
   int line = begLine;
   int col = 0;
-  for (int t = 0; t < tui->team_n; t += MAX_HOR_TEAMS) {
-    for (int i = t; i < t + MAX_HOR_TEAMS && i < tui->team_n; i++) {
+  for (int t = 0; t < tui->team_n; t += tui->teamsInline) {
+    col = 0;
+    for (int i = t; i < t + tui->teamsInline && i < tui->team_n; i++) {
       if (i == tui->ind_team_a || i == tui->ind_team_b) {
         double rating_new = avgRating(tui->teams[i]);
         double avg_old = (i == tui->ind_team_a) ? tui->avg_a : tui->avg_b;
@@ -146,12 +155,12 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
       } else {
         put_text(tui->render, line, col, "\033[4m%s | %.2f\033[24m", tui->teams[i]->name, avgRating(tui->teams[i]));
       }
-      col += printWidth;
+      col += TEAM_PRINT_WIDTH;
     }
     line++;
     for(size_t j = 0; j < tui->skills->n; j++) {
       col = 0;
-      for(int i = t; i < tui->team_n && i - t < MAX_HOR_TEAMS; i++) {
+      for(int i = t; i < tui->team_n && i - t < tui->teamsInline; i++) {
         skill* s = tui->skills->items[j];
         if (i == tui->ind_team_a || i == tui->ind_team_b) {
           double value_new = team_average_skill(tui->teams[i], s);
@@ -167,7 +176,7 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
           put_text(tui->render, line, col, "%s%-12s %.1f", (indent) ? "  " : "",
                    s->name, team_average_skill(tui->teams[i], s));
         }
-        col += 30;
+        col += TEAM_PRINT_WIDTH;
       }
       line++;
     }
@@ -178,10 +187,10 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
 int renderTuiSwapTeams(tuiswap* tui) {
   int width = 15;
   int line = 0;
-  for (int t = 0; t < tui->team_n; t += MAX_HOR_TEAMS) {
+  for (int t = 0; t < tui->team_n; t += tui->teamsInline) {
     int col = 0;
-    for (int i = t; i < t + MAX_HOR_TEAMS && i < tui->team_n; i++) {
-      line = 2 + (t / MAX_HOR_TEAMS) * (tui->team_size + 2);
+    for (int i = t; i < t + tui->teamsInline && i < tui->team_n; i++) {
+      line = 2 + (t / tui->teamsInline) * (tui->team_size + 2);
       put_text(tui->render, line++, col, "\033[34m%-*.2f\033[0m", width, avgRating(tui->teams[i]));
       for(int j = 0; j < tui->team_size; j++) {
         player *p = tui->teams[i]->players[j];
@@ -206,8 +215,9 @@ void renderTuiSwap(tuiswap* tui) {
   } else {
     append_line(tui->render, 0, "[Q]uit | [?]Help");
   }
+  tui->teamsInline = calcTeamsInline(tui->render->width, TEAM_PRINT_WIDTH);
   int lastLine = renderTuiSwapTeams(tui);
-  if (tui->renderSkills) renderTuiSwapSkills(tui, lastLine + 5);
+  if (tui->renderSkills) renderTuiSwapSkills(tui, lastLine + 3);
   render(tui->render);
 }
 
