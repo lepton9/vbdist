@@ -52,6 +52,12 @@ void* pop_elem(dlist* list, size_t index) {
   return e;
 }
 
+void swap_elems(dlist* list, const int a, const int b) {
+  void* t = list->items[a];
+  list->items[a] = list->items[b];
+  list->items[b] = t;
+}
+
 dlist *list_from(void **items, int item_size, int n) {
   dlist *list = init_list_size(item_size);
   free(list->items);
@@ -62,13 +68,9 @@ dlist *list_from(void **items, int item_size, int n) {
 }
 
 void shuffle(dlist* list) {
-  if (list->n > 1) {
-    for (size_t i = 0; i < list->n - 1; i++) {
-      size_t j = rand_int(i, list->n - 1);
-      void* t = list->items[j];
-      list->items[j] = list->items[i];
-      list->items[i] = t;
-    }
+  if (list->n <= 1) return;
+  for (size_t i = 0; i < list->n - 1; i++) {
+    swap_elems(list, i, rand_int(i, list->n - 1));
   }
 }
 
