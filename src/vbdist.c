@@ -564,7 +564,7 @@ int main(int argc, char** argv) {
       } else {
         insertCombos(db, prefCombos);
       }
-      for (int i = 0; i < (int)players->n;) {
+      for (size_t i = 0; i < players->n;) {
         int found = fetchPlayer(db, players->items[i]);
         if (!found) {
           char msg[100];
@@ -572,7 +572,7 @@ int main(int argc, char** argv) {
           err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
           strcat(err_msg, msg);
           freePlayer(players->items[i]);
-          if (i != (int)players->n - 1) {
+          if (i != players->n - 1) {
             players->items[i] = players->items[players->n - 1];
           }
           players->n--;

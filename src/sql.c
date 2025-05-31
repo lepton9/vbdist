@@ -48,7 +48,9 @@ int cb_players(void* list, int count, char **data, char **columns) {
 int cb_player(void* p, int argc, char **argv, char **colName) {
   player* player = p;
   assert(argc == 1);
-  player->firstName = strdup(argv[0]);
+  if (!player->firstName) {
+    player->firstName = strdup(argv[0]);
+  }
   player->found = 1;
   return 0;
 }
@@ -186,10 +188,6 @@ dlist* fetchPlayerList(sqldb* db) {
   char* sql = "SELECT player_id, name FROM Player WHERE player_id IN (SELECT player_id FROM InPlayerList WHERE playerlist_id = 1);";
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
-  for (int i = 0; i < (int)list->n; i++) {
-    fetchPlayerSkills(db, list->items[i]);
-    fetchPlayerPositions(db, list->items[i]);
-  }
   log_sql("Found player list with %d players", list->n);
   return list;
 }
@@ -404,8 +402,10 @@ int fetchPlayer(sqldb* db, player* player) {
   char sql[100];
   sprintf(sql, "SELECT name FROM Player WHERE player_id = %d;", player->id);
   execQuery(db->sqlite, sql, cb_player, player);
-  fetchPlayerSkills(db, player);
-  fetchPlayerPositions(db, player);
+  if (player->found) {
+    fetchPlayerSkills(db, player);
+    fetchPlayerPositions(db, player);
+  }
   return player->found;
 }
 
