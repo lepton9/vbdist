@@ -47,6 +47,7 @@ int getPlayerOfPosition(player** players, size_t n, position* pos);
 int findPlayerOfPosRand(player** players, size_t n, position* pos);
 int getPlayerOfPosAsgn(player** players, size_t n, position* pos);
 int findPlayerOfPosAsngRand(player** players, size_t n, position* pos);
+void sortPositions(dlist* positions, dlist* players);
 
 int balancedClustering(team** teams, int oneSideValidation, context* ctx);
 

@@ -53,6 +53,7 @@ void* pop_elem(dlist* list, size_t index) {
 }
 
 void swap_elems(dlist* list, const int a, const int b) {
+  if (a >= (int)list->n || b >= (int)list->n) return;
   void* t = list->items[a];
   list->items[a] = list->items[b];
   list->items[b] = t;

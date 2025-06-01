@@ -363,25 +363,96 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
 
 // TODO: temporary
 void printTeamsTemp(FILE *out, team **teams, const int printWidth,
-                const int teamsOnLine, const char indent) {
+                const int teams_n, const int team_size, const char indent) {
   char str[printWidth];
-  for (int t = 0; t < 4; t += teamsOnLine) {
-    for (int i = t; i < t + teamsOnLine && i < 4; i++) {
-      sprintf(str, "%s | %.2f:", teams[i]->name, avgRating(teams[i]));
+  for (int i = 0; i < teams_n; i++) {
+    team* team = teams[i];
+    sprintf(str, "%s | %.2f:", team->name, avgRating(team));
+    fprintf(out, "%-*s", printWidth, str);
+  }
+  fprintf(out, "\n");
+  for(int j = 0; j < 6; j++) {
+    for (int i = 0; i < teams_n; i++) {
+      player* p = teams[i]->players[j];
+      position* pos = assignedPosition(p);
+      sprintf(str, "%s%-15s (%s | %d)", (indent) ? "  " : "", p->firstName, (pos) ? pos->name : "", (pos) ? pos->priority : -1);
       fprintf(out, "%-*s", printWidth, str);
     }
     fprintf(out, "\n");
-    for(int j = 0; j < 6; j++) {
-      for(int i = t; i < 4 && i - t < teamsOnLine; i++) {
-        player* p = teams[i]->players[j];
-        position* pos = assignedPosition(p);
-        sprintf(str, "%s%-10s %s", (indent) ? "  " : "", p->firstName, (pos) ? pos->name : "");
-        fprintf(out, "%-*s", printWidth, str);
-      }
-      fprintf(out, "\n");
-    }
-    fprintf(out, "\n");
   }
+  fprintf(out, "\n");
+}
+
+void divideDupPositions(dlist* positions, int* pAmount) {
+  int n = 0;
+  int indexes[positions->n];
+  char processed[positions->n];
+  memset(indexes, 0, sizeof(indexes));
+  memset(processed, 0, sizeof(processed));
+  for (size_t i = 0; i < positions->n; i++) {
+    if (processed[i]) continue;
+    processed[i] = 1;
+
+    position* pos = positions->items[i];
+    for (int ind = findPosition(positions, pos); ind >= 0;
+         ind = findPositionFrom(positions, pos, ind + 1)) {
+      indexes[n++] = ind;
+      processed[ind] = 1;
+    }
+    for (int j = 0; j < n; j++) {
+      pAmount[indexes[j]] = pAmount[indexes[j]] / n;
+    }
+    n = 0;
+    memset(indexes, 0, sizeof(indexes));
+  }
+}
+
+void incPosAmount(dlist* positions, position* pos, int* pAmount) {
+  for (int ind = findPosition(positions, pos); ind >= 0;
+       ind = findPositionFrom(positions, pos, ind + 1)) {
+    pAmount[ind]++;
+  }
+}
+
+int* calcPosAmount(dlist* positions, dlist* players) {
+  int* pAmount = calloc(positions->n, sizeof(int));
+  for (size_t i = 0; i < players->n; i++) {
+    player* p = players->items[i];
+    for (size_t j = 0; j < p->positions->n; j++) {
+      position* pos = p->positions->items[j];
+      incPosAmount(positions, pos, pAmount);
+    }
+  }
+  return pAmount;
+}
+
+void sortPositions(dlist* positions, dlist* players) {
+  if (positions->n <= 1) return;
+  int* pAmount = calcPosAmount(positions, players);
+
+  divideDupPositions(positions, pAmount);
+
+  for (size_t i = 0; i < positions->n; i++) {
+    size_t least_ind = i;
+    for (size_t j = i + 1; j < positions->n; j++) {
+      if (pAmount[j] < pAmount[least_ind]) {
+        least_ind = j;
+      }
+    }
+    if (least_ind != i) {
+      swap_elems(positions, i, least_ind);
+      pAmount[i] ^= pAmount[least_ind];
+      pAmount[least_ind] ^= pAmount[i];
+      pAmount[i] ^= pAmount[least_ind];
+    }
+  }
+
+  // TODO: remove
+  for (size_t i = 0; i < positions->n; i++) {
+    position* pos = positions->items[i];
+    printf("%s: %d, %d\n", pos->name, pAmount[i], pos->id);
+  }
+  free(pAmount);
 }
 
 team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions) {
@@ -410,23 +481,31 @@ team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions)
   // at the end fill the remaining spots in the teams with positions
   // assign them the positions
 
+  sortPositions(positions, players);
+
   // Set one of every position to every team
   for (size_t i = 0; i < positions->n && i < dim->team_size; i++) {
     position* pos = positions->items[i];
     for (size_t t = 0; t < dim->teams_n; t++) {
       size_t ind = team_sizes[t];
       if (ind < dim->team_size) {
-        int p_ind = findPlayerOfPosRand((player **)remaining_players->items,
+        // int p_ind = findPlayerOfPosRand((player **)remaining_players->items,
+        //                                 remaining_players->n, pos);
+        int p_ind = getPlayerOfPosition((player **)remaining_players->items,
                                         remaining_players->n, pos);
-        if (p_ind > 0) {
+        if (p_ind >= 0) {
           player* player = pop_elem(remaining_players, p_ind);
           setPlayerPosition(player, pos);
           teams[t]->players[ind] = player;
           team_sizes[t]++;
+        } else {
+          printf("Can't find player for position: %s, ind: %d\n", pos->name, p_ind);
         }
       }
     }
   }
+
+  printf("\nRemaining: %d\n\n", (int)remaining_players->n);
 
   // Put remaining players into teams
   int t_i = 0;
@@ -445,7 +524,8 @@ team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions)
   // TODO: make sure the initial teams are correct
   // every player should have a position assigned
 
-  printTeamsTemp(stdout, teams, 20, 3, 2);
+  printTeamsTemp(stdout, teams, 35, dim->teams_n, dim->team_size, 2);
+  printf("\033[?25h");
   exit(0);
 
   free_list(remaining_players);

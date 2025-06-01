@@ -183,12 +183,20 @@ position* firstPosition(player* p) {
   return (p->positions->n > 0) ? p->positions->items[0] : NULL;
 }
 
-int hasPosition(player* player, position* pos) {
-  for (size_t i = 0; i < player->positions->n; i++) {
-    position* p = player->positions->items[i];
+int findPositionFrom(dlist* positions, position* pos, const size_t ind) {
+  for (size_t i = ind; i < positions->n; i++) {
+    position* p = positions->items[i];
     if (p->id == pos->id) return i;
   }
   return -1;
+}
+
+int findPosition(dlist* positions, position* pos) {
+  return findPositionFrom(positions, pos, 0);
+}
+
+int hasPosition(player* player, position* pos) {
+  return findPosition(player->positions, pos);
 }
 
 position* assignedPosition(player* p) {

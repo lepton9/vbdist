@@ -58,7 +58,7 @@ void handle_positions_input(tui_pos *tui, int c) {
     case KEY_ENTER:
 #endif
       break;
-    case 27: {  // Esc
+    case 27: { // Esc
       break;
     }
     case 9: // Tab
@@ -66,10 +66,10 @@ void handle_positions_input(tui_pos *tui, int c) {
     case 'e':
       enable_positions(tui);
       break;
-    case '+':
+    case 'l': case '+':
       add_position(tui);
       break;
-    case '-':
+    case 'h': case '-':
       remove_position(tui);
       break;
     case 'k': case 'w':
