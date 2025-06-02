@@ -216,6 +216,7 @@ int getPlayerOfPosition(player** players, size_t n, position* pos) {
   return player_ind;
 }
 
+// TODO: deprecated
 int findPlayerOfPosRand(player** players, size_t n, position* pos) {
   int player_ind = getPlayerOfPosition(players, n, pos);
   if (player_ind < 0 && n > 0) {
@@ -455,7 +456,12 @@ void sortPositions(dlist* positions, dlist* players) {
   free(pAmount);
 }
 
-player* handlePosSwap(team** teams, size_t teams_n, size_t* team_sizes, dlist* remaining_players, position* pos) {
+player* findFromTeams(team** teams, size_t teams_n, size_t* team_sizes, dlist* remaining_players, position* pos) {
+  int t_i = -1, p_i = -1;
+  int replacement_ind = -1;
+  int potential_prio = -1;
+  int replacement_prio = -1;
+
   for (size_t i = 0; i < teams_n; i++) {
     for (size_t j = 0; j < team_sizes[i]; j++) {
       player* p = teams[i]->players[j];
@@ -465,14 +471,30 @@ player* handlePosSwap(team** teams, size_t teams_n, size_t* team_sizes, dlist* r
       if (!asg_pos) continue;
       int p_ind = getPlayerOfPosition((player **)remaining_players->items,
                                       remaining_players->n, asg_pos);
-      // TODO: take the best priority player
-      if (p_ind >= 0) {
-        player* replacement = pop_elem(remaining_players, p_ind);
-        setPlayerPosition(replacement, asg_pos);
-        teams[i]->players[j] = replacement;
-        return p;
+      if (p_ind < 0) continue;
+
+      player* replacement = remaining_players->items[p_ind];
+      int pos_ind = hasPosition(replacement, asg_pos);
+      int potential_priority = ((position *)p->positions->items[ind])->priority;
+      int replacement_priority = ((position *)replacement->positions->items[pos_ind])->priority;
+
+      if (replacement_prio < 0 || potential_prio < 0 || 
+          (potential_priority <= potential_prio && replacement_priority <= replacement_prio)) {
+        replacement_prio = replacement_priority;
+        potential_prio = potential_priority;
+        replacement_ind = p_ind;
+        t_i = i;
+        p_i = j;
       }
     }
+  }
+
+  if (t_i >= 0 && p_i >= 0 && replacement_ind >= 0) {
+    player* found_p = teams[t_i]->players[p_i];
+    player* replacement = pop_elem(remaining_players, replacement_ind);
+    setPlayerPosition(replacement, assignedPosition(found_p));
+    teams[t_i]->players[p_i] = replacement;
+    return found_p;
   }
   return NULL;
 }
@@ -522,12 +544,11 @@ team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions)
           teams[t]->players[ind] = player;
           team_sizes[t]++;
         } else {
-          player = handlePosSwap(teams, dim->teams_n, team_sizes, remaining_players, pos);
+          player = findFromTeams(teams, dim->teams_n, team_sizes, remaining_players, pos);
           if (player) {
             setPlayerPosition(player, pos);
             teams[t]->players[ind] = player;
             team_sizes[t]++;
-            printf("Made switch: %s\n", player->firstName);
           } else {
             printf("Can't find player for position: %s\n", pos->name);
           }
