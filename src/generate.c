@@ -455,6 +455,28 @@ void sortPositions(dlist* positions, dlist* players) {
   free(pAmount);
 }
 
+player* handlePosSwap(team** teams, size_t teams_n, size_t* team_sizes, dlist* remaining_players, position* pos) {
+  for (size_t i = 0; i < teams_n; i++) {
+    for (size_t j = 0; j < team_sizes[i]; j++) {
+      player* p = teams[i]->players[j];
+      int ind = hasPosition(p, pos);
+      if (ind < 0) continue;
+      position* asg_pos = assignedPosition(p);
+      if (!asg_pos) continue;
+      int p_ind = getPlayerOfPosition((player **)remaining_players->items,
+                                      remaining_players->n, asg_pos);
+      // TODO: take the best priority player
+      if (p_ind >= 0) {
+        player* replacement = pop_elem(remaining_players, p_ind);
+        setPlayerPosition(replacement, asg_pos);
+        teams[i]->players[j] = replacement;
+        return p;
+      }
+    }
+  }
+  return NULL;
+}
+
 team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions) {
   assert(players->n == dim->team_size * dim->teams_n);
   assert(positions->n == dim->team_size);
@@ -493,13 +515,22 @@ team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions)
         //                                 remaining_players->n, pos);
         int p_ind = getPlayerOfPosition((player **)remaining_players->items,
                                         remaining_players->n, pos);
+        player* player = NULL;
         if (p_ind >= 0) {
-          player* player = pop_elem(remaining_players, p_ind);
+          player = pop_elem(remaining_players, p_ind);
           setPlayerPosition(player, pos);
           teams[t]->players[ind] = player;
           team_sizes[t]++;
         } else {
-          printf("Can't find player for position: %s, ind: %d\n", pos->name, p_ind);
+          player = handlePosSwap(teams, dim->teams_n, team_sizes, remaining_players, pos);
+          if (player) {
+            setPlayerPosition(player, pos);
+            teams[t]->players[ind] = player;
+            team_sizes[t]++;
+            printf("Made switch: %s\n", player->firstName);
+          } else {
+            printf("Can't find player for position: %s\n", pos->name);
+          }
         }
       }
     }
