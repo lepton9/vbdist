@@ -338,8 +338,6 @@ void updateArea(tuidb* tui) {
 
   update_list_area(tui->allPlayersArea, baseWidth, maxShown);
   update_list_area(tui->allTeamsArea, baseWidth, maxShown);
-
-  setSize(tui->render, tui->term->cols, tui->term->rows);
 }
 
 void renderTuidb(tuidb* tui) {
