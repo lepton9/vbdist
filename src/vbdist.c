@@ -419,8 +419,8 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
     printf(" [c] Combos\n");
     printf(" [o] Positions: %s\n", (ctx->use_positions) ? "TRUE" : "FALSE");
     printf(" [m] Comparison method: %s | %s\n",
-           (ctx->compare == OV_AVERAGE) ? ">\033[4mOVERALL_AVG\033[0m<" : "OVERALL_AVG",
-           (ctx->compare == SKILL_AVERAGE) ? ">\033[4mSKILL_AVG\033[0m<" : "SKILL_AVG");
+           (ctx->compare == SKILL_AVERAGE) ? ">\033[4mSKILLS\033[0m<" : "SKILLS",
+           (ctx->compare == OV_AVERAGE) ? ">\033[4mAVERAGE\033[0m<" : "AVERAGE");
     printf(" [q] Quit\n");
 
     printf("\n\033[31m%s\033[0m\n", error_msg);

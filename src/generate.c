@@ -14,7 +14,7 @@ context* makeContext() {
   ctx->pref_combos = NULL;
   ctx->skills = NULL;
   ctx->positions = NULL;
-  ctx->compare = OV_AVERAGE;
+  ctx->compare = SKILL_AVERAGE;
   ctx->use_positions = 0;
   return ctx;
 }
