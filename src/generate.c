@@ -162,16 +162,13 @@ void setPreferredCombos(team** teams, dimensions* dim, dlist* prefCombos) {
 int getPlayerOfPosAsgn(player** players, size_t n, position* pos) {
   int a = 0;
   int b = n - 1;
-
   for (; a <= b; a++, b--) {
-    player* p_a = players[a];
-    player* p_b = players[b];
-    position* pos_a = assignedPosition(p_a);
-    position* pos_b = assignedPosition(p_b);
-    if (pos_a && pos && pos_a->id == pos->id) {
+    position* pos_a = assignedPosition(players[a]);
+    position* pos_b = assignedPosition(players[b]);
+    if ((pos && pos_a && pos_a->id == pos->id) || (!pos && !pos_a)) {
       return a;
     }
-    if (pos_b && pos && pos_b->id == pos->id) {
+    if ((pos && pos_b && pos_b->id == pos->id) || (!pos && !pos_b)) {
       return b;
     }
   }
@@ -216,23 +213,6 @@ int getPlayerOfPosition(player** players, size_t n, position* pos) {
   return player_ind;
 }
 
-// TODO: deprecated
-int findPlayerOfPosRand(player** players, size_t n, position* pos) {
-  int player_ind = getPlayerOfPosition(players, n, pos);
-  if (player_ind < 0 && n > 0) {
-    return rand_int(0, n - 1);
-  }
-  return player_ind;
-}
-
-int findPlayerOfPosAsngRand(player** players, size_t n, position* pos) {
-  int player_ind = getPlayerOfPosAsgn(players, n, pos);
-  if (player_ind < 0 && n > 0) {
-    return rand_int(0, n - 1);
-  }
-  return player_ind;
-}
-
 int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
   int swaps = 0;
   int failures = 0;
@@ -264,19 +244,18 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
     int teamA = rand_int(0, ctx->teams_dim->teams_n - 1);
     int teamB = rand_int(0, ctx->teams_dim->teams_n - 1);
     while(teamB == teamA) teamB = rand_int(0, ctx->teams_dim->teams_n - 1);
-    // TODO: when getting players handle when has no position
     player* pA = teams[teamA]->players[rand_int(0, ctx->teams_dim->team_size - 1)];
     player* pB = NULL;
 
     if (ctx->use_positions) {
-      position* pos = firstPosition(pA);
-      // TODO: find from assigned positions
-      int ind = findPlayerOfPosAsngRand(teams[teamB]->players, ctx->teams_dim->team_size, pos);
-      pB = teams[teamB]->players[ind];
-      // if (pos) {
-      //   setPlayerPosition(pA, pos);
-      //   setPlayerPosition(pB, pos);
-      // }
+      position* pos = assignedPosition(pA);
+      int ind_b = getPlayerOfPosAsgn(teams[teamB]->players, ctx->teams_dim->team_size, pos);
+      if (ind_b >= 0) {
+        pB = teams[teamB]->players[ind_b];
+      } else {
+        failures++;
+        continue;
+      }
     } else {
       pB = teams[teamB]->players[rand_int(0, ctx->teams_dim->team_size - 1)];
     }
@@ -673,15 +652,10 @@ team** initialTeamsPositions(dlist* players, context* ctx) {
     }
   }
 
-  assert(remaining_players->n == 0);
-
-  // TODO: make sure the initial teams are correct
-  // every player should have a position assigned
-
+  // TODO: remove
   printTeamsTemp(stdout, teams, 35, dim->teams_n, dim->team_size, 2);
-  printf("\033[?25h");
-  exit(0);
 
+  assert(remaining_players->n == 0);
   free_list(remaining_players);
   return teams;
 }

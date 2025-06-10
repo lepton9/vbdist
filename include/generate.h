@@ -5,7 +5,7 @@
 #include "team.h"
 
 #define MAX_FAILURES 300
-#define MAX_SWAPS 1000000
+#define MAX_SWAPS 100000
 
 typedef enum {
   OV_AVERAGE = 0,
@@ -44,9 +44,7 @@ int maxTeamFromPrefCombos(dlist* prefCombos);
 void setPreferredCombos(team** teams, dimensions* dim, dlist* prefCombos);
 
 int getPlayerOfPosition(player** players, size_t n, position* pos);
-int findPlayerOfPosRand(player** players, size_t n, position* pos);
 int getPlayerOfPosAsgn(player** players, size_t n, position* pos);
-int findPlayerOfPosAsngRand(player** players, size_t n, position* pos);
 void sortPositions(dlist* positions, dlist* players);
 
 int balancedClustering(team** teams, int oneSideValidation, context* ctx);
