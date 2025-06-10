@@ -197,31 +197,29 @@ void printPlayers(dlist* players) {
 }
 
 void printTeams(FILE *out, team **teams, const int printWidth,
-                const int teamsOnLine, const char indent) {
-  char str[printWidth];
+                const int teamsOnLine, const char indent, const char verbose) {
+  char str[printWidth * 2];
   for (int t = 0; t < TEAMS_N; t += teamsOnLine) {
     for (int i = t; i < t + teamsOnLine && i < TEAMS_N; i++) {
-      if (PRINT_MODE == PRINT_MINIMAL) {
-        fprintf(out, "%-*s", printWidth, teams[i]->name);
-      } else {
+      if (verbose) {
         sprintf(str, "%s | %.2f:", teams[i]->name, avgRating(teams[i]));
         fprintf(out, "%-*s", printWidth, str);
+      } else {
+        fprintf(out, "%-*s", printWidth, teams[i]->name);
       }
     }
     fprintf(out, "\n");
     for(int j = 0; j < TEAM_SIZE; j++) {
       for(int i = t; i < TEAMS_N && i - t < teamsOnLine; i++) {
         player* p = teams[i]->players[j];
-        if (PRINT_MODE == PRINT_ALL) {
-          sprintf(str, "%s%-10s (%.1f)", (indent) ? "  " : "", p->firstName,
-                  rating(p));
-          fprintf(out, "%-*s", printWidth, str);
+        position* pos = assignedPosition(p);
+        if (verbose && pos) {
+          sprintf(str, "%s%-15s (%s | %d)", (indent) ? "  " : "", p->firstName,
+                  (pos) ? pos->name : "", (pos) ? pos->priority : -1);
         } else {
-          // TODO: print pos
-          position* pos = assignedPosition(p);
-          sprintf(str, "%s%-10s %s", (indent) ? "  " : "", p->firstName, (pos) ? pos->name : "");
-          fprintf(out, "%-*s", printWidth, str);
+          sprintf(str, "%s%-15s", (indent) ? "  " : "", p->firstName);
         }
+        fprintf(out, "%-*s", printWidth, str);
       }
       fprintf(out, "\n");
     }
@@ -258,7 +256,7 @@ void writeTeamsToFile(team** teams, const char* teamsFile) {
   struct tm tm = *localtime(&t);
   fprintf(fp, "%d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-  printTeams(fp, teams, 20, TEAMS_N, 0);
+  printTeams(fp, teams, 20, TEAMS_N, 0, 0);
   fclose(fp);
 }
 
@@ -326,10 +324,10 @@ int askUpdateParamNum(const char* query, int current) {
 int generateTeams(sqldb *db, dlist *players, context* ctx) {
   int saved = 0;
   int clustering = 1;
+  int printWidth = (ctx->use_positions) ? 35 : 20;
   cls(stdout);
-  if (PRINT_MODE == PRINT_ALL) printPlayers(players);
   printf("\nBanned combinations: %d\n", (int)ctx->banned_combos->n);
-  printf("Preferred combinations: %d\n", (int)ctx->pref_combos->n);
+  printf("Preferred combinations: %d\n\n", (int)ctx->pref_combos->n);
 
   team** teams = NULL;
   if (ctx->use_positions) {
@@ -344,25 +342,21 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
     printf("Total swaps: %d\n", swaps);
   }
 
-  if (PRINT_MODE != PRINT_MINIMAL) {
-    printTeams(stdout, teams, 30, 4, 1);
-    printf("\n");
-    printSkills(stdout, teams, ctx->skills, 30, 4, 1);
-  }
+  printTeams(stdout, teams, printWidth, 4, 1, 1);
 
   curShow();
   printf("\nManually change teams? [y/N] ");
   fflush(stdout);
   char ans = keyPress();
-  printf("\033[2K\n");
+  printf("\033[2K\r");
   if (ans == 'y' || ans == 'Y') {
     curHide();
     runTuiSwap(teams, TEAMS_N, TEAM_SIZE, ctx->skills, ctx->banned_combos);
     curShow();
+    printTeams(stdout, teams, printWidth, 4, 1, 1);
   }
 
   log_log("Generated %d teams of %d players", TEAMS_N, TEAM_SIZE);
-  printTeams(stdout, teams, 20, 4, 0);
 
   switch (SOURCE) {
     case TEXT_FILE: {

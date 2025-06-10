@@ -639,7 +639,6 @@ team** initialTeamsPositions(dlist* players, context* ctx) {
 
   // TODO: needed?
   // if all players are set before this
-  printf("\nRemaining: %d\n\n", (int)remaining_players->n);
 
   // Put remaining players into teams
   int t_i = 0;
@@ -651,9 +650,6 @@ team** initialTeamsPositions(dlist* players, context* ctx) {
       teams[t_i]->players[team_sizes[t_i]++] = pop_elem(remaining_players, i);
     }
   }
-
-  // TODO: remove
-  printTeamsTemp(stdout, teams, 35, dim->teams_n, dim->team_size, 2);
 
   assert(remaining_players->n == 0);
   free_list(remaining_players);
