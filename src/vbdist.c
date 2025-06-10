@@ -321,6 +321,12 @@ int askUpdateParamNum(const char* query, int current) {
   return (strcmp(new, "") == 0) ? current : atoi(new);
 }
 
+void resetPositions(dlist* players) {
+  for (size_t i = 0; i < players->n; i++) {
+    resetPosition(players->items[i]);
+  }
+}
+
 int generateTeams(sqldb *db, dlist *players, context* ctx) {
   int saved = 0;
   int clustering = 1;
@@ -331,6 +337,7 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
 
   team** teams = NULL;
   if (ctx->use_positions) {
+    resetPositions(players);
     teams = initialTeamsPositions(players, ctx);
   } else {
     teams = initialTeams(players, ctx);

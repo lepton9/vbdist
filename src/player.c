@@ -221,6 +221,10 @@ void assignPosition(player* p, int index) {
   }
 }
 
+void resetPosition(player* p) {
+  p->assigned_pos = -1;
+}
+
 color_fg getMarkColor(const int key) {
   switch (key) {
     case 1: return GREEN_FG;
