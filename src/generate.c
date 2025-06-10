@@ -447,12 +447,6 @@ void sortPositions(dlist* positions, dlist* players) {
       pAmount[i] ^= pAmount[least_ind];
     }
   }
-
-  // TODO: remove
-  for (size_t i = 0; i < positions->n; i++) {
-    position* pos = positions->items[i];
-    printf("%s: %d, %d\n", pos->name, pAmount[i], pos->id);
-  }
   free(pAmount);
 }
 
@@ -499,118 +493,12 @@ player* findFromTeams(team** teams, size_t teams_n, size_t* team_sizes, dlist* r
   return NULL;
 }
 
-team** makeRandTeamsPositions(dlist* players, dimensions* dim, dlist* positions) {
-  assert(players->n == dim->team_size * dim->teams_n);
-  assert(positions->n == dim->team_size);
-
-  team** teams = malloc(sizeof(team*) * dim->teams_n);
-  for (size_t i = 0; i < dim->teams_n; i++) {
+team** initTeams(const size_t n, const size_t size) {
+  team** teams = malloc(sizeof(team*) * n);
+  for (size_t i = 0; i < n; i++) {
     char tName[20];
     sprintf(tName, "Team %d", (int)i + 1);
-    teams[i] = initTeam(tName, dim->team_size);
-  }
-
-  shuffle(players);
-
-  dlist* remaining_players = init_list();
-  for (size_t i = 0; i < players->n; i++) {
-    list_add(remaining_players, players->items[i]);
-  }
-
-  size_t team_sizes[dim->teams_n];
-  for (size_t i = 0; i < dim->teams_n; i++) team_sizes[i] = 0;
-
-  // TODO: first take the players of position that are found
-  // dont take random
-  // at the end fill the remaining spots in the teams with positions
-  // assign them the positions
-
-  sortPositions(positions, players);
-
-  // Set one of every position to every team
-  for (size_t i = 0; i < positions->n && i < dim->team_size; i++) {
-    position* pos = positions->items[i];
-    for (size_t t = 0; t < dim->teams_n; t++) {
-      size_t ind = team_sizes[t];
-      if (ind < dim->team_size) {
-        // int p_ind = findPlayerOfPosRand((player **)remaining_players->items,
-        //                                 remaining_players->n, pos);
-        int p_ind = getPlayerOfPosition((player **)remaining_players->items,
-                                        remaining_players->n, pos);
-        player* player = NULL;
-        if (p_ind >= 0) {
-          player = pop_elem(remaining_players, p_ind);
-          setPlayerPosition(player, pos);
-          teams[t]->players[ind] = player;
-          team_sizes[t]++;
-        } else {
-          player = findFromTeams(teams, dim->teams_n, team_sizes, remaining_players, pos);
-          if (player) {
-            setPlayerPosition(player, pos);
-            teams[t]->players[ind] = player;
-            team_sizes[t]++;
-          } else {
-            printf("Can't find player for position: %s\n", pos->name);
-          }
-        }
-      }
-    }
-  }
-
-  printf("\nRemaining: %d\n\n", (int)remaining_players->n);
-
-  // Put remaining players into teams
-  int t_i = 0;
-  for (int i = remaining_players->n - 1; i >= 0; i--) {
-    while (team_sizes[t_i] == dim->team_size) {
-      t_i = (t_i + 1) % dim->teams_n;
-    }
-    if (team_sizes[t_i] < dim->team_size) {
-      teams[t_i]->players[team_sizes[t_i]] = pop_elem(remaining_players, i);
-      team_sizes[t_i]++;
-    }
-  }
-
-  assert(remaining_players->n == 0);
-
-  // TODO: make sure the initial teams are correct
-  // every player should have a position assigned
-
-  printTeamsTemp(stdout, teams, 35, dim->teams_n, dim->team_size, 2);
-  printf("\033[?25h");
-  exit(0);
-
-  free_list(remaining_players);
-  return teams;
-}
-
-team** balanceTeamsRand(dlist* players, dimensions* dim) {
-  team** teams = malloc(sizeof(team*) * dim->teams_n);
-  for (size_t i = 0; i < dim->teams_n; i++) {
-    char tName[20];
-    sprintf(tName, "Team %d", (int)i + 1);
-    teams[i] = initTeam(tName, dim->team_size);
-  }
-
-  qsort(players->items, players->n, sizeof(player*), cmpPlayers);
-  srand(time(0));
-
-  int group = 0;
-  int inTeam[dim->teams_n * dim->team_size];
-  for (size_t i = 0; i < dim->teams_n * dim->team_size; i++) inTeam[i] = 0;
-
-  int teamI = 0;
-  int teamCounters[dim->teams_n];
-  for (size_t i = 0; i < dim->teams_n; i++) teamCounters[i] = 0;
-
-  for (size_t i = 0; i < players->n; i++) {
-    int ind = rand_int(group * dim->teams_n, (group + 1) * dim->teams_n - 1);
-    while(inTeam[ind]) ind = rand_int(group * dim->teams_n, (group + 1) * dim->teams_n - 1);
-    inTeam[ind] = 1;
-
-    teams[teamI]->players[teamCounters[teamI]++] = players->items[ind];
-    teamI = (teamI + 1) % dim->teams_n;
-    if (teamI == 0) group++;
+    teams[i] = initTeam(tName, size);
   }
   return teams;
 }
@@ -682,15 +570,40 @@ void initBpcsToTeams(team** teams, size_t* team_sizes, context* ctx, dlist* play
   }
 }
 
-team** initialTeams(dlist* players, dimensions* dim, context* ctx) {
-  assert(players->n == dim->team_size * dim->teams_n);
-
-  team** teams = malloc(sizeof(team*) * dim->teams_n);
-  for (size_t i = 0; i < dim->teams_n; i++) {
-    char tName[20];
-    sprintf(tName, "Team %d", (int)i + 1);
-    teams[i] = initTeam(tName, dim->team_size);
+void initPosToTeams(team** teams, size_t* team_sizes, context* ctx, dlist* players) {
+  for (size_t i = 0; i < ctx->positions->n && i < ctx->teams_dim->team_size; i++) {
+    position* pos = ctx->positions->items[i];
+    for (size_t t = 0; t < ctx->teams_dim->teams_n; t++) {
+      size_t ind = team_sizes[t];
+      if (ind < ctx->teams_dim->team_size) {
+        int p_ind = getPlayerOfPosition((player **)players->items,
+                                        players->n, pos);
+        player* player = NULL;
+        if (p_ind >= 0) {
+          player = pop_elem(players, p_ind);
+          setPlayerPosition(player, pos);
+          teams[t]->players[ind] = player;
+          team_sizes[t]++;
+        } else {
+          player = findFromTeams(teams, ctx->teams_dim->teams_n, team_sizes, players, pos);
+          if (player) {
+            setPlayerPosition(player, pos);
+            teams[t]->players[ind] = player;
+            team_sizes[t]++;
+          } else {
+            // TODO: set borrowed position?
+            printf("Can't find player for position: %s\n", pos->name);
+          }
+        }
+      }
+    }
   }
+}
+
+team** initialTeams(dlist* players, context* ctx) {
+  assert(players->n == ctx->teams_dim->team_size * ctx->teams_dim->teams_n);
+
+  team** teams = initTeams(ctx->teams_dim->teams_n, ctx->teams_dim->team_size);
 
   shuffle(players);
 
@@ -698,7 +611,7 @@ team** initialTeams(dlist* players, dimensions* dim, context* ctx) {
   for (size_t i = 0; i < players->n; i++) {
     list_add(remaining_players, players->items[i]);
   }
-  size_t team_sizes[dim->teams_n];
+  size_t team_sizes[ctx->teams_dim->teams_n];
   memset(team_sizes, 0, sizeof(team_sizes));
 
   int last_team = 0;
@@ -709,20 +622,66 @@ team** initialTeams(dlist* players, dimensions* dim, context* ctx) {
   // Set banned combos to teams
   initBpcsToTeams(teams, team_sizes, ctx, remaining_players);
 
-  size_t sum = 0;
-  for (size_t i = 0; i < dim->teams_n; i++) sum += team_sizes[i];
-  assert(dim->teams_n * dim->team_size - remaining_players->n == sum);
-
   // Set rest of the players into teams
   while(remaining_players->n > 0) {
-    while ((team_sizes[last_team] >= dim->team_size)) {
-      last_team = (last_team + 1) % dim->teams_n;
+    while ((team_sizes[last_team] >= ctx->teams_dim->team_size)) {
+      last_team = (last_team + 1) % ctx->teams_dim->teams_n;
     }
     player* p = pop_elem(remaining_players, remaining_players->n - 1);
     teams[last_team]->players[team_sizes[last_team]++] = p;
   }
 
   assert(remaining_players->n == 0);
+  free_list(remaining_players);
+  return teams;
+}
+
+team** initialTeamsPositions(dlist* players, context* ctx) {
+  dimensions* dim = ctx->teams_dim;
+  assert(players->n == dim->team_size * dim->teams_n);
+  assert(ctx->positions->n == dim->team_size);
+
+  team** teams = initTeams(dim->teams_n, dim->team_size);
+
+  sortPositions(ctx->positions, players);
+  shuffle(players);
+
+  dlist* remaining_players = init_list();
+  for (size_t i = 0; i < players->n; i++) {
+    list_add(remaining_players, players->items[i]);
+  }
+  size_t team_sizes[dim->teams_n];
+  memset(team_sizes, 0, sizeof(team_sizes));
+
+  // TODO: handle combos
+
+  // Set one of every position to every team
+  initPosToTeams(teams, team_sizes, ctx, remaining_players);
+
+  // TODO: needed?
+  // if all players are set before this
+  printf("\nRemaining: %d\n\n", (int)remaining_players->n);
+
+  // Put remaining players into teams
+  int t_i = 0;
+  for (int i = remaining_players->n - 1; i >= 0; i--) {
+    while (team_sizes[t_i] == dim->team_size) {
+      t_i = (t_i + 1) % dim->teams_n;
+    }
+    if (team_sizes[t_i] < dim->team_size) {
+      teams[t_i]->players[team_sizes[t_i]++] = pop_elem(remaining_players, i);
+    }
+  }
+
+  assert(remaining_players->n == 0);
+
+  // TODO: make sure the initial teams are correct
+  // every player should have a position assigned
+
+  printTeamsTemp(stdout, teams, 35, dim->teams_n, dim->team_size, 2);
+  printf("\033[?25h");
+  exit(0);
+
   free_list(remaining_players);
   return teams;
 }

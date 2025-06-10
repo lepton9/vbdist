@@ -333,12 +333,9 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
 
   team** teams = NULL;
   if (ctx->use_positions) {
-    teams = makeRandTeamsPositions(players, ctx->teams_dim, ctx->positions);
-    // TODO: set combos, or make initialTeams() to handle positions
+    teams = initialTeamsPositions(players, ctx);
   } else {
-    teams = initialTeams(players, ctx->teams_dim, ctx);
-    // teams = balanceTeamsRand(players, ctx->teams_dim);
-    // setPreferredCombos(teams, ctx->teams_dim, ctx->pref_combos);
+    teams = initialTeams(players, ctx);
   }
 
   if (clustering) {
