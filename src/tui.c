@@ -47,6 +47,14 @@ void cls(FILE* s) {
   fprintf(s, "\033[2J\033[%d;%dH", 1, 1);
 }
 
+void flushInput() {
+#ifdef _WIN32
+  FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+#else
+  flushinp();
+#endif
+}
+
 void initScreen() {
 #ifdef __linux__
   initscr();

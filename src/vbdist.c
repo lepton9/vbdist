@@ -349,6 +349,7 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
     cls(stdout);
     printf("\033[2KSwapped players: %d\n\n", swaps);
   }
+  flushInput();
 
   printTeams(stdout, teams, printWidth, 4, 1, 1);
 

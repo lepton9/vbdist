@@ -23,6 +23,7 @@ void curSet(int row, int col);
 void curHide();
 void curShow();
 void cls(FILE* s);
+void flushInput();
 int supportsUnicode();
 int keyPress();
 void initScreen();
