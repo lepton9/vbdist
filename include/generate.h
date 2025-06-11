@@ -4,7 +4,7 @@
 #include "dlist.h"
 #include "team.h"
 
-#define MAX_FAILURES 300
+#define MAX_FAILURES 10000
 #define MAX_SWAPS 100000
 
 typedef enum {

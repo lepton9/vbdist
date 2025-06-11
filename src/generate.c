@@ -63,23 +63,36 @@ dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* sel_skills) {
 }
 
 double averageRating(team** teams, dimensions* dim, dlist* sel_skills) {
-  int n = dim->teams_n * dim->team_size;
   if (teams == NULL) return 0.0;
-  double sumRating = 0.0;
+  int n = 0;
+  double sum = 0.0;
   for (size_t t = 0; t < dim->teams_n; t++) {
-    for (size_t p = 0; p < dim->team_size; p++) {
-      sumRating += rating_filter(teams[t]->players[p], sel_skills);
+    double r = team_rating_filter(teams[t], sel_skills);
+    if (fabs(r) > 1e-6f) {
+      sum += r;
+      n++;
     }
   }
-  return (n <= 0) ? 0.0 : sumRating / n;
+  return (n > 0) ? sum / n : 0.0;
 }
 
 int validateSwap(double a, double b, double aNew, double bNew, double avg, int oneSideValidation) {
   if (fabs(avg) < 1e-6f) return 1;
   int valid = 0;
-  if (fabs(aNew - avg) < fabs(a - avg)) valid++;
-  if (fabs(bNew - avg) < fabs(b - avg)) valid++;
-  return (valid == 2) ? 1 : (valid == 1 && oneSideValidation) ? 1 : 0;
+  int aCloser = fabs(aNew - avg) < fabs(a - avg);
+  int bCloser = fabs(bNew - avg) < fabs(b - avg);
+
+  if (aCloser) valid++;
+  if (bCloser) valid++;
+
+  if (valid == 2) return 1;
+
+  if (valid == 1 && oneSideValidation) {
+    double totalOld = fabs(a - avg) + fabs(b - avg);
+    double totalNew = fabs(aNew - avg) + fabs(bNew - avg);
+    return totalNew < totalOld;
+  }
+  return 0;
 }
 
 // Calc L2 norm
@@ -550,25 +563,25 @@ void initPosToTeams(team** teams, size_t* team_sizes, context* ctx, dlist* playe
     position* pos = ctx->positions->items[i];
     for (size_t t = 0; t < ctx->teams_dim->teams_n; t++) {
       size_t ind = team_sizes[t];
-      if (ind < ctx->teams_dim->team_size) {
-        int p_ind = getPlayerOfPosition((player **)players->items,
-                                        players->n, pos);
-        player* player = NULL;
-        if (p_ind >= 0) {
-          player = pop_elem(players, p_ind);
+      if (ind >= ctx->teams_dim->team_size) continue;
+        // TODO: use ban and pref combos
+      int p_ind = getPlayerOfPosition((player **)players->items, players->n, pos);
+      player* player = NULL;
+      if (p_ind >= 0) {
+        player = pop_elem(players, p_ind);
+        setPlayerPosition(player, pos);
+        teams[t]->players[ind] = player;
+        team_sizes[t]++;
+      } else {
+        // TODO: use ban and pref combos
+        player = findFromTeams(teams, ctx->teams_dim->teams_n, team_sizes, players, pos);
+        if (player) {
           setPlayerPosition(player, pos);
           teams[t]->players[ind] = player;
           team_sizes[t]++;
         } else {
-          player = findFromTeams(teams, ctx->teams_dim->teams_n, team_sizes, players, pos);
-          if (player) {
-            setPlayerPosition(player, pos);
-            teams[t]->players[ind] = player;
-            team_sizes[t]++;
-          } else {
-            // TODO: set borrowed position?
-            printf("Can't find player for position: %s\n", pos->name);
-          }
+          // TODO: set borrowed position?
+          printf("Can't find player for position: %s\n", pos->name);
         }
       }
     }

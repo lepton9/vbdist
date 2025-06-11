@@ -37,7 +37,7 @@ double team_rating_filter(team* t, dlist* skill_ids) {
   if (t == NULL) return 0.0;
   double sum = 0;
   int ratings_n = 0;
-  for (int pI = 0; pI < (int)t->size; pI++) {
+  for (size_t pI = 0; pI < t->size; pI++) {
     double r = rating_filter(t->players[pI], skill_ids);
     if (fabs(r) > 1e-6f) {
       sum += r;

@@ -346,7 +346,8 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
   if (clustering) {
     printf("\nBalancing teams..\n");
     int swaps = balancedClustering(teams, 1, ctx);
-    printf("Total swaps: %d\n", swaps);
+    cls(stdout);
+    printf("\033[2KSwapped players: %d\n\n", swaps);
   }
 
   printTeams(stdout, teams, printWidth, 4, 1, 1);
