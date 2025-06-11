@@ -112,7 +112,9 @@ void update_positions_area(tui_pos* tui) {
 }
 
 void render_pos_tui(tui_pos* tui) {
-  put_text(tui->render, 1, 2, "\033[4m %s \033[24m %10s", "Positions", tui->use_positions ? "ENABLED" : "NOT ENABLED");
+  put_text(tui->render, 1, 2, "\033[4m %s \033[24m \033[%dm%10s\033[0m",
+           "Positions", tui->use_positions ? GREEN_FG : RED_FG,
+           tui->use_positions ? "ON" : "OFF");
 
   int line = 3;
   int len = min_int(min_int(tui->term->rows - line, (int)tui->positions_area->max_shown), (int)tui->positions->n - (tui->positions_area->first_ind));
