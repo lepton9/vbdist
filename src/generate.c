@@ -313,11 +313,14 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
   }
 
   if (ctx->use_positions) {
-    // TODO: sort by positions
-
+    for (size_t i = 0; i < ctx->teams_dim->teams_n; i++) {
+      qsort(teams[i]->players, ctx->teams_dim->team_size, sizeof(player *),
+            cmpPlayerPos);
+    }
   } else {
     for (size_t i = 0; i < ctx->teams_dim->teams_n; i++) {
-      qsort(teams[i]->players, ctx->teams_dim->team_size, sizeof(player*), cmpPlayers);
+      qsort(teams[i]->players, ctx->teams_dim->team_size, sizeof(player *),
+            cmpPlayers);
     }
   }
 

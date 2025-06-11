@@ -137,6 +137,17 @@ int cmpPlayers(const void* a, const void* b) {
   return (ret < 0) ? -1 : (ret > 0) ? 1 : 0;
 }
 
+int cmpPlayerPos(const void* a, const void* b) {
+  player* ap = *(player**)a;
+  player* bp = *(player**)b;
+  position* pos_a = assignedPosition(ap);
+  position* pos_b = assignedPosition(bp);
+  if (pos_a && pos_b) {
+    return (pos_a->id > pos_b->id) - (pos_a->id < pos_b->id);
+  }
+  return pos_a ? 1 : (pos_b ? -1 : 0);
+}
+
 void swapPlayers(player* a, player* b) {
   player tmp = *a;
   *a = *b;

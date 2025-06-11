@@ -31,6 +31,7 @@ player* copyPlayer(player* p);
 player* parsePlayer(char* pStr);
 
 int cmpPlayers(const void* a, const void* b);
+int cmpPlayerPos(const void* a, const void* b);
 void swapPlayers(player* a, player* b);
 
 double rating(player* p);
