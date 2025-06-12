@@ -1,10 +1,6 @@
 #include "../include/render.h"
 #include "../include/tui.h"
 #include "../include/utils.h"
-#include "../include/ansicodes.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 
 
@@ -224,9 +220,6 @@ int setText(renderer* r, size_t row, size_t print_col, const char* line) {
     print_len = available_space;
   }
 
-  // TODO: probably useless
-  // shift_esc_seq(r->screen.s[row], r->real_width, print_col, len);
-
   if (len > print_len && print_col < r->screen.print_line_len[row]) {
     size_t shift = len - print_len;
     shift_right(r->screen.s[row], real_col,
@@ -256,8 +249,8 @@ void shift_right(char* line, size_t real_ind, size_t len, size_t shift_n) {
   memmove(line + real_ind + shift_n, line + real_ind, len);
 }
 
-
-// TODO: multiple shifts in a row needed
+// TODO: deprecated
+// multiple shifts in a row needed
 size_t shift_esc_seq(char* line, size_t line_len, size_t print_ind, size_t section_len) {
   size_t real_ind = real_index(line, print_ind);
   int in_escape = 0;
@@ -291,16 +284,6 @@ size_t shift_esc_seq(char* line, size_t line_len, size_t print_ind, size_t secti
   return 0;
 }
 
-// TODO: useless
-char* make_str(size_t width, const char *fmt, ...) {
-  char *line = malloc(width + 1);
-  va_list args;
-  va_start(args, fmt);
-  vsnprintf(line, width + 1, fmt, args);
-  va_end(args);
-  return line;
-}
-
 int emptied(renderer* r) {
   for (size_t i = 0; i < r->height; i++) {
     if (r->screen.line_len[i] != 0) return 0;
@@ -329,24 +312,25 @@ void update_segment(renderer* r, size_t row, size_t col, size_t width, const cha
   setText(r, row, col, segment);
 }
 
-void put_text(renderer* r, size_t row, size_t col, const char *fmt, ...) {
+void set_text_with_format(renderer* r, size_t row, size_t col, const char *fmt, va_list args) {
   if (row >= r->height) return;
-  char line[r->width + 1];
+  char content[r->width + 1];
+  vsnprintf(content, sizeof(content), fmt, args);
+  setText(r, row, col, content);
+}
+
+void put_text(renderer* r, size_t row, size_t col, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  vsnprintf(line, sizeof(line), fmt, args);
+  set_text_with_format(r, row, col, fmt, args);
   va_end(args);
-  setText(r, row, col, line);
 }
 
 void append_line(renderer* r, size_t row, const char *fmt, ...) {
-  if (row >= r->height) return;
-  char line[r->width + 1];
   va_list args;
   va_start(args, fmt);
-  vsnprintf(line, sizeof(line), fmt, args);
+  set_text_with_format(r, row, r->screen.print_line_len[row], fmt, args);
   va_end(args);
-  setText(r, row, r->screen.print_line_len[row], line);
 }
 
 void make_borders_utf(renderer* r, size_t x, size_t y, size_t w, size_t h) {
@@ -363,8 +347,6 @@ void make_borders_ascii(renderer* r, size_t x, size_t y, size_t w, size_t h) {
         r->screen.s[y + i][real_col] = '-';
       else if (j == 0 || j == w-1)
         r->screen.s[y + i][real_col] = '|';
-      // else if ((i != 0 && i != h-1) && r->screen.print_line_len[i] < j)
-      //   r->screen.s[y + i][real_col] = ' ';
     }
     if (x + w > r->screen.print_line_len[y + i]) {
       size_t over = (x + w) - r->screen.print_line_len[y + i];
@@ -418,15 +400,12 @@ void refresh_screen(renderer* r) {
 void render(renderer* r) {
   int resize = updateSize(r);
   int changes = 0;
-  // char l[r->real_width+1];
-  for (int y = 0; y < (int)r->height; y++) {
+  for (size_t y = 0; y < r->height; y++) {
     int modified = (r->screen.line_len[y] != r->last_screen.line_len[y]) ||
                    (memcmp(r->screen.s[y], r->last_screen.s[y],
                            r->screen.line_len[y]) != 0);
     if (resize || modified) {
-      // sprintf(l, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
-      // write(fileno(r->out), l, (int)r->screen.line_len[y]);
-      fprintf(r->out, "\033[%d;1H%.*s\033[0K", y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
+      fprintf(r->out, "\033[%d;1H%.*s\033[0K", (int)y + 1, (int)r->screen.line_len[y], r->screen.s[y]);
       memcpy(r->last_screen.s[y], r->screen.s[y], r->real_width);
       r->last_screen.line_len[y] = r->screen.line_len[y];
       r->last_screen.print_line_len[y] = r->screen.print_line_len[y];
@@ -438,20 +417,4 @@ void render(renderer* r) {
   }
   if (changes) fflush(r->out);
 }
-
-// void render(renderer* r, FILE* out) {
-//   if (memcmp(r->screen, r->last_screen, r->width * r->height) == 0) return;
-//   for (int y = 0; y < r->height; y++) {
-//     for (int x = 0; x < r->line_len[y]; x++) {
-//       if (r->screen[x] != r->last_screen[x]) {
-//         fprintf(out, "\033[%d;%dH%c", y + 1, x + 1, r->screen[y][x]);
-//         r->last_screen[y][x] = r->screen[y][x];
-//       }
-//     }
-//     fprintf(out, "\033[%d;%dH\033[0K", y + 1, (int)r->line_len[y]);
-//     r->line_len[y] = 0;
-//     r->print_line_len[y] = 0;
-//   }
-//   fflush(out);
-// }
 
