@@ -21,12 +21,6 @@
 #define TEAMS_FILE "teams.txt"
 
 typedef enum {
-  PRINT_MINIMAL,
-  PRINT_NORATING,
-  PRINT_ALL
-} printMode;
-
-typedef enum {
   NO_SOURCE,
   TEXT_FILE,
   DATABASE
@@ -35,7 +29,6 @@ typedef enum {
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
 dataSource SOURCE = NO_SOURCE;
-printMode PRINT_MODE = PRINT_MINIMAL;
 
 
 void updateCombos(sqldb* db, dlist* players, dlist* combos, comboType combo_type) {
@@ -538,7 +531,6 @@ int main(int argc, char** argv) {
 
   TEAMS_N = (params->teams > 0) ? params->teams : cfg->teams_n;
   TEAM_SIZE = (params->players > 0) ? params->players : cfg->team_size;
-  PRINT_MODE = params->printMode;
 
   switch (SOURCE) {
     case DATABASE: {

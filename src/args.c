@@ -10,7 +10,6 @@ void printUsage(FILE *out) {
                "    -d, --database <database>  Path to sqlite database\n"
                "    -t, --teams <int>          Set number of teams\n"
                "    -p, --players <int>        Set number of players in a team\n"
-               "    -m, --mode <int>           Set print mode 0-2 (Optional, default minimal)\n"
                "    -h, --help                 Display help\n"
                "\nUses a file or database to store and retrieve data based on "
                "which option is set.\n");
@@ -44,9 +43,6 @@ args *parseArgs(int argc, char **argv) {
     } else if (checkForOption(arg, "-p", "--players")) {
       if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
       params->players = atoi(argv[++optind]);
-    } else if (checkForOption(arg, "-m", "--mode")) {
-      if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
-      params->printMode = atoi(argv[++optind]);
     } else {
       printf("Invalid option `%s`\n", arg);
       printf("See `vbdist --help` for more.\n\n");

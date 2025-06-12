@@ -33,7 +33,6 @@ vbdist [options]
     -d, --database <database>  Path to sqlite database
     -t, --teams <int>          Set number of teams
     -p, --players <int>        Set number of players in a team
-    -m, --mode <int>           Set print mode 0-2 (Optional, default minimal)
     -h, --help                 Display help
 ```
 If you are using a SQLite3 database, you will need both the database and player file.
