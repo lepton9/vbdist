@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdio.h>
+
 #define CONFIG_NAME "vbdist.conf"
 
 typedef struct {
@@ -13,6 +15,7 @@ typedef struct {
 
 config* read_config();
 void write_config(config* cfg);
+void printCfgLocation(FILE* out);
 
 char* absolute_path(const char* path);
 void set_db_path(config* cfg, const char* path);

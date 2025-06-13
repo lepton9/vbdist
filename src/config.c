@@ -1,5 +1,4 @@
 #include "../include/config.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -154,5 +153,12 @@ void write_config(config* cfg) {
   fprintf(file, "team_size=%d\n", cfg->team_size);
   fprintf(file, "db_path=%s\n", cfg->db_path);
   fclose(file);
+}
+
+void printCfgLocation(FILE* out) {
+  char config_path[420];
+  if (find_config(config_path)) {
+    fprintf(out, "%s\n", config_path);
+  }
 }
 

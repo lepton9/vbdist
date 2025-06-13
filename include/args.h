@@ -5,6 +5,7 @@
 typedef enum {
   ACTION_GENERATE,
   ACTION_HELP,
+  ACTION_CONFIG,
   ACTION_ERROR
 } action;
 

@@ -10,6 +10,7 @@ void printUsage(FILE *out) {
                "    -d, --database <database>  Path to sqlite database\n"
                "    -t, --teams <int>          Set number of teams\n"
                "    -p, --players <int>        Set number of players in a team\n"
+               "    -c, --config               Print config location\n"
                "    -h, --help                 Display help\n"
                "\nUses a file or database to store and retrieve data based on "
                "which option is set.\n");
@@ -31,6 +32,9 @@ action parseArgs(args* params, int argc, char **argv) {
     char* arg = argv[optind];
     if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
       return ACTION_HELP;
+    }
+    if (strcmp(arg, "-c") == 0 || strcmp(arg, "--config") == 0) {
+      return ACTION_CONFIG;
     }
     if (checkForOption(arg, "-f", "--file")) {
       if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;

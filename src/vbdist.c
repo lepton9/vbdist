@@ -503,6 +503,11 @@ int main(int argc, char** argv) {
       freeArgs(params);
       exit(0);
       break;
+    case ACTION_CONFIG:
+      printCfgLocation(stdout);
+      freeArgs(params);
+      exit(0);
+      break;
     case ACTION_ERROR:
       printArgsError(params, stdout);
       freeArgs(params);
