@@ -15,21 +15,22 @@ void printUsage(FILE *out) {
                "which option is set.\n");
 }
 
+void printArgsError(args* args, FILE* out) {
+  fprintf(out, "%s", (args->err_msg) ? args->err_msg : "");
+}
+
 int checkForOption(const char *arg, const char *shortOpt, const char *longOpt) {
   return (strcmp(arg, shortOpt) == 0) || (strcmp(arg, longOpt) == 0);
 }
 
-args *parseArgs(int argc, char **argv) {
-  args *params = malloc(sizeof(args));
-  memset(params, 0, sizeof(args));
+action parseArgs(args* params, int argc, char **argv) {
+  if (!params) return ACTION_ERROR;
 
   int optind;
   for (optind = 1; optind < argc; optind++) {
     char* arg = argv[optind];
     if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
-      free(params);
-      printUsage(stdout);
-      return NULL;
+      return ACTION_HELP;
     }
     if (checkForOption(arg, "-f", "--file")) {
       if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
@@ -44,12 +45,23 @@ args *parseArgs(int argc, char **argv) {
       if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
       params->players = atoi(argv[++optind]);
     } else {
-      printf("Invalid option `%s`\n", arg);
-      printf("See `vbdist --help` for more.\n\n");
-      freeArgs(params);
-      return NULL;
+      char msg[100];
+      snprintf(msg, sizeof(msg), "Invalid option `%s`\nSee `vbdist --help` for more.\n\n", arg);
+      argsError(params, msg);
+      return ACTION_ERROR;
     }
   }
+  return ACTION_GENERATE;
+}
+
+void argsError(args* args, char* msg) {
+  if (args->err_msg) free(args->err_msg);
+  args->err_msg = strdup(msg);
+}
+
+args* initArgs() {
+  args *params = malloc(sizeof(args));
+  memset(params, 0, sizeof(args));
   return params;
 }
 
@@ -57,6 +69,7 @@ void freeArgs(args* args) {
   if (!args) return;
   if (args->dbName) free(args->dbName);
   if (args->fileName) free(args->fileName);
+  if (args->err_msg) free(args->err_msg);
   free(args);
 }
 

@@ -492,9 +492,22 @@ int main(int argc, char** argv) {
   err_msg[0] = '\0';
   char database[512];
 
-  args* params = parseArgs(argc, argv);
-  if (!params) {
-    exit(0);
+  args* params = initArgs();
+  action a = parseArgs(params, argc, argv);
+
+  switch (a) {
+    case ACTION_GENERATE:
+      break;
+    case ACTION_HELP:
+      printUsage(stdout);
+      freeArgs(params);
+      exit(0);
+      break;
+    case ACTION_ERROR:
+      printArgsError(params, stdout);
+      freeArgs(params);
+      exit(1);
+      break;
   }
 
   SOURCE = (params->dbName)     ? DATABASE
