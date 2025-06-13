@@ -10,8 +10,8 @@ typedef enum {
 } action;
 
 typedef struct {
-  char *fileName;
-  char *dbName;
+  char *filePath;
+  char *dbPath;
   char *err_msg;
   int teams;
   int players;

@@ -471,6 +471,46 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
   }
 }
 
+dlist* sourceDatabase(sqldb* db, context* ctx, char* pFileName, char** err_msg) {
+  dlist* players = NULL;
+  createDB(db);
+  players = (pFileName)
+    ? readPlayers(pFileName, ctx->banned_combos, ctx->pref_combos)
+    : NULL;
+  if (!players) {
+    players = fetchPlayerList(db);
+  }
+  if (ctx->banned_combos->n == 0) {
+    updateCombos(db, players, ctx->banned_combos, BAN);
+  } else {
+    insertCombos(db, ctx->banned_combos);
+  }
+  if (ctx->pref_combos->n == 0) {
+    updateCombos(db, players, ctx->pref_combos, PAIR);
+  } else {
+    insertCombos(db, ctx->pref_combos);
+  }
+  for (size_t i = 0; i < players->n;) {
+    int found = fetchPlayer(db, players->items[i]);
+    if (!found) {
+      char msg[100];
+      sprintf(msg, "Player with id %d not found\n", ((player*)players->items[i])->id);
+      *err_msg = realloc(*err_msg, strlen(*err_msg) + strlen(msg) + 1);
+      strcat(*err_msg, msg);
+      freePlayer(players->items[i]);
+      if (i != players->n - 1) {
+        players->items[i] = players->items[players->n - 1];
+      }
+      players->n--;
+    } else {
+      i++;
+    }
+  }
+  ctx->skills = fetchSkills(db);
+  ctx->positions = fetchPositions(db);
+  return players;
+}
+
 int handleAction(action a, args* args) {
   switch (a) {
     case ACTION_GENERATE:
@@ -501,20 +541,16 @@ int main(int argc, char** argv) {
 
   char* err_msg = malloc(1);
   err_msg[0] = '\0';
-  char database[512];
 
-  args* params = initArgs();
-  action a = parseArgs(params, argc, argv);
-
-  int ret = handleAction(a, params);
-
+  args* args = initArgs();
+  int ret = handleAction(parseArgs(args, argc, argv), args);
   if (ret >= 0) {
-    freeArgs(params);
+    freeArgs(args);
     exit(ret);
   }
 
-  SOURCE = (params->dbName)     ? DATABASE
-           : (params->fileName) ? TEXT_FILE
+  SOURCE = (args->dbPath)     ? DATABASE
+           : (args->filePath) ? TEXT_FILE
                                 : NO_SOURCE;
 
   config* cfg = read_config();
@@ -526,77 +562,44 @@ int main(int argc, char** argv) {
   }
 
   if (SOURCE == NO_SOURCE) {
-    if (strcmp(cfg->db_path, "") != 0) {
+    if (db_is_set(cfg)) {
       SOURCE = DATABASE;
-      strcpy(database, cfg->db_path);
     } else {
       printUsage(stdout);
       exit(1);
     }
   } else if (SOURCE == DATABASE) {
-    set_db_path(cfg, params->dbName);
-    strcpy(database, params->dbName);
+    set_db_path(cfg, args->dbPath);
   }
 
   context* ctx = makeContext();
   ctx->banned_combos = init_list();
   ctx->pref_combos = init_list();
-
   dlist* skills_all = NULL;
   dlist* positions_all = NULL;
   sqldb* db = NULL;
   dlist* players = NULL;
 
-  TEAMS_N = (params->teams > 0) ? params->teams : cfg->teams_n;
-  TEAM_SIZE = (params->players > 0) ? params->players : cfg->team_size;
+  TEAMS_N = (args->teams > 0) ? args->teams : cfg->teams_n;
+  TEAM_SIZE = (args->players > 0) ? args->players : cfg->team_size;
 
   switch (SOURCE) {
     case DATABASE: {
-      db = openSqlDB(database);
+      db = openSqlDB(cfg->db_path);
       if (!db->sqlite) {
+        printf("Failed to open database '%s'\n", cfg->db_path);
         exit(1);
       }
-      createDB(db);
-      players = (params->fileName)
-                    ? readPlayers(params->fileName, ctx->banned_combos, ctx->pref_combos)
-                    : NULL;
-      if (!players) {
-        players = fetchPlayerList(db);
-      }
-      if (ctx->banned_combos->n == 0) {
-        updateCombos(db, players, ctx->banned_combos, BAN);
-      } else {
-        insertCombos(db, ctx->banned_combos);
-      }
-      if (ctx->pref_combos->n == 0) {
-        updateCombos(db, players, ctx->pref_combos, PAIR);
-      } else {
-        insertCombos(db, ctx->pref_combos);
-      }
-      for (size_t i = 0; i < players->n;) {
-        int found = fetchPlayer(db, players->items[i]);
-        if (!found) {
-          char msg[100];
-          sprintf(msg, "Player with id %d not found\n", ((player*)players->items[i])->id);
-          err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
-          strcat(err_msg, msg);
-          freePlayer(players->items[i]);
-          if (i != players->n - 1) {
-            players->items[i] = players->items[players->n - 1];
-          }
-          players->n--;
-        } else {
-          i++;
-        }
-      }
-      skills_all = fetchSkills(db);
-      positions_all = fetchPositions(db);
+      players = sourceDatabase(db, ctx, args->filePath, &err_msg);
+      skills_all = copySkills(ctx->skills);
+      positions_all = copyPositions(ctx->positions);
       break;
     }
+    // TODO: deprecated, probably not working
     case TEXT_FILE: {
-      players = readPlayers(params->fileName, ctx->banned_combos, ctx->pref_combos);
+      players = readPlayers(args->filePath, ctx->banned_combos, ctx->pref_combos);
       if (!players) {
-        printf("File %s not found\n", params->fileName);
+        printf("File %s not found\n", args->filePath);
         exit(1);
       }
       break;
@@ -606,6 +609,7 @@ int main(int argc, char** argv) {
   }
 
   qsort(players->items, players->n, sizeof(player*), cmpPlayers);
+  ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
 
   tuidb* tui = NULL;
   if (SOURCE == DATABASE) {
@@ -615,10 +619,6 @@ int main(int argc, char** argv) {
     setAllTeams(tui, fetchTeams(db));
     tui->players = players;
   }
-
-  ctx->skills = copySkills(skills_all);
-  ctx->positions = copyPositions(positions_all);
-  ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
 
   curHide();
   altBufferEnable();
@@ -640,7 +640,7 @@ int main(int argc, char** argv) {
     freePlayer(players->items[i]);
   }
   free_list(players);
-  freeArgs(params);
+  freeArgs(args);
   closeSqlDB(db);
   freeTuiDB(tui);
   freeContext(ctx);

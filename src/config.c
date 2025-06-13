@@ -32,6 +32,10 @@ void set_db_path(config* cfg, const char* path) {
   free(abs_path);
 }
 
+char db_is_set(config* cfg) {
+  return strcmp(cfg->db_path, "") != 0;
+}
+
 void cfg_full_path(char* full, const char* base_path) {
   sprintf(full, "%s%s", base_path, CONFIG_NAME);
 }
@@ -65,7 +69,7 @@ config* base_config(const char* base_path) {
   config* cfg = malloc(sizeof(config));
   cfg->teams_n = 0;
   cfg->team_size = 0;
-  strcpy(cfg->db_path, "");
+  cfg->db_path[0] = '\0';
   cfg_full_path(cfg->config_path, base_path);
   cfg->created = 0;
   return cfg;

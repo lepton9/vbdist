@@ -21,7 +21,7 @@ sqldb* openSqlDB(const char* path) {
 
 void closeSqlDB(sqldb* db) {
   if (!db) return;
-  sqlite3_close(db->sqlite);
+  if (db->sqlite) sqlite3_close(db->sqlite);
   log_sql("Closed database '%s'", db->path);
   free(db->path);
   free(db);

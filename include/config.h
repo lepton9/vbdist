@@ -19,6 +19,7 @@ void printCfgLocation(FILE* out);
 
 char* absolute_path(const char* path);
 void set_db_path(config* cfg, const char* path);
+char db_is_set(config* cfg);
 
 void expand_path(char* path);
 int dir_exists(const char* path);
