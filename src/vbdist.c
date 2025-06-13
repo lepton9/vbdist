@@ -477,6 +477,23 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
   }
 }
 
+int handleAction(action a, args* args) {
+  switch (a) {
+    case ACTION_GENERATE:
+      return -1;
+    case ACTION_HELP:
+      printUsage(stdout);
+      return 0;
+    case ACTION_CONFIG:
+      printCfgLocation(stdout);
+      return 0;
+    case ACTION_ERROR:
+      printArgsError(args, stdout);
+      return 1;
+  }
+  return -1;
+}
+
 int main(int argc, char** argv) {
 #ifdef _WIN32
   char ret = initScreenWin();
@@ -495,24 +512,11 @@ int main(int argc, char** argv) {
   args* params = initArgs();
   action a = parseArgs(params, argc, argv);
 
-  switch (a) {
-    case ACTION_GENERATE:
-      break;
-    case ACTION_HELP:
-      printUsage(stdout);
-      freeArgs(params);
-      exit(0);
-      break;
-    case ACTION_CONFIG:
-      printCfgLocation(stdout);
-      freeArgs(params);
-      exit(0);
-      break;
-    case ACTION_ERROR:
-      printArgsError(params, stdout);
-      freeArgs(params);
-      exit(1);
-      break;
+  int ret = handleAction(a, params);
+
+  if (ret >= 0) {
+    freeArgs(params);
+    exit(ret);
   }
 
   SOURCE = (params->dbName)     ? DATABASE
