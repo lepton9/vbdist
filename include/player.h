@@ -46,8 +46,6 @@ int playerInList(dlist* list, int player_id);
 player* getPlayerInList(dlist* list, int player_id);
 
 position* firstPosition(player* p);
-int findPositionFrom(dlist* positions, position* pos, const size_t ind);
-int findPosition(dlist* positions, position* pos);
 int hasPosition(player* player, position* pos);
 position* assignedPosition(player* p);
 int setPlayerPosition(player* p, position* pos);

@@ -4,24 +4,23 @@
 #include <string.h>
 #include <ctype.h>
 
-player* initPlayer() {
+player* initPlayerClean() {
   player* p = malloc(sizeof(player));
   p->firstName = NULL;
   p->surName = NULL;
+  p->skills = NULL;
+  p->positions = NULL;
   p->found = 0;
-  p->skills = init_list();
-  p->positions = init_list();
   p->assigned_pos = -1;
   unmarkPlayer(p);
   return p;
 }
 
-void freePositions(dlist* positions) {
-  if (!positions) return;
-  for (size_t i = 0; i < positions->n; i++) {
-    freePosition(positions->items[i]);
-  }
-  free_list(positions);
+player* initPlayer() {
+  player* p = initPlayerClean();
+  p->skills = init_list();
+  p->positions = init_list();
+  return p;
 }
 
 void freePlayer(player* p) {
@@ -34,24 +33,13 @@ void freePlayer(player* p) {
 }
 
 player* copyPlayer(player* p) {
-  player* copy = initPlayer();
+  player* copy = initPlayerClean();
   copy->id = p->id;
   if (p->firstName) copy->firstName = strdup(p->firstName);
   if (p->surName) copy->surName = strdup(p->surName);
   copy->assigned_pos = p->assigned_pos;
-
-  copy->skills = init_list();
-  for (size_t i = 0; i < p->skills->n; i++) {
-    skill* s = p->skills->items[i];
-    skill* s_copy = initSkill(s->id, s->name, s->value);
-    list_add(copy->skills, s_copy);
-  }
-  for (size_t i = 0; i < p->positions->n; i++) {
-    position* pos = p->positions->items[i];
-    position* pos_copy = copy_position(pos);
-    setPriority(pos_copy, pos->priority);
-    list_add(copy->positions, pos_copy);
-  }
+  copy->skills = copySkills(p->skills);
+  copy->positions = copyPositions(p->positions);
   return copy;
 }
 
@@ -192,18 +180,6 @@ player* getPlayerInList(dlist* list, int player_id) {
 
 position* firstPosition(player* p) {
   return (p->positions->n > 0) ? p->positions->items[0] : NULL;
-}
-
-int findPositionFrom(dlist* positions, position* pos, const size_t ind) {
-  for (size_t i = ind; i < positions->n; i++) {
-    position* p = positions->items[i];
-    if (p->id == pos->id) return i;
-  }
-  return -1;
-}
-
-int findPosition(dlist* positions, position* pos) {
-  return findPositionFrom(positions, pos, 0);
 }
 
 int hasPosition(player* player, position* pos) {

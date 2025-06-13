@@ -45,12 +45,13 @@ skill* copySkill(skill* s) {
   return copySkillVal(s, s->value);
 }
 
-dlist* copySkills(dlist* allSkills) {
-  dlist* skills = init_list();
-  for (size_t i = 0; i < allSkills->n; i++) {
-    list_add(skills, copySkill(allSkills->items[i]));
+dlist* copySkills(dlist* skills) {
+  if (!skills) return NULL;
+  dlist* skills_copy = init_list();
+  for (size_t i = 0; i < skills->n; i++) {
+    list_add(skills_copy, copySkill(skills->items[i]));
   }
-  return skills;
+  return skills_copy;
 }
 
 void freeSkills(dlist* skills) {

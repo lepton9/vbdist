@@ -20,6 +20,10 @@ context* makeContext() {
 }
 
 void freeContext(context* ctx) {
+  freeCombos(ctx->banned_combos);
+  freeCombos(ctx->pref_combos);
+  freeSkills(ctx->skills);
+  freePositions(ctx->positions);
   free(ctx->teams_dim);
   free(ctx);
 }

@@ -389,11 +389,6 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
 }
 
 void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dlist* allPositions, char* err) {
-  dlist* selected_skills = copySkills(allSkills);
-  dlist* selected_positions = fetchPositions(tui->db);
-  ctx->skills = selected_skills;
-  ctx->positions = selected_positions;
-
   int teams_added = 0;
   char error_msg[1000];
   strcpy(error_msg, err);
@@ -401,16 +396,16 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
   while (1) {
     cls(stdout);
     curSet(1, 1);
-    printf("\n Players selected: %d/%d\n", (int)players->n, TEAMS_N * TEAM_SIZE);
-    printf("\n Banned combinations: %d\n", (int)ctx->banned_combos->n);
-    printf(" Preferred combinations: %d\n", (int)ctx->pref_combos->n);
+    printf("\n Players selected: %zu/%d\n", players->n, TEAMS_N * TEAM_SIZE);
+    printf("\n Banned combinations: %zu\n", ctx->banned_combos->n);
+    printf(" Preferred combinations: %zu\n", ctx->pref_combos->n);
     printf("\n");
 
     printf(" [g] Generate teams\n");
     if (SOURCE == DATABASE) printf(" [d] Database\n");
     printf(" [t] Teams: %d\n", TEAMS_N);
     printf(" [p] Team size: %d\n", TEAM_SIZE);
-    printf(" [s] Skills %d/%d\n", (int)selected_skills->n, (int)allSkills->n);
+    printf(" [s] Skills %zu/%zu\n", ctx->skills->n, allSkills->n);
     printf(" [c] Combos\n");
     printf(" [o] Positions: %s\n", (ctx->use_positions) ? "ON" : "OFF");
     printf(" [m] Comparison method: %s | %s\n",
@@ -424,7 +419,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
     switch (c) {
       case 'G': case 'g':
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
-          sprintf(error_msg, "Selected %d players, but %d was expected", (int)players->n, TEAMS_N * TEAM_SIZE);
+          sprintf(error_msg, "Selected %zu players, but %d was expected", players->n, TEAMS_N * TEAM_SIZE);
         } else if (ctx->use_positions && (int)ctx->positions->n != TEAM_SIZE) {
           sprintf(error_msg, "Amount of positions should equal team size (%d/%d)", (int)ctx->positions->n, TEAM_SIZE);
         } else {
@@ -444,7 +439,6 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
         break;
       case 'Q': case 'q':
         saveToDB(tui->db, players, ctx->banned_combos, ctx->pref_combos);
-        freeSkills(selected_skills);
         cls(stdout);
         return;
       case 'D': case 'd':
@@ -458,14 +452,14 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
         }
         break;
       case 'S': case 's':
-        runTuiSkills(tui->db, allSkills, selected_skills);
+        runTuiSkills(tui->db, allSkills, ctx->skills);
         break;
       case 'C': case 'c':
         runTuiCombo(tui->db, players);
         updatePlayerCombos(tui->db, players, ctx->banned_combos, ctx->pref_combos);
         break;
       case 'O': case 'o':
-        ctx->use_positions = runTuiPositions(tui->db, allPositions, selected_positions, ctx->use_positions);
+        ctx->use_positions = runTuiPositions(tui->db, allPositions, ctx->positions, ctx->use_positions);
         break;
       case 'M': case 'm':
         changeComparison(&ctx->compare);
@@ -544,10 +538,12 @@ int main(int argc, char** argv) {
     strcpy(database, params->dbName);
   }
 
-  dlist* bannedCombos = init_list();
-  dlist* prefCombos = init_list();
-  dlist* skills = NULL;
-  dlist* positions = NULL;
+  context* ctx = makeContext();
+  ctx->banned_combos = init_list();
+  ctx->pref_combos = init_list();
+
+  dlist* skills_all = NULL;
+  dlist* positions_all = NULL;
   sqldb* db = NULL;
   dlist* players = NULL;
 
@@ -562,20 +558,20 @@ int main(int argc, char** argv) {
       }
       createDB(db);
       players = (params->fileName)
-                    ? readPlayers(params->fileName, bannedCombos, prefCombos)
+                    ? readPlayers(params->fileName, ctx->banned_combos, ctx->pref_combos)
                     : NULL;
       if (!players) {
         players = fetchPlayerList(db);
       }
-      if (bannedCombos->n == 0) {
-        updateCombos(db, players, bannedCombos, BAN);
+      if (ctx->banned_combos->n == 0) {
+        updateCombos(db, players, ctx->banned_combos, BAN);
       } else {
-        insertCombos(db, bannedCombos);
+        insertCombos(db, ctx->banned_combos);
       }
-      if (prefCombos->n == 0) {
-        updateCombos(db, players, prefCombos, PAIR);
+      if (ctx->pref_combos->n == 0) {
+        updateCombos(db, players, ctx->pref_combos, PAIR);
       } else {
-        insertCombos(db, prefCombos);
+        insertCombos(db, ctx->pref_combos);
       }
       for (size_t i = 0; i < players->n;) {
         int found = fetchPlayer(db, players->items[i]);
@@ -593,12 +589,12 @@ int main(int argc, char** argv) {
           i++;
         }
       }
-      skills = fetchSkills(db);
-      positions = fetchPositions(db);
+      skills_all = fetchSkills(db);
+      positions_all = fetchPositions(db);
       break;
     }
     case TEXT_FILE: {
-      players = readPlayers(params->fileName, bannedCombos, prefCombos);
+      players = readPlayers(params->fileName, ctx->banned_combos, ctx->pref_combos);
       if (!players) {
         printf("File %s not found\n", params->fileName);
         exit(1);
@@ -620,42 +616,33 @@ int main(int argc, char** argv) {
     tui->players = players;
   }
 
-  context* ctx = makeContext();
-  ctx->banned_combos = bannedCombos;
-  ctx->pref_combos = prefCombos;
-  ctx->skills = NULL;
-  ctx->positions = NULL;
+  ctx->skills = copySkills(skills_all);
+  ctx->positions = copyPositions(positions_all);
   ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
 
   curHide();
   altBufferEnable();
-  runBeginTui(tui, players, ctx, skills, positions, err_msg);
+  runBeginTui(tui, players, ctx, skills_all, positions_all, err_msg);
   altBufferDisable();
   curShow();
+
+  free(err_msg);
 
   cfg->team_size = TEAM_SIZE;
   cfg->teams_n = TEAMS_N;
   write_config(cfg);
   free(cfg);
 
-  if (skills) freeSkills(skills);
-  if (positions) {
-    for (size_t i = 0; i < positions->n; i++) {
-      freePosition(positions->items[i]);
-    }
-    free_list(positions);
-  }
+  freeSkills(skills_all);
+  freePositions(positions_all);
 
-  for (int i = 0; i < (int)players->n; i++) {
+  for (size_t i = 0; i < players->n; i++) {
     freePlayer(players->items[i]);
   }
   free_list(players);
   freeArgs(params);
-  free(err_msg);
   closeSqlDB(db);
   freeTuiDB(tui);
-  freeCombos(bannedCombos);
-  freeCombos(prefCombos);
   freeContext(ctx);
 
   return 0;
