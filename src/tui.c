@@ -55,15 +55,25 @@ void flushInput() {
 #endif
 }
 
-void initScreen() {
+char initScreen() {
+#ifdef _WIN32
+  return initScreenWin();
+#else
+  return initScreenLinux();
+#endif
+}
+
+char initScreenLinux() {
 #ifdef __linux__
   initscr();
   raw();
-  keypad(stdscr, TRUE),
+  keypad(stdscr, TRUE);
   noecho();
   refresh();
   endwin();
+  return 1;
 #endif
+  return 0;
 }
 
 char initScreenWin() {
@@ -82,8 +92,9 @@ char initScreenWin() {
   GetConsoleCursorInfo(hOut, &cursorInfo);
   cursorInfo.bVisible = FALSE;
   SetConsoleCursorInfo(hOut, &cursorInfo);
-#endif
   return 1;
+#endif
+  return 0;
 }
 
 void getTermSize(term_size* term) {

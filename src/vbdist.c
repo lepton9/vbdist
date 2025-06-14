@@ -529,16 +529,6 @@ int handleAction(action a, args* args) {
 }
 
 int main(int argc, char** argv) {
-#ifdef _WIN32
-  char ret = initScreenWin();
-  if (ret <= 0) {
-    printf("Initializing screen failed\n");
-    exit(1);
-  }
-#else
-  initScreen();
-#endif
-
   char* err_msg = malloc(1);
   err_msg[0] = '\0';
 
@@ -618,6 +608,12 @@ int main(int argc, char** argv) {
     setAllPlayers(tui, fetchPlayers(db));
     setAllTeams(tui, fetchTeams(db));
     tui->players = players;
+  }
+
+  if (!initScreen()) {
+    log_error("%s", "Initializing screen failed");
+    printf("Initializing screen failed..\n");
+    exit(1);
   }
 
   curHide();

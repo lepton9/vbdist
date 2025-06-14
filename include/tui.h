@@ -26,7 +26,8 @@ void cls(FILE* s);
 void flushInput();
 int supportsUnicode();
 int keyPress();
-void initScreen();
+char initScreen();
+char initScreenLinux();
 char initScreenWin();
 void getTermSize(term_size* term);
 

@@ -162,7 +162,7 @@ void write_config(config* cfg) {
 void printCfgLocation(FILE* out) {
   char config_path[420];
   if (find_config(config_path)) {
-    fprintf(out, "%s\n", config_path);
+    fprintf(out, "%s%s\n", config_path, CONFIG_NAME);
   }
 }
 
