@@ -16,6 +16,12 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->allPlayersArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
   tui->allTeamsArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
 
+  set_area_pos(tui->allPlayersArea->area, 1, 0);
+  set_padding(tui->allPlayersArea->area, 3, 1, 2, 0);
+
+  set_area_pos(tui->allTeamsArea->area, 1, 0);
+  set_padding(tui->allTeamsArea->area, 3, 1, 2, 0);
+
   tui->tab = PLAYERS_TAB;
   tui->show_player_info = 0;
 
@@ -144,13 +150,13 @@ void renameSelectedListElem(tuidb* tui) {
     player* p = selectedPlayer(tui);
     if (!p) return;
     old_name = p->firstName;
-    width = tui->allPlayersArea->width;
+    width = tui->allPlayersArea->area->width;
     row = tui->allPlayersArea->selected_term_row;
   } else if (tui->tab == TEAMS_TAB) {
     team* t = selectedTeam(tui);
     if (!t) return;
     old_name = t->name;
-    width = tui->allTeamsArea->width;
+    width = tui->allTeamsArea->area->width;
     row = tui->allTeamsArea->selected_term_row;
   }
   curShow();
@@ -221,13 +227,13 @@ void deleteSelectedListElem(tuidb* tui) {
     player* p = selectedPlayer(tui);
     if (!p) return;
     name = p->firstName;
-    width = tui->allPlayersArea->width;
+    width = tui->allPlayersArea->area->width;
     row = tui->allPlayersArea->selected_term_row;
   } else if (tui->tab == TEAMS_TAB) {
     team* t = selectedTeam(tui);
     if (!t) return;
     name = t->name;
-    width = tui->allTeamsArea->width;
+    width = tui->allTeamsArea->area->width;
     row = tui->allTeamsArea->selected_term_row;
   }
 
@@ -331,14 +337,28 @@ void runTuiDB(tuidb* tui) {
 
 void updateArea(tuidb* tui) {
   getTermSize(tui->term);
-  int maxRows = min_int(tui->term->rows - 4, BASE_LIST_LEN);
-  int baseWidth = min_int(tui->term->cols / 2, BASE_SECTION_WIDTH);
+  int height = min_int(tui->term->rows - 1, BASE_LIST_LEN);
+  int width = min_int(tui->term->cols / 2, 40);
 
-  update_list_area(tui->allPlayersArea, min_int(tui->term->cols / 2, 40), maxRows);
-  update_list_area(tui->allTeamsArea, baseWidth, maxRows);
+  update_list_area(tui->allPlayersArea, width, height);
+  update_list_area(tui->allTeamsArea, width, height);
+}
+
+void renderTab(tuidb* tui) {
+  switch (tui->tab) {
+    case PLAYERS_TAB: {
+      put_text(tui->render, 0, 0, "\033[7m  %-10s\033[27m  %-10s", "Players", " Teams ");
+      break;
+    }
+    case TEAMS_TAB: {
+      put_text(tui->render, 0, 0, "  %-10s\033[7m  %-10s\033[27m", "Players", " Teams ");
+      break;
+    }
+  }
 }
 
 void renderTuidb(tuidb* tui) {
+  renderTab(tui);
   switch (tui->tab) {
     case PLAYERS_TAB: {
       renderAllPlayersList(tui);
@@ -355,16 +375,22 @@ void renderTuidb(tuidb* tui) {
   render(tui->render);
 }
 
+void draw_area_borders(renderer* render, tui_area* area, color_fg color) {
+  make_borders_color(render, area->start_col, area->start_row, area->width,
+                     area->height, BLUE_FG);
+}
+
 void renderAllPlayersList(tuidb* tui) {
-  int col = 2;
-  int line = 3;
-  int len = getListAreaLen(tui->allPlayersArea, tui->term->rows, line);
-  int borderHeight = len + 4;
+  int col = start_print_col(tui->allPlayersArea->area);
+  int line = start_print_line(tui->allPlayersArea->area);
+  int len = getListAreaLen(tui->allPlayersArea, tui->term->rows);
 
-  make_borders_color(tui->render, 0, 0, tui->allPlayersArea->width, borderHeight, BLUE_FG);
+  draw_area_borders(tui->render, tui->allPlayersArea->area, BLUE_FG);
 
-  put_text(tui->render, 1, 3, "\033[4m %-20s %-10s\033[24m", "Name", "Rating");
-  put_text(tui->render, borderHeight - 1, 2, "%d/%d", tui->allPlayersArea->selected + 1, (int)tui->allPlayers->n);
+  put_text(tui->render, tui->allTeamsArea->area->start_row + 1, 2,
+           "\033[4m %-20s %-10s\033[24m", "Name", "Rating");
+  put_text(tui->render, area_last_line(tui->allPlayersArea->area), 2, "%d/%d",
+           tui->allPlayersArea->selected + 1, (int)tui->allPlayers->n);
 
   for (int i = tui->allPlayersArea->first_ind; i < tui->allPlayersArea->first_ind + len; i++) {
     player* p = tui->allPlayers->items[i];
@@ -382,26 +408,33 @@ void renderAllPlayersList(tuidb* tui) {
 }
 
 void renderSelectedList(tuidb* tui) {
-  int startCol = tui->allPlayersArea->width + 5;
+  int startCol = tui->allPlayersArea->area->width + 5;
+  int line = 2;
+  int borderStartLine = 1;
+  int len = min_int(tui->players->n, tui->term->rows - 1 - line - borderStartLine);
+  int borderHeight = len + 4 - borderStartLine;
+
+  make_borders_color(tui->render, startCol - 2, borderStartLine, 35, borderHeight, DEFAULT_FG);
+
   const int total_size = tui->teams_n * tui->team_size;
-  put_text(tui->render, 0, startCol, "Selected %s%d/%d%s",
+  put_text(tui->render, 1, startCol, "Selected %s%d/%d%s",
            ((int)tui->players->n > total_size) ? "\033[31m" : "",
            (int)tui->players->n, total_size, "\033[0m");
-  int line = 2;
-  for (int i = 0;
-       line <= tui->term->rows - 1 &&
-       i + 1 <= (int)tui->allPlayersArea->max_shown &&
-       i < (int)tui->players->n;
-       i++) {
+
+  for (int i = 0; i < len; i++) {
     player* p = tui->players->items[i];
     put_text(tui->render, line++, startCol, " %-20s %.2f", p->firstName, rating(p));
+  }
+  if ((int)tui->players->n > len) {
+    put_text(tui->render, borderHeight - borderStartLine, startCol,
+             "... %d more players", tui->players->n - len);
   }
 }
 
 void renderPlayerInfo(tuidb* tui) {
   player* p = selectedPlayer(tui);
   if (!p) return;
-  int startCol = tui->allPlayersArea->width + 5;
+  int startCol = tui->allPlayersArea->area->width + 5;
   int line = 0;
   put_text(tui->render, line++, startCol, "Name: %s %s", p->firstName,
            p->surName ? p->surName : "");
@@ -477,25 +510,24 @@ void renderPlayerInfo(tuidb* tui) {
 }
 
 void renderAllTeamsList(tuidb* tui) {
-  append_line(tui->render, 0, "\033[4m %-20s%d/%d\033[24m", "Name",
-              tui->allTeamsArea->selected + 1, (int)tui->allTeams->n);
-  if (tui->allTeams->n > 0) {
-    int line = 1;
-    for (int i = tui->allTeamsArea->first_ind;
-    line <= tui->term->rows - 1 &&
-    i - tui->allTeamsArea->first_ind + 1 <= (int)tui->allTeamsArea->max_shown &&
-    i < (int)tui->allTeams->n;
-    i++) {
-      if (tui->allTeamsArea->selected == i) {
-        tui->allTeamsArea->selected_term_row = line + 1;
-        append_line(tui->render, line, "\033[7m");
-      }
-      append_line(tui->render, line, " %-20s", ((team*)tui->allTeams->items[i])->name);
-      if (tui->allTeamsArea->selected == i) {
-        append_line(tui->render, line, "\033[27m");
-      }
-      put_text(tui->render, line, tui->allTeamsArea->width, "|");
-      line++;
+  int col = start_print_col(tui->allTeamsArea->area);
+  int line = start_print_line(tui->allTeamsArea->area);
+  int len = getListAreaLen(tui->allTeamsArea, tui->term->rows);
+
+  draw_area_borders(tui->render, tui->allTeamsArea->area, BLUE_FG);
+
+  put_text(tui->render, tui->allTeamsArea->area->start_row + 1, 2,
+           "\033[4m %-20s\033[24m", "Name");
+  put_text(tui->render, area_last_line(tui->allTeamsArea->area), 2, "%d/%d",
+           tui->allTeamsArea->selected + 1, (int)tui->allTeams->n);
+
+  for (int i = tui->allTeamsArea->first_ind; i < tui->allTeamsArea->first_ind + len; i++) {
+    team* t = tui->allTeams->items[i];
+    if (tui->allTeamsArea->selected == i) {
+      tui->allTeamsArea->selected_term_row = line + 1;
+      put_text(tui->render, line++, col, "\033[7m%-20s\033[27m", t->name);
+    } else {
+      put_text(tui->render, line++, col, "%-20s", t->name);
     }
   }
 }
@@ -503,7 +535,7 @@ void renderAllTeamsList(tuidb* tui) {
 void renderSelectedTeam(tuidb* tui) {
   team* t = selectedTeam(tui);
   if (!t) return;
-  int startCol = tui->allTeamsArea->width + 5;
+  int startCol = tui->allTeamsArea->area->width + 5;
   int line = 1;
   put_text(tui->render, line++, startCol, "Players in team %s:", t->name);
   line++;

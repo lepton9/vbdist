@@ -93,7 +93,7 @@ void rename_selected_skill(tui_skills* tui) {
   skill* selected = get_selected_skill(tui);
   if (!selected) return;
   char* old_name = selected->name;
-  int width = tui->skills_area->width;
+  int width = tui->skills_area->area->width;
   int row = tui->skills_area->selected_term_row;
 
   curShow();
@@ -161,7 +161,7 @@ void delete_selected_skill(tui_skills* tui) {
   skill* selected = get_selected_skill(tui);
   if (!selected) return;
   int row = tui->skills_area->selected_term_row;
-  int width = tui->skills_area->width;
+  int width = tui->skills_area->area->width;
   curShow();
   curSet(row, width - 1);
   printf("\033[1K");
@@ -179,7 +179,7 @@ void delete_selected_skill(tui_skills* tui) {
 }
 
 void add_skill(tui_skills* tui) {
-  int width = tui->skills_area->width;
+  int width = tui->skills_area->area->width;
   int row = 3;
 
   curShow();

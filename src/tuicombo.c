@@ -244,12 +244,12 @@ void renderComboTui(tui_combos* tui) {
 void ctuiRenderPlayersArea(tui_combos* tui) {
   int col = 2;
   int line = 2;
-  int len = getListAreaLen(tui->players_area, tui->term->rows, line);
+  int len = getListAreaLen(tui->players_area, tui->term->rows);
 
   if (tui->mode == CTUI_PLAYER_LIST) {
-    make_borders_color(tui->render, 0, 0, tui->players_area->width, len + 4, BLUE_FG);
+    make_borders_color(tui->render, 0, 0, tui->players_area->area->width, len + 4, BLUE_FG);
   } else {
-    make_borders(tui->render, 0, 0, tui->players_area->width, len + 4);
+    make_borders(tui->render, 0, 0, tui->players_area->area->width, len + 4);
   }
   put_text(tui->render, 0, 3, "%s", "Selected players");
   if (tui->recording_combo) {
@@ -280,9 +280,9 @@ void ctuiRenderPlayersArea(tui_combos* tui) {
 }
 
 void ctuiRenderCombosArea(tui_combos* tui) {
-  int col = tui->players_area->width + 5;
+  int col = tui->players_area->area->width + 5;
   int line = 2;
-  int len = getListAreaLen(tui->combos_area, tui->term->rows, line);
+  int len = getListAreaLen(tui->combos_area, tui->term->rows);
 
   int ind = tui->combos_area->selected;
   int sel_combo_len = 0;
@@ -324,9 +324,9 @@ void ctuiRenderCombosArea(tui_combos* tui) {
   }
 
   if (tui->mode == CTUI_COMBO_LIST) {
-    make_borders_color(tui->render, col, 0, tui->combos_area->width, border_height, BLUE_FG);
+    make_borders_color(tui->render, col, 0, tui->combos_area->area->width, border_height, BLUE_FG);
   } else {
-    make_borders(tui->render, col, 0, tui->combos_area->width, border_height);
+    make_borders(tui->render, col, 0, tui->combos_area->area->width, border_height);
   }
   put_text(tui->render, 0, col + 3, "%s", "Combos");
 
