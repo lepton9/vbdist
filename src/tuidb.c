@@ -331,13 +331,11 @@ void runTuiDB(tuidb* tui) {
 
 void updateArea(tuidb* tui) {
   getTermSize(tui->term);
-  int maxRows = tui->term->rows - 2;
-  int baseWidth = (tui->term->rows < BASE_SECTION_WIDTH) ? tui->term->cols / 2
-                                                         : BASE_SECTION_WIDTH;
-  int maxShown = (maxRows < BASE_LIST_LEN) ? maxRows : BASE_LIST_LEN;
+  int maxRows = min_int(tui->term->rows - 4, BASE_LIST_LEN);
+  int baseWidth = min_int(tui->term->cols / 2, BASE_SECTION_WIDTH);
 
-  update_list_area(tui->allPlayersArea, baseWidth, maxShown);
-  update_list_area(tui->allTeamsArea, baseWidth, maxShown);
+  update_list_area(tui->allPlayersArea, min_int(tui->term->cols / 2, 40), maxRows);
+  update_list_area(tui->allTeamsArea, baseWidth, maxRows);
 }
 
 void renderTuidb(tuidb* tui) {
@@ -358,30 +356,27 @@ void renderTuidb(tuidb* tui) {
 }
 
 void renderAllPlayersList(tuidb* tui) {
-  append_line(tui->render, 0, "\033[4m %-20s %-10s %d/%d\033[24m", "Name",
-           "Rating", tui->allPlayersArea->selected + 1,
-           (int)tui->allPlayers->n);
-  if (tui->allPlayers->n > 0) {
-    int line = 1;
-    for (int i = tui->allPlayersArea->first_ind;
-    line <= tui->term->rows - 1 &&
-    i - tui->allPlayersArea->first_ind + 1 <= (int)tui->allPlayersArea->max_shown &&
-    i < (int)tui->allPlayers->n;
-    i++) {
-      if (tui->allPlayersArea->selected == i) {
-        tui->allPlayersArea->selected_term_row = line + 1;
-        append_line(tui->render, line, "\033[7m");
-      }
-      if (playerInList(tui->players, ((player*)tui->allPlayers->items[i])->id) >= 0) {
-        append_line(tui->render, line, ">");
-      }
-      player* player = tui->allPlayers->items[i];
-      append_line(tui->render, line, " %-20s %.2f", player->firstName, rating(player));
-      if (tui->allPlayersArea->selected == i) {
-        append_line(tui->render, line, "\033[27m");
-      }
-      put_text(tui->render, line, tui->allPlayersArea->width, "|");
-      line++;
+  int col = 2;
+  int line = 3;
+  int len = getListAreaLen(tui->allPlayersArea, tui->term->rows, line);
+  int borderHeight = len + 4;
+
+  make_borders_color(tui->render, 0, 0, tui->allPlayersArea->width, borderHeight, BLUE_FG);
+
+  put_text(tui->render, 1, 3, "\033[4m %-20s %-10s\033[24m", "Name", "Rating");
+  put_text(tui->render, borderHeight - 1, 2, "%d/%d", tui->allPlayersArea->selected + 1, (int)tui->allPlayers->n);
+
+  for (int i = tui->allPlayersArea->first_ind; i < tui->allPlayersArea->first_ind + len; i++) {
+    player* p = tui->allPlayers->items[i];
+    char selected = playerInList(tui->players, ((player *)tui->allPlayers->items[i])->id) >= 0;
+
+    if (tui->allPlayersArea->selected == i) {
+      tui->allPlayersArea->selected_term_row = line + 1;
+      put_text(tui->render, line++, col, "\033[7m%s %-20s %.2f\033[27m",
+               (selected) ? ">" : "", p->firstName, rating(p));
+    } else {
+      put_text(tui->render, line++, col, "%s %-20s %.2f", (selected) ? ">" : "",
+               p->firstName, rating(p));
     }
   }
 }

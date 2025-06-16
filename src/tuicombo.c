@@ -241,16 +241,10 @@ void renderComboTui(tui_combos* tui) {
   render(tui->render);
 }
 
-int getListAreaLen(list_area* area, term_size* term, int start_line) {
-  if (area->len == 0) return 0;
-  return min_int(min_int(term->rows - start_line, (int)area->max_shown),
-                 (int)area->len - (area->first_ind));
-}
-
 void ctuiRenderPlayersArea(tui_combos* tui) {
   int col = 2;
   int line = 2;
-  int len = getListAreaLen(tui->players_area, tui->term, line);
+  int len = getListAreaLen(tui->players_area, tui->term->rows, line);
 
   if (tui->mode == CTUI_PLAYER_LIST) {
     make_borders_color(tui->render, 0, 0, tui->players_area->width, len + 4, BLUE_FG);
@@ -288,7 +282,7 @@ void ctuiRenderPlayersArea(tui_combos* tui) {
 void ctuiRenderCombosArea(tui_combos* tui) {
   int col = tui->players_area->width + 5;
   int line = 2;
-  int len = getListAreaLen(tui->combos_area, tui->term, line);
+  int len = getListAreaLen(tui->combos_area, tui->term->rows, line);
 
   int ind = tui->combos_area->selected;
   int sel_combo_len = 0;

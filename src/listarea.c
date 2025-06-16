@@ -1,4 +1,5 @@
 #include "../include/listarea.h"
+#include "../include/utils.h"
 
 
 list_area* init_list_area(size_t w, size_t h) {
@@ -62,5 +63,11 @@ void check_selected(list_area* la) {
   else if (la->selected < 0 && la->len > 0) {
     la->selected = 0;
   }
+}
+
+int getListAreaLen(list_area* area, int term_height, int start_line) {
+  if (area->len == 0) return 0;
+  return min_int(min_int(term_height - start_line, (int)area->max_shown),
+                 (int)area->len - area->first_ind);
 }
 

@@ -25,5 +25,7 @@ void update_list_len(list_area* la, size_t n);
 
 void fit_screen(list_area* la);
 
+int getListAreaLen(list_area* area, int term_height, int start_line);
+
 #endif
 
