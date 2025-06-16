@@ -7,13 +7,26 @@ tui_area* init_tui_area(size_t w, size_t h, size_t row, size_t col) {
   area->height = h;
   area->start_row = row;
   area->start_col = col;
-  area->padding_top = 0;
-  area->padding_bottom = 0;
+  area->pad = init_padding(0, 0, 0, 0);
   return area;
 }
 
 void free_tui_area(tui_area* a) {
+  free_padding(a->pad);
   free(a);
+}
+
+padding* init_padding(int top, int bottom, int left, int right) {
+  padding* pad = malloc(sizeof(padding));
+  pad->top = top;
+  pad->bottom = bottom;
+  pad->left = left;
+  pad->right = right;
+  return pad;
+}
+
+void free_padding(padding* pad) {
+  free(pad);
 }
 
 void set_area_pos(tui_area* area, size_t row, size_t col) {
@@ -21,9 +34,11 @@ void set_area_pos(tui_area* area, size_t row, size_t col) {
   area->start_col = col;
 }
 
-void set_padding(tui_area* area, int padding_top, int padding_bottom) {
-  area->padding_top = padding_top;
-  area->padding_bottom = padding_bottom;
+void set_padding(tui_area* area, int top, int bottom, int left, int right) {
+  area->pad->top = top;
+  area->pad->bottom = bottom;
+  area->pad->left = left;
+  area->pad->right = right;
 }
 
 void update_area(tui_area* area, size_t w, size_t h) {
@@ -32,7 +47,11 @@ void update_area(tui_area* area, size_t w, size_t h) {
 }
 
 int start_print_line(tui_area* area) {
-  return area->start_row + area->padding_top;
+  return area->start_row + area->pad->top;
+}
+
+int start_print_col(tui_area* area) {
+  return area->start_col + area->pad->left;
 }
 
 int area_last_line(tui_area* area) {
@@ -85,7 +104,7 @@ void fit_screen(list_area* la) {
 
 void update_list_area(list_area* la, size_t w, size_t h) {
   update_area(la->area, w, h);
-  la->max_shown = max_int(0, h - start_print_line(la->area) - la->area->padding_bottom);
+  la->max_shown = max_int(0, h - start_print_line(la->area) - la->area->pad->bottom);
   check_selected(la);
   fit_screen(la);
 }
@@ -103,9 +122,9 @@ void check_selected(list_area* la) {
   }
 }
 
-int getListAreaLen(list_area* area, int term_height, int start_line) {
+int getListAreaLen(list_area *area, int term_height) {
   if (area->len == 0) return 0;
-  return min_int(min_int(term_height - start_line, (int)area->max_shown),
-                 (int)area->len - area->first_ind);
+  return min_int(
+      min_int(term_height - start_print_line(area->area), (int)area->max_shown),
+      (int)area->len - area->first_ind);
 }
-
