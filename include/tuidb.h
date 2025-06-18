@@ -15,6 +15,11 @@ typedef enum {
   TEAMS_TAB
 } TuiTab;
 
+typedef enum {
+  PLAYERS_LIST,
+  PLAYER_EDIT
+} layout_area;
+
 typedef struct {
   sqldb* db;
   dlist* players;
@@ -27,7 +32,8 @@ typedef struct {
   int teams_n;
   int team_size;
   TuiTab tab;
-  int show_player_info;
+  layout_area active_area;
+  char show_player_info;
 } tuidb;
 
 
