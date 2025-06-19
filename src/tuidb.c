@@ -96,22 +96,32 @@ team* selectedTeam(tuidb *tui) {
   return tui->allTeams->items[tui->allTeamsArea->selected];
 }
 
-void selectPlayer(tuidb* tui) {
+void unselectPlayer(tuidb* tui, int index) {
+  if (index < 0) return;
+  player* p = pop_elem(tui->players, index);
+  freePlayer(p);
+}
+
+void unselect_all(tuidb* tui) {
+  for (int i = (int)tui->players->n; i >= 0; i--) {
+    unselectPlayer(tui, i);
+  }
+}
+
+void selectCurPlayer(tuidb* tui) {
   if (tui->allPlayersArea->selected < 0 || tui->allPlayers->n <= 0) return;
   player* selected = selectedPlayer(tui);
   if (playerInList(tui->players, selected->id) >= 0) {
-    unselectPlayer(tui);
+    unselectCurPlayer(tui);
     return;
   }
   list_add(tui->players, copyPlayer(selected));
 }
 
-void unselectPlayer(tuidb* tui) {
+void unselectCurPlayer(tuidb* tui) {
   player* selected = selectedPlayer(tui);
   int i = playerInList(tui->players, selected->id);
-  if (i < 0) return;
-  player* p = pop_elem(tui->players, i);
-  freePlayer(p);
+  unselectPlayer(tui, i);
 }
 
 void tuidb_list_up(tuidb* tui) {
@@ -292,7 +302,7 @@ void handleKeyPress(tuidb* tui, int c) {
     case KEY_ENTER:
 #endif
     if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST) {
-      selectPlayer(tui);
+      selectCurPlayer(tui);
     }
     break;
     case 27: // Esc
@@ -332,6 +342,9 @@ void handleKeyPress(tuidb* tui, int c) {
     case 'e': case 'E': // Edit player
       if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST)
         toggle_edit_player(tui);
+      break;
+    case 'u': case 'U':
+      unselect_all(tui);
       break;
     default: {
       break;
