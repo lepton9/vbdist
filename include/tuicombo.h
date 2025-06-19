@@ -25,6 +25,7 @@ typedef struct {
 
   int recording_combo;
   combo* cur_combo;
+  char exit;
 } tui_combos;
 
 tui_combos* init_tui_combo(sqldb* db, dlist* players);
@@ -38,6 +39,7 @@ void comboTuiListDown(tui_combos* tui);
 void runTuiCombo(sqldb* db, dlist* players);
 void updateTuiComboAreas(tui_combos* tui);
 void handleComboTuiInput(tui_combos* tui, int c);
+void handle_exit(tui_combos* tui);
 
 void ctuiSelectPlayer(tui_combos* tui);
 

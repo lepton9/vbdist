@@ -9,6 +9,7 @@ tui_combos* init_tui_combo(sqldb* db, dlist* players) {
   getTermSize(tui->term);
   tui->render = init_renderer(stdout);
 
+  tui->exit = 0;
   tui->mode = CTUI_PLAYER_LIST;
 
   tui->cur_combo = NULL;
@@ -139,7 +140,7 @@ void runTuiCombo(sqldb* db, dlist* players) {
   curHide();
   refresh_screen(tui->render);
   int c = 0;
-  while (c != 'q') {
+  while (!tui->exit) {
     check_selected(tui->combos_area);
     check_selected(tui->players_area);
     updateTuiComboAreas(tui);
@@ -180,8 +181,19 @@ void comboTuiListDown(tui_combos* tui) {
   }
 }
 
+void handle_exit(tui_combos* tui) {
+  if (editing_combo(tui)) {
+    end_combo(tui);
+  } else {
+    tui->exit = 1;
+  }
+}
+
 void handleComboTuiInput(tui_combos* tui, int c) {
   switch (c) {
+    case 'q': case 'Q':
+      handle_exit(tui);
+      break;
     case 13: case '\n': case ' ':
 #ifdef __linux__
     case KEY_ENTER:
