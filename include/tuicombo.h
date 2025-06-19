@@ -41,6 +41,7 @@ void handleComboTuiInput(tui_combos* tui, int c);
 
 void ctuiSelectPlayer(tui_combos* tui);
 
+int editing_combo(tui_combos* tui);
 void start_edit_combo(tui_combos* tui);
 void start_combo(tui_combos* tui, comboType type);
 void end_combo(tui_combos* tui);

@@ -30,7 +30,14 @@ tui_combos* init_tui_combo(sqldb* db, dlist* players) {
   return tui;
 }
 
+int editing_combo(tui_combos* tui) {
+  return tui->recording_combo && tui->cur_combo;
+}
+
 void free_tui_combo(tui_combos* tui) {
+  if (editing_combo(tui)) {
+    end_combo(tui);
+  }
   free(tui->term);
   free_renderer(tui->render);
   free_list_area(tui->players_area);
