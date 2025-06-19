@@ -136,6 +136,13 @@ int cmpPlayerPos(const void* a, const void* b) {
   return pos_a ? 1 : (pos_b ? -1 : 0);
 }
 
+int cmpPlayerName(const void* a, const void* b) {
+  player* ap = *(player**)a;
+  player* bp = *(player**)b;
+  return strcmp(ap->firstName ? ap->firstName : "",
+                bp->firstName ? bp->firstName : "");
+}
+
 void swapPlayers(player* a, player* b) {
   player tmp = *a;
   *a = *b;

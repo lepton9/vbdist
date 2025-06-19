@@ -128,6 +128,7 @@ void deleteCurCombo(tui_combos* tui) {
 
 void runTuiCombo(sqldb* db, dlist* players) {
   tui_combos* tui = init_tui_combo(db, players);
+  qsort(players->items, players->n, sizeof(player*), cmpPlayerName);
   curHide();
   refresh_screen(tui->render);
   int c = 0;
