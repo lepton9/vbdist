@@ -22,6 +22,7 @@ void closeSqlDB(sqldb* db);
 
 int execQuery(sqlite3 *db, const char *sql,
               int (*cb)(void *, int, char **, char **), void *p);
+int sqlPrepare(sqlite3* db, sqlite3_stmt** stmt, const char* sql);
 
 int enableForeignKey(sqldb* db);
 int createDB(sqldb* db);

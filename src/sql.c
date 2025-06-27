@@ -151,6 +151,15 @@ int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char
   return result == SQLITE_OK;
 }
 
+int sqlPrepare(sqlite3* db, sqlite3_stmt** stmt, const char* sql) {
+  int result = sqlite3_prepare_v2(db, sql, -1, stmt, NULL);
+  if (result != SQLITE_OK) {
+    log_sql_error("%s", sqlite3_errmsg(db));
+    return 0;
+  }
+  return 1;
+}
+
 int enableForeignKey(sqldb* db) {
   char* sql = "PRAGMA foreign_keys = ON;";
   return execQuery(db->sqlite, sql, 0, 0);
