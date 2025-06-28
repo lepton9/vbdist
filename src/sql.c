@@ -138,6 +138,15 @@ int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char
   return result == SQLITE_OK;
 }
 
+int stmtExec(sqlite3* db, sqlite3_stmt* stmt) {
+  int r = (sqlite3_step(stmt) == SQLITE_DONE);
+  if (!r) {
+    log_sql_error("%s", sqlite3_errmsg(db));
+  }
+  sqlite3_finalize(stmt);
+  return r;
+}
+
 int sqlPrepare(sqlite3* db, sqlite3_stmt** stmt, const char* sql) {
   int result = sqlite3_prepare_v2(db, sql, -1, stmt, NULL);
   if (result != SQLITE_OK) {
