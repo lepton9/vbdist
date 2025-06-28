@@ -32,8 +32,8 @@ dataSource SOURCE = NO_SOURCE;
 
 
 void updateCombos(sqldb* db, dlist* players, dlist* combos, comboType combo_type) {
-  for (int i = 0; i < (int)combos->n; i++) {
-    free(combos->items[i]);
+  for (size_t i = 0; i < combos->n; i++) {
+    freeCombo(combos->items[i]);
     combos->items[i] = NULL;
   }
   combos->n = 0;
@@ -46,7 +46,7 @@ void updateCombos(sqldb* db, dlist* players, dlist* combos, comboType combo_type
     combos->size = new_combos->size;
   }
 
-  for (int i = 0; i < (int)new_combos->n; i++) {
+  for (size_t i = 0; i < new_combos->n; i++) {
     combos->items[i] = new_combos->items[i];
   }
   combos->n = new_combos->n;
