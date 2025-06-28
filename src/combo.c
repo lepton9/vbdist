@@ -38,10 +38,12 @@ combo* initCombo(comboType type, int combo_id) {
 
 void freeCombo(combo* combo) {
   if (!combo) return;
-  for (size_t i = 0; i < combo->ids->n; i++) {
-    free(combo->ids->items[i]);
+  if (combo->ids) {
+    for (size_t i = 0; i < combo->ids->n; i++) {
+      free(combo->ids->items[i]);
+    }
+    free_list(combo->ids);
   }
-  if (combo->ids) free_list(combo->ids);
   free(combo);
 }
 

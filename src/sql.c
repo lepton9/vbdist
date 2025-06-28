@@ -224,10 +224,9 @@ int insertCombo(sqldb* db, combo* combo) {
   sqlite3_stmt* stmt;
   if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
   sqlite3_bind_text(stmt, 1, comboTypeString(combo->type), -1, SQLITE_STATIC);
-  if (sqlite3_step(stmt) == SQLITE_DONE) {
+  if (stmtExec(db->sqlite, stmt)) {
     int combo_id = sqlite3_last_insert_rowid(db->sqlite);
     if (insertInCombo(db, combo_id, combo->ids)) {
-      sqlite3_finalize(stmt);
       log_sql("Inserted Combo %s (%d players)", comboTypeString(combo->type), (int)combo->ids->n);
       combo->combo_id = combo_id;
       return 1;
@@ -235,7 +234,6 @@ int insertCombo(sqldb* db, combo* combo) {
   } else {
     log_sql_error("Failed to insert combo: %s", sqlite3_errmsg(db->sqlite));
   }
-  sqlite3_finalize(stmt);
   return 0;
 }
 
@@ -253,14 +251,12 @@ int updateCombo(sqldb* db, combo* combo) {
   char* sql = "DELETE FROM InCombo WHERE combo_id = ?;";
   if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
   sqlite3_bind_int(stmt, 1, combo->combo_id);
-  if (sqlite3_step(stmt) == SQLITE_DONE) {
+  if (stmtExec(db->sqlite, stmt)) {
     if (insertInCombo(db, combo->combo_id, combo->ids)) {
-      sqlite3_finalize(stmt);
       log_sql("Updated Combo %s (%d players)", comboTypeString(combo->type), (int)combo->ids->n);
       return 1;
     }
   }
-  sqlite3_finalize(stmt);
   return 0;
 }
 
@@ -334,11 +330,10 @@ int deleteCombo(sqldb* db, combo* combo) {
   sqlite3_stmt* stmt;
   if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
   sqlite3_bind_int(stmt, 1, combo->combo_id);
-  int r = (sqlite3_step(stmt) == SQLITE_DONE);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Deleted Combo (%d)", combo->combo_id);
   }
-  sqlite3_finalize(stmt);
   return r;
 }
 
@@ -395,23 +390,26 @@ dlist* fetchSkills(sqldb* db) {
   return skills;
 }
 
-
 int insertSkill(sqldb* db, skill* skill) {
-  char sql[100];
-  sprintf(sql, "INSERT INTO Skill (name, weight) VALUES ('%s', %f);", skill->name, skill->weight);
-  int r = execQuery(db->sqlite, sql, NULL, NULL);
+  const char* sql = "INSERT INTO Skill (name, weight) VALUES (?, ?);";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_text(stmt, 1, skill->name, -1, SQLITE_STATIC);
+  sqlite3_bind_double(stmt, 2, skill->weight);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
-    int skill_id = sqlite3_last_insert_rowid(db->sqlite);
-    skill->id = skill_id;
+    skill->id = sqlite3_last_insert_rowid(db->sqlite);
     log_sql("Created new Skill (%d) '%s'", skill->id, skill->name);
   }
   return r;
 }
 
 int deleteSkill(sqldb* db, skill* skill) {
-  char sql[100];
-  sprintf(sql, "DELETE FROM Skill WHERE skill_id = %d;", skill->id);
-  int r = execQuery(db->sqlite, sql, NULL, NULL);
+  const char* sql = "DELETE FROM Skill WHERE skill_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, skill->id);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Deleted Skill (%d) '%s'", skill->id, skill->name);
   }
@@ -419,9 +417,12 @@ int deleteSkill(sqldb* db, skill* skill) {
 }
 
 int renameSkill(sqldb* db, skill* skill, const char* name) {
-  char sql[100];
-  sprintf(sql, "UPDATE Skill SET name = '%s' WHERE skill_id = %d;", name, skill->id);
-  int r = execQuery(db->sqlite, sql, 0, 0);
+  const char* sql = "UPDATE Skill SET name = ? WHERE skill_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
+  sqlite3_bind_int(stmt, 2, skill->id);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Renamed Skill (%d) '%s' -> '%s'", skill->id, skill->name, name);
   }
@@ -429,9 +430,12 @@ int renameSkill(sqldb* db, skill* skill, const char* name) {
 }
 
 int updateSkillWeight(sqldb* db, skill* skill) {
-  char sql[100];
-  sprintf(sql, "UPDATE Skill SET weight = %f WHERE skill_id = %d;", skill->weight, skill->id);
-  int r = execQuery(db->sqlite, sql, 0, 0);
+  const char* sql = "UPDATE Skill SET weight = ? WHERE skill_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_double(stmt, 1, skill->weight);
+  sqlite3_bind_int(stmt, 2, skill->id);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Updated weight Skill (%d) '%s' '%.2f'", skill->id, skill->name, skill->weight);
   }
@@ -498,9 +502,12 @@ dlist* fetchPlayersInTeam(sqldb* db, team* team) {
 }
 
 int renamePlayer(sqldb* db, player* player, const char* name) {
-  char sql[100];
-  sprintf(sql, "UPDATE Player SET name = '%s' WHERE player_id = %d;", name, player->id);
-  int r = execQuery(db->sqlite, sql, 0, 0);
+  const char* sql = "UPDATE Player SET name = ? WHERE player_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
+  sqlite3_bind_int(stmt, 2, player->id);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Renamed Player (%d) '%s' -> '%s'", player->id, player->firstName, name);
   }
@@ -508,9 +515,12 @@ int renamePlayer(sqldb* db, player* player, const char* name) {
 }
 
 int renameTeam(sqldb* db, team* team, const char* name) {
-  char sql[100];
-  sprintf(sql, "UPDATE Team SET name = '%s' WHERE team_id = %d;", name, team->id);
-  int r = execQuery(db->sqlite, sql, 0, 0);
+  const char* sql = "UPDATE Team SET name = ? WHERE team_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
+  sqlite3_bind_int(stmt, 2, team->id);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Renamed Team (%d) '%s' -> '%s'", team->id, team->name, name);
   }
@@ -518,9 +528,11 @@ int renameTeam(sqldb* db, team* team, const char* name) {
 }
 
 int deletePlayer(sqldb* db, player* player) {
-  char sql[100];
-  sprintf(sql, "DELETE FROM Player WHERE player_id = %d;", player->id);
-  int r = execQuery(db->sqlite, sql, 0, 0);
+  const char* sql = "DELETE FROM Player WHERE player_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, player->id);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Deleted Player (%d) '%s'", player->id, player->firstName);
   }
@@ -528,9 +540,11 @@ int deletePlayer(sqldb* db, player* player) {
 }
 
 int deleteTeam(sqldb* db, team* team) {
-  char sql[100];
-  sprintf(sql, "DELETE FROM Team WHERE team_id = %d;", team->id);
-  int r = execQuery(db->sqlite, sql, 0, 0);
+  const char* sql = "DELETE FROM Team WHERE team_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, team->id);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Deleted Team (%d) '%s'", team->id, team->name);
   }
@@ -538,21 +552,25 @@ int deleteTeam(sqldb* db, team* team) {
 }
 
 int insertTeam(sqldb* db, team* team) {
-  char sql[100];
-  sprintf(sql, "INSERT INTO Team (name) VALUES ('%s');", team->name);
-  int r = execQuery(db->sqlite, sql, 0, 0);
-  int id = sqlite3_last_insert_rowid(db->sqlite);
-  team->id = id;
+  const char* sql = "INSERT INTO Team (name) VALUES (?);";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_text(stmt, 1, team->name, -1, SQLITE_STATIC);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
+    team->id = sqlite3_last_insert_rowid(db->sqlite);
     log_sql("Inserted Team (%d) '%s'", team->id, team->name);
   }
   return r;
 }
 
 int insertPlayerTeam(sqldb* db, player* player, team* team) {
-  char sql[100];
-  sprintf(sql, "INSERT INTO PlayerTeam (player_id, team_id) VALUES (%d, %d);", player->id, team->id);
-  int r = execQuery(db->sqlite, sql, 0, 0);
+  const char* sql = "INSERT INTO PlayerTeam (player_id, team_id) VALUES (?, ?);";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, player->id);
+  sqlite3_bind_int(stmt, 2, team->id);
+  int r = stmtExec(db->sqlite, stmt);
   if (r) {
     log_sql("Inserted Player (%d) '%s' to Team (%d) '%s'", player->id, player->firstName, team->id, team->name);
   }
