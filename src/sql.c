@@ -121,19 +121,6 @@ int cb_add_id_list(void* list, int count, char **data, char **columns) {
   return 0;
 }
 
-int cb_combos(void* combos, int count, char **data, char **columns) {
-  assert(count == 2);
-  combo* c = initCombo(toComboType(data[1]), atoi(data[0]));
-  list_add(combos, c);
-  return 0;
-}
-
-int cb_combo(void* combo, int count, char **data, char **columns) {
-  assert(count == 1);
-  addToCombo(combo, atoi(data[0]));
-  return 0;
-}
-
 int cb_found(void* flag, int count, char **data, char **columns) {
   assert(count == 1);
   int* f = flag;
@@ -177,18 +164,19 @@ int clearPlayerList(sqldb* db) {
   return execQuery(db->sqlite, sql, 0, 0);
 }
 
-int insertToPlayerList(sqldb* db, player* p) {
-  char sql[150];
-  sprintf(sql, "INSERT OR IGNORE INTO InPlayerList (playerlist_id, player_id) VALUES (%d, %d);", 1, p->id);
-  return execQuery(db->sqlite, sql, 0, 0);
-}
-
 int saveToPlayerList(sqldb* db, dlist* players) {
+  sqlite3_stmt* stmt;
+  int ok = sqlPrepare(db->sqlite, &stmt, "INSERT OR IGNORE INTO InPlayerList (playerlist_id, player_id) VALUES (1, ?);");
+  if (!ok) return 0;
   int r = 0;
   clearPlayerList(db);
-  for (int i = 0; i < (int)players->n; i++) {
-    r += insertToPlayerList(db, players->items[i]);
+  for (size_t i = 0; i < players->n; i++) {
+    player* p = players->items[i];
+    sqlite3_bind_int(stmt, 1, p->id);
+    r += sqlite3_step(stmt) == SQLITE_DONE;
+    sqlite3_reset(stmt);
   }
+  sqlite3_finalize(stmt);
   log_sql("Saved player list with %d players", r);
   return r;
 }
@@ -202,40 +190,49 @@ dlist* fetchPlayerList(sqldb* db) {
 }
 
 int insertInCombo(sqldb* db, int combo_id, dlist* ids) {
-  char sql[200];
-  sprintf(sql, "INSERT INTO InCombo (combo_id, player_id) VALUES ");
+  const char* sql = "INSERT INTO InCombo (combo_id, player_id) VALUES (?, ?);";
+  sqlite3_stmt* stmt;
+  int result = sqlPrepare(db->sqlite, &stmt, sql);
+  if (!result) return 0;
   for (size_t i = 0; i < ids->n; i++) {
-    if (i > 0) strcat(sql, ",");
-    char sql_combo[20];
     int* id = ids->items[i];
-    sprintf(sql_combo, "(%d, %d)", combo_id, *id);
-    strcat(sql, sql_combo);
+    sqlite3_bind_int(stmt, 1, combo_id);
+    sqlite3_bind_int(stmt, 2, *id);
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+      log_sql_error("Failed to insert player (%d) to combo (%d): %s", id, combo_id, sqlite3_errmsg(db->sqlite));
+      sqlite3_finalize(stmt);
+      return 0;
+    }
+    sqlite3_reset(stmt);
   }
-  strcat(sql, ";");
-  return execQuery(db->sqlite, sql, NULL, NULL);
+  sqlite3_finalize(stmt);
+  return 1;
 }
 
 int insertCombo(sqldb* db, combo* combo) {
-  if (combo->combo_id >= 0) {
-    return 0;
-  }
-  char sql[200];
-  sprintf(sql, "INSERT INTO Combo (combo_type) VALUES ('%s');",
-          comboTypeString(combo->type));
-  if (execQuery(db->sqlite, sql, NULL, NULL)) {
+  if (combo->combo_id >= 0) return 0;
+  const char* sql = "INSERT INTO Combo (combo_type) VALUES (?);";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_text(stmt, 1, comboTypeString(combo->type), -1, SQLITE_STATIC);
+  if (sqlite3_step(stmt) == SQLITE_DONE) {
     int combo_id = sqlite3_last_insert_rowid(db->sqlite);
     if (insertInCombo(db, combo_id, combo->ids)) {
+      sqlite3_finalize(stmt);
       log_sql("Inserted Combo %s (%d players)", comboTypeString(combo->type), (int)combo->ids->n);
       combo->combo_id = combo_id;
       return 1;
     }
+  } else {
+    log_sql_error("Failed to insert combo: %s", sqlite3_errmsg(db->sqlite));
   }
+  sqlite3_finalize(stmt);
   return 0;
 }
 
 int insertCombos(sqldb* db, dlist* combos) {
   int r = 0;
-  for (int i = 0; i < (int)combos->n; i++) {
+  for (size_t i = 0; i < combos->n; i++) {
     r += insertCombo(db, combos->items[i]);
   }
   return r;
@@ -243,21 +240,39 @@ int insertCombos(sqldb* db, dlist* combos) {
 
 int updateCombo(sqldb* db, combo* combo) {
   if (combo->combo_id < 0) return 0;
-  char sql[200];
-  sprintf(sql, "DELETE FROM InCombo WHERE combo_id = %d;", combo->combo_id);
-  if (execQuery(db->sqlite, sql, NULL, NULL)) {
+  sqlite3_stmt* stmt;
+  char* sql = "DELETE FROM InCombo WHERE combo_id = ?;";
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, combo->combo_id);
+  if (sqlite3_step(stmt) == SQLITE_DONE) {
     if (insertInCombo(db, combo->combo_id, combo->ids)) {
+      sqlite3_finalize(stmt);
       log_sql("Updated Combo %s (%d players)", comboTypeString(combo->type), (int)combo->ids->n);
       return 1;
     }
   }
+  sqlite3_finalize(stmt);
   return 0;
 }
 
 int fetchCombo(sqldb* db, combo* combo) {
-  char sql[100];
-  sprintf(sql, "SELECT player_id FROM InCombo WHERE combo_id = %d;", combo->combo_id);
-  return execQuery(db->sqlite, sql, cb_combo, combo);
+  const char* sql = "SELECT player_id FROM InCombo WHERE combo_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, combo->combo_id);
+  int r;
+  while ((r = sqlite3_step(stmt)) == SQLITE_ROW) {
+    if (sqlite3_column_type(stmt, 0) == SQLITE_INTEGER) {
+      addToCombo(combo, sqlite3_column_int(stmt, 0));
+    }
+  }
+  sqlite3_finalize(stmt);
+  if (r != SQLITE_DONE) {
+    log_sql_error("Error in fetching combo (%d): %s", combo->combo_id,
+                  sqlite3_errmsg(db->sqlite));
+    return 0;
+  }
+  return 1;
 }
 
 void removeEmptyCombos(dlist* combos) {
@@ -271,9 +286,16 @@ void removeEmptyCombos(dlist* combos) {
 
 dlist* fetchCombos(sqldb* db, comboType type) {
   dlist* combos = init_list();
-  char sql[100];
-  sprintf(sql, "SELECT combo_id, combo_type FROM Combo WHERE combo_type = '%s';", comboTypeString(type));
-  execQuery(db->sqlite, sql, cb_combos, combos);
+  const char* sql = "SELECT combo_id FROM Combo WHERE combo_type = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return combos;
+  sqlite3_bind_text(stmt, 1, comboTypeString(type), -1, SQLITE_STATIC);
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    if (sqlite3_column_type(stmt, 0) == SQLITE_INTEGER) {
+      list_add(combos, initCombo(type, sqlite3_column_int(stmt, 0)));
+    }
+  }
+  sqlite3_finalize(stmt);
   for (size_t i = 0; i < combos->n; i++) {
     fetchCombo(db, combos->items[i]);
   }
@@ -283,10 +305,15 @@ dlist* fetchCombos(sqldb* db, comboType type) {
 
 dlist* fetchAllCombos(sqldb* db) {
   dlist* combos = init_list();
-  char sql[100];
-  sprintf(sql, "SELECT combo_id, combo_type FROM Combo;");
-  execQuery(db->sqlite, sql, cb_combos, combos);
-  for (int i = 0; i < (int)combos->n; i++) {
+  const char* sql = "SELECT combo_id, combo_type FROM Combo;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return combos;
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    char* type = (char*)sqlite3_column_text(stmt, 1);
+    list_add(combos, initCombo(toComboType(type), sqlite3_column_int(stmt, 0)));
+  }
+  sqlite3_finalize(stmt);
+  for (size_t i = 0; i < combos->n; i++) {
     fetchCombo(db, combos->items[i]);
   }
   removeEmptyCombos(combos);
@@ -294,12 +321,15 @@ dlist* fetchAllCombos(sqldb* db) {
 }
 
 int deleteCombo(sqldb* db, combo* combo) {
-  char sql[100];
-  sprintf(sql, "DELETE FROM Combo WHERE combo_id = %d;", combo->combo_id);
-  int r = execQuery(db->sqlite, sql, NULL, NULL);
+  const char* sql = "DELETE FROM Combo WHERE combo_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, combo->combo_id);
+  int r = (sqlite3_step(stmt) == SQLITE_DONE);
   if (r) {
     log_sql("Deleted Combo (%d)", combo->combo_id);
   }
+  sqlite3_finalize(stmt);
   return r;
 }
 

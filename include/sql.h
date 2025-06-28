@@ -29,7 +29,6 @@ int createDB(sqldb* db);
 
 int makePlayerList(sqldb* db);
 int clearPlayerList(sqldb* db);
-int insertToPlayerList(sqldb* db, player* p);
 int saveToPlayerList(sqldb* db, dlist* players);
 dlist* fetchPlayerList(sqldb* db);
 
