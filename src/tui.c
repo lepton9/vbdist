@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <locale.h>
@@ -55,17 +56,20 @@ void flushInput() {
 #endif
 }
 
-char initScreen() {
+char initScreen(term** t) {
+  *t = malloc(sizeof(term));
 #ifdef _WIN32
   return initScreenWin();
 #else
-  return initScreenLinux();
+  return initScreenLinux(*t);
 #endif
 }
 
-char initScreenLinux() {
+char initScreenLinux(term* t) {
 #ifdef __linux__
-  initscr();
+  t->screen = newterm(NULL, stdout, stdin);
+  if (!t->screen) return 0;
+  set_term(t->screen);
   raw();
   keypad(stdscr, TRUE);
   noecho();
@@ -95,6 +99,15 @@ char initScreenWin() {
   return 1;
 #endif
   return 0;
+}
+
+void endScreen(term* term) {
+  if (!term) return;
+#ifdef __linux__
+  endwin();
+  if (term->screen) delscreen(term->screen);
+#endif
+  free(term);
 }
 
 void getTermSize(term_size* term) {

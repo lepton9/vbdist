@@ -610,7 +610,8 @@ int main(int argc, char** argv) {
     tui->players = players;
   }
 
-  if (!initScreen()) {
+  term* term = NULL;
+  if (!initScreen(&term)) {
     log_error("%s", "Initializing screen failed");
     printf("Initializing screen failed..\n");
     exit(1);
@@ -622,6 +623,7 @@ int main(int argc, char** argv) {
   altBufferDisable();
   curShow();
 
+  endScreen(term);
   free(err_msg);
 
   cfg->team_size = TEAM_SIZE;

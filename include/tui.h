@@ -13,6 +13,12 @@
 #endif
 
 typedef struct {
+#ifdef __linux__
+  SCREEN* screen;
+#endif
+} term;
+
+typedef struct {
   int rows;
   int cols;
 } term_size;
@@ -26,9 +32,10 @@ void cls(FILE* s);
 void flushInput();
 int supportsUnicode();
 int keyPress();
-char initScreen();
-char initScreenLinux();
+char initScreen(term** term);
+char initScreenLinux(term* t);
 char initScreenWin();
+void endScreen(term* term);
 void getTermSize(term_size* term);
 
 #endif
