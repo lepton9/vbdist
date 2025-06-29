@@ -65,8 +65,8 @@ void freeTuiDB(tuidb* tui) {
   freeAllPlayers(tui->allPlayers);
   freeAllTeams(tui->allTeams);
   free_renderer(tui->render);
-  free(tui->allPlayersArea);
-  free(tui->allTeamsArea);
+  free_list_area(tui->allPlayersArea);
+  free_list_area(tui->allTeamsArea);
   free(tui->term);
   free(tui);
 }
@@ -592,6 +592,7 @@ void renderSelectedTeam(tuidb* tui) {
   make_borders_color(tui->render, startCol - 2, borderStartLine, borderWidth, borderHeight, DEFAULT_FG);
 
   put_text(tui->render, borderStartLine, startCol, "%s", t->name);
+  put_text(tui->render, borderStartLine, startCol + 25, "%d", t->id);
 
   for (size_t i = 0; i < player_ids->n; i++) {
     int* id = player_ids->items[i];
