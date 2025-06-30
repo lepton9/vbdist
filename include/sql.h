@@ -28,6 +28,11 @@ int sqlPrepare(sqlite3* db, sqlite3_stmt** stmt, const char* sql);
 int enableForeignKey(sqldb* db);
 int createDB(sqldb* db);
 
+char* findCol(char** columns, char** data, int count, char* colName);
+int colInt(char** columns, char** data, int count, char* colName);
+double colFloat(char** columns, char** data, int count, char* colName);
+char* colStr(char** columns, char** data, int count, char* colName);
+
 int makePlayerList(sqldb* db);
 int clearPlayerList(sqldb* db);
 int saveToPlayerList(sqldb* db, dlist* players);

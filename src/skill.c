@@ -22,6 +22,7 @@ float skillValue(skill* skill) {
 }
 
 void setWeight(skill* skill, float value) {
+  if (value < 0) return;
   skill->weight = value;
 }
 

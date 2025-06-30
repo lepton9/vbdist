@@ -5,7 +5,7 @@
 
 team* initTeam(char* teamName, const size_t size) {
   team* t = malloc(sizeof(team));
-  t->name = strdup(teamName);
+  t->name = strdup(teamName ? teamName : "");
   t->size = size;
   t->players = malloc(size * sizeof(player*));
   t->id = -1;

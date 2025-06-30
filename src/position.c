@@ -5,7 +5,7 @@
 position* initPosition(int id, const char* name) {
   position* p = malloc(sizeof(position));
   p->id = id;
-  p->name = strdup(name);
+  p->name = strdup(name ? name : "");
   p->priority = 0;
   return p;
 }

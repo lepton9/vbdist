@@ -27,29 +27,53 @@ void closeSqlDB(sqldb* db) {
   free(db);
 }
 
+char* findCol(char** columns, char** data, int count, char* colName) {
+  for (int i = 0; i < count; i++) {
+    if (strcmp(columns[i], colName) == 0) {
+      return data[i];
+    }
+  }
+  return NULL;
+}
+
+int colInt(char** columns, char** data, int count, char* colName) {
+  char* d = findCol(columns, data, count, colName);
+  return d ? atoi(d) : -1;
+}
+
+double colFloat(char** columns, char** data, int count, char* colName) {
+  char* d = findCol(columns, data, count, colName);
+  return d ? atof(d) : 0;
+}
+
+char* colStr(char** columns, char** data, int count, char* colName) {
+  char* d = findCol(columns, data, count, colName);
+  return d ? strdup(d) : NULL;
+}
+
 int cb_teams(void* tList, int count, char **data, char **columns) {
   assert(count == 2);
-  dlist* list = tList;
-  team* t = initTeam(data[1], 0);
-  t->id = atoi(data[0]);
-  list_add(list, t);
+  char* name = findCol(columns, data, count, "name");
+  team* t = initTeam(name, 0);
+  t->id = colInt(columns, data, count, "team_id");
+  list_add(tList, t);
   return 0;
 }
 
 int cb_players(void* list, int count, char **data, char **columns) {
   assert(count == 2);
   player* p = initPlayer();
-  p->id = atoi(data[0]);
-  p->firstName = strdup(data[1]);
+  p->id = colInt(columns, data, count, "player_id");
+  p->firstName = colStr(columns, data, count, "name");
   list_add(list, p);
   return 0;
 }
 
-int cb_player(void* p, int argc, char **argv, char **colName) {
-  player* player = p;
+int cb_player(void* p, int argc, char **argv, char **columns) {
   assert(argc == 1);
+  player* player = p;
   if (!player->firstName) {
-    player->firstName = strdup(argv[0]);
+    player->firstName = colStr(columns, argv, argc, "name");
   }
   player->found = 1;
   return 0;
@@ -57,8 +81,8 @@ int cb_player(void* p, int argc, char **argv, char **colName) {
 
 int cb_positions(void* list, int count, char **data, char **columns) {
   assert(count == 2);
-  int id = atoi(data[0]);
-  const char* name = data[1];
+  int id = colInt(columns, data, count, "position_id");
+  char* name = findCol(columns, data, count, "name");
   position* p = initPosition(id, name);
   list_add(list, p);
   return 0;
@@ -66,9 +90,9 @@ int cb_positions(void* list, int count, char **data, char **columns) {
 
 int cb_player_position(void* positions, int count, char **data, char **columns) {
   assert(count == 3);
-  int id = atoi(data[0]);
-  const char* name = data[1];
-  int priority = atoi(data[2]);
+  int id = colInt(columns, data, count, "position_id");
+  char* name = findCol(columns, data, count, "name");
+  int priority = colInt(columns, data, count, "priority_value");
   position* p = initPosition(id, name);
   setPriority(p, priority);
   list_add(positions, p);
@@ -77,21 +101,21 @@ int cb_player_position(void* positions, int count, char **data, char **columns) 
 
 int cb_player_skill(void* skills, int count, char **data, char **columns) {
   assert(count == 4);
-  int id = atoi(data[0]);
-  float value = atof(data[1]);
-  const char* name = data[2];
+  int id = colInt(columns, data, count, "skill_id");
+  float value = colFloat(columns, data, count, "value");
+  char* name = findCol(columns, data, count, "name");
   skill* s = initSkill(id, name, value);
-  setWeight(s, atof(data[3]));
+  setWeight(s, colFloat(columns, data, count, "weight"));
   list_add(skills, s);
   return 0;
 }
 
 int cb_skill(void* skills, int count, char **data, char **columns) {
   assert(count == 3);
-  int id = atoi(data[0]);
-  const char* name = data[1];
+  int id = colInt(columns, data, count, "skill_id");
+  char* name = findCol(columns, data, count, "name");
   skill* s = initSkill(id, name, 0);
-  setWeight(s, atof(data[2]));
+  setWeight(s, colFloat(columns, data, count, "weight"));
   list_add(skills, s);
   return 0;
 }
@@ -99,8 +123,8 @@ int cb_skill(void* skills, int count, char **data, char **columns) {
 int cb_teammates(void* teammates, int count, char **data, char **columns) {
   assert(count == 2);
   int_tuple* tuple = malloc(sizeof(int_tuple));
-  tuple->a = atoi(data[0]);
-  tuple->b = atoi(data[1]);
+  tuple->a = colInt(columns, data, count, "player_id");
+  tuple->b = colInt(columns, data, count, "teammate_count");
   list_add(teammates, tuple);
   return 0;
 }
@@ -108,7 +132,7 @@ int cb_teammates(void* teammates, int count, char **data, char **columns) {
 int cb_not_teammates(void* not_teammates, int count, char **data, char **columns) {
   assert(count == 1);
   int* id = malloc(sizeof(int));
-  *id = atoi(data[0]);
+  *id = colInt(columns, data, count, "player_id");
   list_add(not_teammates, id);
   return 0;
 }
@@ -116,15 +140,8 @@ int cb_not_teammates(void* not_teammates, int count, char **data, char **columns
 int cb_add_id_list(void* list, int count, char **data, char **columns) {
   assert(count == 1);
   int* id = malloc(sizeof(int));
-  *id = atoi(data[0]);
+  *id = colInt(columns, data, count, "team_id");
   list_add(list, id);
-  return 0;
-}
-
-int cb_found(void* flag, int count, char **data, char **columns) {
-  assert(count == 1);
-  int* f = flag;
-  *f = 1;
   return 0;
 }
 

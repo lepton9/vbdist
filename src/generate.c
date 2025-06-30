@@ -354,28 +354,6 @@ int balancedClustering(team** teams, int oneSideValidation, context* ctx) {
   return swaps;
 }
 
-// TODO: temporary
-void printTeamsTemp(FILE *out, team **teams, const int printWidth,
-                const int teams_n, const int team_size, const char indent) {
-  char str[printWidth];
-  for (int i = 0; i < teams_n; i++) {
-    team* team = teams[i];
-    sprintf(str, "%s | %.2f:", team->name, avgRating(team));
-    fprintf(out, "%-*s", printWidth, str);
-  }
-  fprintf(out, "\n");
-  for(int j = 0; j < 6; j++) {
-    for (int i = 0; i < teams_n; i++) {
-      player* p = teams[i]->players[j];
-      position* pos = assignedPosition(p);
-      sprintf(str, "%s%-15s (%s | %d)", (indent) ? "  " : "", p->firstName, (pos) ? pos->name : "", (pos) ? pos->priority : -1);
-      fprintf(out, "%-*s", printWidth, str);
-    }
-    fprintf(out, "\n");
-  }
-  fprintf(out, "\n");
-}
-
 void divideDupPositions(dlist* positions, int* pAmount) {
   int n = 0;
   int indexes[positions->n];

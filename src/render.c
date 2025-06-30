@@ -333,8 +333,8 @@ void append_line(renderer* r, size_t row, const char *fmt, ...) {
   va_end(args);
 }
 
-void make_borders_utf(renderer* r, size_t x, size_t y, size_t w, size_t h) {
-}
+// void make_borders_utf(renderer* r, size_t x, size_t y, size_t w, size_t h) {
+// }
 
 void make_borders_ascii(renderer* r, size_t x, size_t y, size_t w, size_t h) {
   for (size_t i = 0; i < h; i++) {
