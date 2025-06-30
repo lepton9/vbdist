@@ -5,7 +5,7 @@ INCLUDE := ./include
 BUILD := $(BIN)/build
 OBJS := ./objs
 INC := -I$(INCLUDE) -I$(LIB)
-FLAGS := -O3 -Wextra -Wall -Wno-unused-parameter
+FLAGS := -O3 -Wextra -Wall
 LINK := -L$(LIB) -lm
 
 PLATFORM := $(shell uname)
@@ -69,11 +69,13 @@ $(TESTS)/bin/%_test: ../testLibC/utestC.c $(TESTS)/%_test.c $(OBJ)
 	$(CC) $(INC) $^ -g -o $@ $(LINK)
 
 clean:
-	rm -rf $(OBJS)/*.o $(BIN)/*
-	rm -rf $(TESTS)/bin/*
+	rm -rf $(OBJS)/*.o $(BIN)/* $(TESTS)/bin/*
 
-cleanall: clean
-	rm -rf $(BIN) $(OBJS) $(LIB)
+cleanall:
+	rm -rf $(BIN) $(OBJS) $(LIB) $(TESTS)
+
+valgrind:
+	valgrind --leak-check=full $(BIN)/$(MAIN)
 
 run:
 	$(BIN)/$(MAIN)
