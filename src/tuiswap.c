@@ -150,10 +150,10 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
         double avg_old = (i == tui->ind_team_a) ? tui->avg_a : tui->avg_b;
         int color = (rating_new > avg_old) ? GREEN_FG : RED_FG;
         put_text(tui->render, line, col,
-                 "\033[4m%s | %.2f\033[24m -> \033[%dm%.2f\033[0m",
+                 "\033[4m%s |     %-.2f\033[24m-> \033[%dm%.2f\033[0m",
                  tui->teams[i]->name, avg_old, color, rating_new);
       } else {
-        put_text(tui->render, line, col, "\033[4m%s | %.2f\033[24m", tui->teams[i]->name, avgRating(tui->teams[i]));
+        put_text(tui->render, line, col, "\033[4m%s |     %.2f\033[24m", tui->teams[i]->name, avgRating(tui->teams[i]));
       }
       col += TEAM_PRINT_WIDTH;
     }
