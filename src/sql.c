@@ -13,6 +13,7 @@ sqldb* openSqlDB(const char* path) {
     log_sql_error("Failed to open db (%s)", sqlite3_errmsg(db->sqlite));
     db->sqlite = NULL;
   }
+  enableWAL(db);
   enableForeignKey(db);
   makePlayerList(db);
   log_sql("Opened database '%s'", path);
@@ -25,6 +26,44 @@ void closeSqlDB(sqldb* db) {
   log_sql("Closed database '%s'", db->path);
   free(db->path);
   free(db);
+}
+
+int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char **), void* p) {
+  char* err_msg = NULL;
+  int result = sqlite3_exec(db, sql, cb, p, &err_msg);
+  if (err_msg) {
+    log_sql_error("%s", err_msg);
+    sqlite3_free(err_msg);
+  }
+  return result == SQLITE_OK;
+}
+
+int stmtExec(sqlite3* db, sqlite3_stmt* stmt) {
+  int r = (sqlite3_step(stmt) == SQLITE_DONE);
+  if (!r) {
+    log_sql_error("%s", sqlite3_errmsg(db));
+  }
+  sqlite3_finalize(stmt);
+  return r;
+}
+
+int sqlPrepare(sqlite3* db, sqlite3_stmt** stmt, const char* sql) {
+  int result = sqlite3_prepare_v2(db, sql, -1, stmt, NULL);
+  if (result != SQLITE_OK) {
+    log_sql_error("%s", sqlite3_errmsg(db));
+    return 0;
+  }
+  return 1;
+}
+
+int enableForeignKey(sqldb* db) {
+  char* sql = "PRAGMA foreign_keys = ON;";
+  return execQuery(db->sqlite, sql, 0, 0);
+}
+
+int enableWAL(sqldb* db) {
+  char* sql = "PRAGMA journal_mode = WAL;";
+  return execQuery(db->sqlite, sql, 0, 0);
 }
 
 char* findCol(char** columns, char** data, int count, char* colName) {
@@ -143,39 +182,6 @@ int cb_add_id_list(void* list, int count, char **data, char **columns) {
   *id = colInt(columns, data, count, "team_id");
   list_add(list, id);
   return 0;
-}
-
-int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char **), void* p) {
-  char* err_msg = NULL;
-  int result = sqlite3_exec(db, sql, cb, p, &err_msg);
-  if (err_msg) {
-    log_sql_error("%s", err_msg);
-    sqlite3_free(err_msg);
-  }
-  return result == SQLITE_OK;
-}
-
-int stmtExec(sqlite3* db, sqlite3_stmt* stmt) {
-  int r = (sqlite3_step(stmt) == SQLITE_DONE);
-  if (!r) {
-    log_sql_error("%s", sqlite3_errmsg(db));
-  }
-  sqlite3_finalize(stmt);
-  return r;
-}
-
-int sqlPrepare(sqlite3* db, sqlite3_stmt** stmt, const char* sql) {
-  int result = sqlite3_prepare_v2(db, sql, -1, stmt, NULL);
-  if (result != SQLITE_OK) {
-    log_sql_error("%s", sqlite3_errmsg(db));
-    return 0;
-  }
-  return 1;
-}
-
-int enableForeignKey(sqldb* db) {
-  char* sql = "PRAGMA foreign_keys = ON;";
-  return execQuery(db->sqlite, sql, 0, 0);
 }
 
 int makePlayerList(sqldb* db) {

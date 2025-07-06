@@ -26,6 +26,7 @@ int stmtExec(sqlite3* db, sqlite3_stmt* stmt);
 int sqlPrepare(sqlite3* db, sqlite3_stmt** stmt, const char* sql);
 
 int enableForeignKey(sqldb* db);
+int enableWAL(sqldb* db);
 int createDB(sqldb* db);
 
 char* findCol(char** columns, char** data, int count, char* colName);
