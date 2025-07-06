@@ -179,7 +179,7 @@ int cb_not_teammates(void* not_teammates, int count, char **data, char **columns
 int cb_add_id_list(void* list, int count, char **data, char **columns) {
   assert(count == 1);
   int* id = malloc(sizeof(int));
-  *id = colInt(columns, data, count, "team_id");
+  *id = colInt(columns, data, count, columns[0]);
   list_add(list, id);
   return 0;
 }
