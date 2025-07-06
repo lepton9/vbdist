@@ -12,9 +12,11 @@ sqldb* openSqlDB(const char* path) {
   if (r != SQLITE_OK) {
     log_sql_error("Failed to open db (%s)", sqlite3_errmsg(db->sqlite));
     db->sqlite = NULL;
+    return db;
   }
   enableWAL(db);
   enableForeignKey(db);
+  createDB(db);
   makePlayerList(db);
   log_sql("Opened database '%s'", path);
   return db;

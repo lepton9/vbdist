@@ -473,7 +473,6 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
 
 dlist* sourceDatabase(sqldb* db, context* ctx, char* pFileName, char** err_msg) {
   dlist* players = NULL;
-  createDB(db);
   players = (pFileName)
     ? readPlayers(pFileName, ctx->banned_combos, ctx->pref_combos)
     : NULL;
