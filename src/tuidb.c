@@ -22,7 +22,11 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->tab = PLAYERS_TAB;
   tui->active_area = PLAYERS_LIST;
   tui->show_player_info = 0;
-  tui->edit_player = 0;
+
+  tui->p_edit = malloc(sizeof(player_edit));
+  tui->p_edit->active = 0;
+  tui->p_edit->lists_index = 0;
+  tui->p_edit->p = NULL;
 
   tui->term = malloc(sizeof(term_size));
   getTermSize(tui->term);
@@ -68,6 +72,7 @@ void freeTuiDB(tuidb* tui) {
   free_renderer(tui->render);
   free_list_area(tui->allPlayersArea);
   free_list_area(tui->allTeamsArea);
+  free(tui->p_edit);
   free(tui->term);
   free(tui);
 }
@@ -281,17 +286,23 @@ void deleteSelectedListElem(tuidb* tui) {
 }
 
 void toggle_edit_player(tuidb* tui) {
-  if (tui->active_area == PLAYER_EDIT) tui->active_area = PLAYERS_LIST;
-  else if (selectedPlayer(tui)) {
-    tui->edit_player = 1;
+  if (tui->active_area == PLAYER_EDIT) {
+    tui->active_area = PLAYERS_LIST;
+    return;
+  }
+  player* selected = selectedPlayer(tui);
+  if (selected) {
+    tui->p_edit->active = 1;
     tui->show_player_info = 1;
+    tui->p_edit->p = selected;
     tui->active_area = PLAYER_EDIT;
   }
 }
 
 void handle_esc(tuidb* tui) {
   if (tui->active_area == PLAYER_EDIT) {
-    tui->edit_player = 0;
+    tui->p_edit->active = 0;
+    tui->p_edit->p = NULL;
     tui->active_area = PLAYERS_LIST;
   } else {
     tui->show_player_info = 0;
@@ -558,7 +569,7 @@ void renderPlayerInfo(tuidb* tui) {
     }
   }
 
-  if (!tui->edit_player) {
+  if (!tui->p_edit->active) {
     renderPlayerRelations(tui, p, startCol + borderWidth + 2, 1);
   }
 }
