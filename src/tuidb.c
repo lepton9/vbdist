@@ -22,6 +22,7 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->tab = PLAYERS_TAB;
   tui->active_area = PLAYERS_LIST;
   tui->show_player_info = 0;
+  tui->edit_player = 0;
 
   tui->term = malloc(sizeof(term_size));
   getTermSize(tui->term);
@@ -282,6 +283,7 @@ void deleteSelectedListElem(tuidb* tui) {
 void toggle_edit_player(tuidb* tui) {
   if (tui->active_area == PLAYER_EDIT) tui->active_area = PLAYERS_LIST;
   else if (selectedPlayer(tui)) {
+    tui->edit_player = 1;
     tui->show_player_info = 1;
     tui->active_area = PLAYER_EDIT;
   }
@@ -289,6 +291,7 @@ void toggle_edit_player(tuidb* tui) {
 
 void handle_esc(tuidb* tui) {
   if (tui->active_area == PLAYER_EDIT) {
+    tui->edit_player = 0;
     tui->active_area = PLAYERS_LIST;
   } else {
     tui->show_player_info = 0;
@@ -463,50 +466,8 @@ void renderSelectedList(tuidb* tui) {
   }
 }
 
-void renderPlayerInfo(tuidb* tui) {
-  player* p = selectedPlayer(tui);
-  if (!p) return;
-  int startCol = tui->allPlayersArea->area->width + 5;
-  int line = 2;
-  int borderStartLine = 1;
-  int borderHeight = min_int(p->positions->n + p->skills->n + 9, tui->term->rows) -  borderStartLine;
-  int borderWidth = 35;
-
-  make_borders_color(tui->render, startCol - 2, borderStartLine, borderWidth,
-                     borderHeight,
-                     (tui->active_area == PLAYER_EDIT) ? BLUE_FG : DEFAULT_FG);
-
-  put_text(tui->render, line++, startCol, "Name: %s %s",
-           p->firstName ? p->firstName : "", p->surName ? p->surName : "");
-  put_text(tui->render, line++, startCol, "ID: %d", p->id);
-
-  line++;
-  if (p->skills->n == 0) {
-    put_text(tui->render, line++, startCol, "\033[2mNo skills\033[22m");
-  } else {
-    put_text(tui->render, line++, startCol, "\033[2m%-15s %.2f\033[22m", "Skills:", rating(p));
-    for (size_t i = 0; i < p->skills->n; i++) {
-      skill* s = p->skills->items[i];
-      put_text(tui->render, line++, startCol,
-               "%-15s %.2f", s->name, s->value);
-    }
-  }
-
-  line++;
-  if (p->positions->n == 0) {
-    put_text(tui->render, line++, startCol, "\033[2mNo positions\033[22m");
-  } else {
-    put_text(tui->render, line++, startCol, "\033[2mPositions:\033[22m");
-    for (size_t i = 0; i < p->positions->n; i++) {
-      position * pos = p->positions->items[i];
-      put_text(tui->render, line++, startCol,
-               "%d %-15s", pos->priority, pos->name);
-    }
-  }
-
-
-  line = 1;
-  startCol = startCol + borderWidth + 2;
+void renderPlayerRelations(tuidb* tui, player* p, int startCol, int startLine) {
+  int line = startLine;
   put_text(tui->render, line, startCol, "Former teammates:");
   line += 2;
 
@@ -554,6 +515,52 @@ void renderPlayerInfo(tuidb* tui) {
     free(player_ids->items[i]);
   }
   free_list(player_ids);
+}
+
+void renderPlayerInfo(tuidb* tui) {
+  player* p = selectedPlayer(tui);
+  if (!p) return;
+  int startCol = tui->allPlayersArea->area->width + 5;
+  int line = 2;
+  int borderStartLine = 1;
+  int borderHeight = min_int(p->positions->n + p->skills->n + 9, tui->term->rows) -  borderStartLine;
+  int borderWidth = 35;
+
+  make_borders_color(tui->render, startCol - 2, borderStartLine, borderWidth,
+                     borderHeight,
+                     (tui->active_area == PLAYER_EDIT) ? BLUE_FG : DEFAULT_FG);
+
+  put_text(tui->render, line++, startCol, "Name: %s %s",
+           p->firstName ? p->firstName : "", p->surName ? p->surName : "");
+  put_text(tui->render, line++, startCol, "ID: %d", p->id);
+
+  line++;
+  if (p->skills->n == 0) {
+    put_text(tui->render, line++, startCol, "\033[2mNo skills\033[22m");
+  } else {
+    put_text(tui->render, line++, startCol, "\033[2m%-15s %.2f\033[22m", "Skills:", rating(p));
+    for (size_t i = 0; i < p->skills->n; i++) {
+      skill* s = p->skills->items[i];
+      put_text(tui->render, line++, startCol,
+               "%-15s %.2f", s->name, s->value);
+    }
+  }
+
+  line++;
+  if (p->positions->n == 0) {
+    put_text(tui->render, line++, startCol, "\033[2mNo positions\033[22m");
+  } else {
+    put_text(tui->render, line++, startCol, "\033[2mPositions:\033[22m");
+    for (size_t i = 0; i < p->positions->n; i++) {
+      position * pos = p->positions->items[i];
+      put_text(tui->render, line++, startCol,
+               "%d %-15s", pos->priority, pos->name);
+    }
+  }
+
+  if (!tui->edit_player) {
+    renderPlayerRelations(tui, p, startCol + borderWidth + 2, 1);
+  }
 }
 
 void renderAllTeamsList(tuidb* tui) {

@@ -34,6 +34,7 @@ typedef struct {
   TuiTab tab;
   layout_area active_area;
   char show_player_info;
+  char edit_player;
 } tuidb;
 
 
