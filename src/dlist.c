@@ -76,3 +76,12 @@ void shuffle(dlist* list) {
   }
 }
 
+void* get_elem(dlist* list, const size_t index) {
+  if (index >= list->n) return NULL;
+  return list->items[index];
+}
+
+void* get_last(dlist* list) {
+  return get_elem(list, list->n);
+}
+

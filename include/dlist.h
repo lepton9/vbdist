@@ -19,6 +19,9 @@ dlist* list_from(void** items, int item_size, int n);
 char swap_elems(dlist* list, const size_t a, const size_t b);
 void shuffle(dlist* list);
 
+void* get_elem(dlist* list, size_t index);
+void* get_last(dlist* list);
+
 // The caller is responsible for freeing the element
 void* pop_elem(dlist* list, size_t index);
 
