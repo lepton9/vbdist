@@ -186,9 +186,11 @@ void pedit_list_up(tuidb* tui) {
 void pedit_list_down(tuidb* tui) {
   switch (tui->p_edit->selected_element) {
     case SKILLS_LIST:
-      if (tui->p_edit->lists_index >= (int)tui->p_edit->p->skills->n) {
+      if (tui->p_edit->lists_index >= (int)tui->p_edit->p->skills->n - 1) {
         tui->p_edit->lists_index = 0;
         tui->p_edit->selected_element = POSITIONS_LIST;
+      } else {
+        tui->p_edit->lists_index++;
       }
       break;
     case POSITIONS_LIST:
@@ -592,27 +594,43 @@ void renderPlayerInfo(tuidb* tui) {
            p->firstName ? p->firstName : "", p->surName ? p->surName : "");
   put_text(tui->render, line++, startCol, "ID: %d", p->id);
 
+  // Skills list
   line++;
   if (p->skills->n == 0) {
-    put_text(tui->render, line++, startCol, "\033[2mNo skills\033[22m");
+    put_text(tui->render, line++, startCol,
+             tui->p_edit->active && tui->p_edit->selected_element == SKILLS_LIST
+                 ? "\033[7m%s\033[27m"
+                 : "\033[2m%s\033[22m", "No skills");
   } else {
     put_text(tui->render, line++, startCol, "\033[2m%-15s %.2f\033[22m", "Skills:", rating(p));
     for (size_t i = 0; i < p->skills->n; i++) {
       skill* s = p->skills->items[i];
+      int is_selected = tui->p_edit->active &&
+                        tui->p_edit->selected_element == SKILLS_LIST &&
+                        (tui->p_edit->lists_index == (int)i);
       put_text(tui->render, line++, startCol,
-               "%-15s %.2f", s->name, s->value);
+               is_selected ? "\033[7m%-15s %.2f\033[27m" : "%-15s %.2f",
+               s->name, s->value);
     }
   }
 
+  // Positions list
   line++;
   if (p->positions->n == 0) {
-    put_text(tui->render, line++, startCol, "\033[2mNo positions\033[22m");
+    put_text(tui->render, line++, startCol,
+             tui->p_edit->active && tui->p_edit->selected_element == POSITIONS_LIST
+                 ? "\033[7m%s\033[27m"
+                 : "\033[2m%s\033[22m", "No positions");
   } else {
     put_text(tui->render, line++, startCol, "\033[2mPositions:\033[22m");
     for (size_t i = 0; i < p->positions->n; i++) {
-      position * pos = p->positions->items[i];
+      position* pos = p->positions->items[i];
+      int is_selected = tui->p_edit->active &&
+                        tui->p_edit->selected_element == POSITIONS_LIST &&
+                        (tui->p_edit->lists_index == (int)i);
       put_text(tui->render, line++, startCol,
-               "%d %-15s", pos->priority, pos->name);
+               is_selected ? "\033[7m%d %-15s\033[27m" : "%d %-15s",
+               pos->priority, pos->name);
     }
   }
 
