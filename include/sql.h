@@ -22,6 +22,7 @@ void closeSqlDB(sqldb* db);
 
 int execQuery(sqlite3 *db, const char *sql,
               int (*cb)(void *, int, char **, char **), void *p);
+int stmtStepDone(sqlite3* db, sqlite3_stmt* stmt);
 int stmtExec(sqlite3* db, sqlite3_stmt* stmt);
 int sqlPrepare(sqlite3* db, sqlite3_stmt** stmt, const char* sql);
 
@@ -65,6 +66,10 @@ int deleteSkill(sqldb* db, skill* skill);
 int renameSkill(sqldb* db, skill* skill, const char* name);
 int updateSkillWeight(sqldb* db, skill* skill);
 int updateSkillWeights(sqldb* db, dlist* skills);
+
+int updatePlayer(sqldb* db, player* player);
+int updatePlayerSkills(sqldb* db, player* player);
+int updatePlayerPositions(sqldb* db, player* player);
 
 int renamePlayer(sqldb* db, player* player, const char* name);
 int renameTeam(sqldb* db, team* team, const char* name);

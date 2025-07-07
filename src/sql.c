@@ -2,6 +2,7 @@
 #include "../include/log.h"
 #include <assert.h>
 #include <limits.h>
+#include <sqlite3.h>
 #include <string.h>
 
 
@@ -40,11 +41,16 @@ int execQuery(sqlite3* db, const char* sql, int (*cb)(void *, int, char **, char
   return result == SQLITE_OK;
 }
 
-int stmtExec(sqlite3* db, sqlite3_stmt* stmt) {
+int stmtStepDone(sqlite3* db, sqlite3_stmt* stmt) {
   int r = (sqlite3_step(stmt) == SQLITE_DONE);
   if (!r) {
     log_sql_error("%s", sqlite3_errmsg(db));
   }
+  return r;
+}
+
+int stmtExec(sqlite3* db, sqlite3_stmt* stmt) {
+  int r = stmtStepDone(db, stmt);
   sqlite3_finalize(stmt);
   return r;
 }
@@ -524,6 +530,35 @@ dlist* fetchPlayersInTeam(sqldb* db, team* team) {
   dlist* players = init_list();
   execQuery(db->sqlite, sql, cb_add_id_list, players);
   return players;
+}
+
+int updatePlayer(sqldb* db, player* player) {
+  return 1;
+}
+
+int updatePlayerSkills(sqldb* db, player* player) {
+  const char *sql =
+      "UPDATE PlayerSkill SET value = ? WHERE player_id = ? AND skill_id = ?;";
+  sqlite3_stmt* stmt;
+  int r = 1;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  for (size_t i = 0; i < player->skills->n; i++) {
+    skill* s = player->skills->items[i];
+    sqlite3_bind_double(stmt, 1, s->value);
+    sqlite3_bind_int(stmt, 2, player->id);
+    sqlite3_bind_int(stmt, 3, s->id);
+    r = r && stmtStepDone(db->sqlite, stmt);
+    sqlite3_reset(stmt);
+  }
+  sqlite3_finalize(stmt);
+  if (r) {
+    log_sql("Updated Skill values for Player (%d)", player->id);
+  }
+  return r;
+}
+
+int updatePlayerPositions(sqldb* db, player* player) {
+  return 1;
 }
 
 int renamePlayer(sqldb* db, player* player, const char* name) {
