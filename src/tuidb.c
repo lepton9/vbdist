@@ -363,6 +363,13 @@ skill* pedit_selected_skill(tuidb* tui) {
   return tui->p_edit->p->skills->items[tui->p_edit->lists_index];
 }
 
+position* pedit_selected_position(tuidb* tui) {
+  player* p = tui->p_edit->p;
+  if (!p || p->positions->n == 0 || tui->p_edit->lists_index > (int)p->positions->n - 1)
+    return NULL;
+  return tui->p_edit->p->positions->items[tui->p_edit->lists_index];
+}
+
 void pedit_handle_inc(tuidb* tui) {
   if (!tui->p_edit->active || !tui->p_edit->p) return;
   switch (tui->p_edit->selected_element) {
@@ -374,8 +381,17 @@ void pedit_handle_inc(tuidb* tui) {
       }
       break;
     }
-    case POSITIONS_LIST:
+    case POSITIONS_LIST: {
+      player* p = tui->p_edit->p;
+      int pos_ind_sel = tui->p_edit->lists_index;
+      int pos_ind_above = tui->p_edit->lists_index - 1;
+      if (pos_ind_above >= 0 && pos_ind_sel < (int)p->positions->n) {
+        swapPositions(p, pos_ind_sel, pos_ind_above);
+        tui->p_edit->modified = 1;
+        tui->p_edit->lists_index = pos_ind_above;
+      }
       break;
+    }
     default:
       break;
   }
@@ -392,8 +408,17 @@ void pedit_handle_dec(tuidb* tui) {
       }
       break;
     }
-    case POSITIONS_LIST:
+    case POSITIONS_LIST: {
+      player* p = tui->p_edit->p;
+      int pos_ind_sel = tui->p_edit->lists_index;
+      int pos_ind_below = tui->p_edit->lists_index + 1;
+      if (pos_ind_sel >= 0 && pos_ind_below < (int)p->positions->n) {
+        swapPositions(p, pos_ind_sel, pos_ind_below);
+        tui->p_edit->modified = 1;
+        tui->p_edit->lists_index = pos_ind_below;
+      }
       break;
+    }
     default:
       break;
   }

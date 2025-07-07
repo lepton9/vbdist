@@ -34,6 +34,7 @@ int cmpPlayers(const void* a, const void* b);
 int cmpPlayerPos(const void* a, const void* b);
 int cmpPlayerName(const void* a, const void* b);
 void swapPlayers(player* a, player* b);
+void swapPositions(player* p, size_t a, size_t b);
 
 double rating(player* p);
 double rating_filter(player* p, dlist* skills);

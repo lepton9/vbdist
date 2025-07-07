@@ -82,6 +82,7 @@ void exit_edit_player(tuidb* tui);
 void pedit_list_up(tuidb* tui);
 void pedit_list_down(tuidb* tui);
 skill* pedit_selected_skill(tuidb* tui);
+position* pedit_selected_position(tuidb* tui);
 
 void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);

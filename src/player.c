@@ -149,6 +149,16 @@ void swapPlayers(player* a, player* b) {
   *b = tmp;
 }
 
+void swapPositions(player* p, size_t a, size_t b) {
+  char swapped = swap_elems(p->positions, a, b);
+  if (!swapped) return;
+  position* pos_a = p->positions->items[a];
+  position* pos_b = p->positions->items[b];
+  int prio_a = pos_a->priority;
+  setPriority(pos_a, pos_b->priority);
+  setPriority(pos_b, prio_a);
+}
+
 void markPlayer(player* p, color_fg color) {
   p->marker.active = 1;
   p->marker.color = color;
