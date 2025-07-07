@@ -20,8 +20,15 @@ typedef enum {
   PLAYER_EDIT
 } layout_area;
 
+typedef enum {
+  SKILLS_LIST,
+  POSITIONS_LIST,
+  NO_ELEMENT
+} p_edit_element;
+
 typedef struct {
   char active;
+  p_edit_element selected_element;
   int lists_index;
   player* p;
 } player_edit;
@@ -68,6 +75,9 @@ void deleteSelectedListElem(tuidb* tui);
 
 void tuidb_list_up(tuidb* tui);
 void tuidb_list_down(tuidb* tui);
+
+void pedit_list_up(tuidb* tui);
+void pedit_list_down(tuidb* tui);
 
 void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);

@@ -25,6 +25,7 @@ tuidb* initTuiDB(int teams, int team_size) {
 
   tui->p_edit = malloc(sizeof(player_edit));
   tui->p_edit->active = 0;
+  tui->p_edit->selected_element = SKILLS_LIST;
   tui->p_edit->lists_index = 0;
   tui->p_edit->p = NULL;
 
@@ -134,6 +135,9 @@ void tuidb_list_up(tuidb* tui) {
   switch (tui->tab) {
     case PLAYERS_TAB: {
       if (tui->active_area == PLAYERS_LIST) list_up(tui->allPlayersArea);
+      else if (tui->active_area == PLAYER_EDIT && tui->p_edit->active) {
+        pedit_list_up(tui);
+      }
       break;
     }
     case TEAMS_TAB: {
@@ -147,12 +151,53 @@ void tuidb_list_down(tuidb* tui) {
   switch (tui->tab) {
     case PLAYERS_TAB: {
       if (tui->active_area == PLAYERS_LIST) list_down(tui->allPlayersArea);
+      else if (tui->active_area == PLAYER_EDIT && tui->p_edit->active) {
+        pedit_list_down(tui);
+      }
       break;
     }
     case TEAMS_TAB: {
       list_down(tui->allTeamsArea);
       break;
     }
+  }
+}
+
+void pedit_list_up(tuidb* tui) {
+  switch (tui->p_edit->selected_element) {
+    case SKILLS_LIST:
+      if (tui->p_edit->lists_index > 0) {
+        tui->p_edit->lists_index--;
+      }
+      break;
+    case POSITIONS_LIST:
+      if (tui->p_edit->lists_index <= 0) {
+        tui->p_edit->lists_index = max_int(tui->p_edit->p->skills->n - 1, 0);
+        tui->p_edit->selected_element = SKILLS_LIST;
+      } else {
+        tui->p_edit->lists_index--;
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+void pedit_list_down(tuidb* tui) {
+  switch (tui->p_edit->selected_element) {
+    case SKILLS_LIST:
+      if (tui->p_edit->lists_index >= (int)tui->p_edit->p->skills->n) {
+        tui->p_edit->lists_index = 0;
+        tui->p_edit->selected_element = POSITIONS_LIST;
+      }
+      break;
+    case POSITIONS_LIST:
+      if (tui->p_edit->lists_index < (int)tui->p_edit->p->positions->n - 1) {
+        tui->p_edit->lists_index++;
+      }
+      break;
+    default:
+      break;
   }
 }
 
@@ -293,6 +338,8 @@ void toggle_edit_player(tuidb* tui) {
   player* selected = selectedPlayer(tui);
   if (selected) {
     tui->p_edit->active = 1;
+    tui->p_edit->selected_element = SKILLS_LIST;
+    tui->p_edit->lists_index = 0;
     tui->show_player_info = 1;
     tui->p_edit->p = selected;
     tui->active_area = PLAYER_EDIT;
