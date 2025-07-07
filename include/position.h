@@ -16,7 +16,7 @@ void setPriority(position* p, int priority);
 int findPositionFrom(dlist* positions, position* pos, const size_t ind);
 int findPosition(dlist* positions, position* pos);
 
-position* copy_position(position* p);
+position* copy_position(const position* p);
 dlist* copyPositions(dlist* positions);
 void freePositions(dlist* positions);
 

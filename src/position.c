@@ -32,7 +32,7 @@ int findPosition(dlist* positions, position* pos) {
   return findPositionFrom(positions, pos, 0);
 }
 
-position* copy_position(position* p) {
+position* copy_position(const position* p) {
   position* copy = initPosition(p->id, p->name);
   return copy;
 }

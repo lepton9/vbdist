@@ -606,6 +606,7 @@ int main(int argc, char** argv) {
     tui->db = db;
     setAllPlayers(tui, fetchPlayers(db));
     setAllTeams(tui, fetchTeams(db));
+    setAllPositions(tui, positions_all);
     tui->players = players;
   }
 

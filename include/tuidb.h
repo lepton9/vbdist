@@ -17,7 +17,8 @@ typedef enum {
 
 typedef enum {
   PLAYERS_LIST,
-  PLAYER_EDIT
+  PLAYER_EDIT,
+  POSITIONS_LIST_EDIT
 } layout_area;
 
 typedef enum {
@@ -32,6 +33,8 @@ typedef struct {
   p_edit_element selected_element;
   int lists_index;
   player* p;
+  dlist* positions;
+  list_area* positionsArea;
 } player_edit;
 
 typedef struct {
@@ -39,6 +42,7 @@ typedef struct {
   dlist* players;
   dlist* allPlayers;
   dlist* allTeams;
+  dlist* allPositions;
   list_area* allPlayersArea;
   list_area* allTeamsArea;
   term_size* term;
@@ -55,6 +59,9 @@ typedef struct {
 tuidb* initTuiDB(int teams, int team_size);
 void freeTuiDB(tuidb* tui);
 
+player_edit* initPlayerEdit();
+void freePlayerEdit(player_edit* edit);
+
 void updateAllTeams(tuidb* tui);
 void updateTeamSize(tuidb* tui, int team_n, int team_size);
 
@@ -67,9 +74,11 @@ void unselect_all(tuidb* tui);
 
 void setAllPlayers(tuidb* tui, dlist* players);
 void setAllTeams(tuidb* tui, dlist* teams);
+void setAllPositions(tuidb* tui, dlist* positions);
 
 player* selectedPlayer(tuidb* tui);
 team* selectedTeam(tuidb* tui);
+position* selectedPosition(tuidb *tui);
 
 void renameSelectedListElem(tuidb* tui);
 void deleteSelectedListElem(tuidb* tui);
@@ -83,6 +92,9 @@ void pedit_list_up(tuidb* tui);
 void pedit_list_down(tuidb* tui);
 skill* pedit_selected_skill(tuidb* tui);
 position* pedit_selected_position(tuidb* tui);
+void pedit_reset_positions(tuidb* tui);
+void pedit_filtered_positions(tuidb* tui);
+void pedit_add(tuidb* tui);
 
 void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);
@@ -92,6 +104,8 @@ void renderPlayerInfo(tuidb* tui);
 void renderAllTeamsList(tuidb* tui);
 void renderSelectedTeam(tuidb* tui);
 
+void handle_esc(tuidb* tui);
+void handleAdd(tuidb* tui);
 void handleKeyPress(tuidb* tui, int c);
 
 #endif

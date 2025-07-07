@@ -11,6 +11,7 @@ tuidb* initTuiDB(int teams, int team_size) {
 
   tui->allPlayers = NULL;
   tui->allTeams = NULL;
+  tui->allPositions = NULL;
 
   tui->allPlayersArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
   tui->allTeamsArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
@@ -19,16 +20,11 @@ tuidb* initTuiDB(int teams, int team_size) {
   set_area_pos(tui->allTeamsArea->area, 1, 0);
   set_padding(tui->allTeamsArea->area, 3, 1, 2, 0);
 
+  tui->p_edit = initPlayerEdit();
+
   tui->tab = PLAYERS_TAB;
   tui->active_area = PLAYERS_LIST;
   tui->show_player_info = 0;
-
-  tui->p_edit = malloc(sizeof(player_edit));
-  tui->p_edit->active = 0;
-  tui->p_edit->modified = 0;
-  tui->p_edit->selected_element = SKILLS_LIST;
-  tui->p_edit->lists_index = 0;
-  tui->p_edit->p = NULL;
 
   tui->term = malloc(sizeof(term_size));
   getTermSize(tui->term);
@@ -37,10 +33,29 @@ tuidb* initTuiDB(int teams, int team_size) {
   return tui;
 }
 
+player_edit* initPlayerEdit() {
+  player_edit* edit = malloc(sizeof(player_edit));
+  edit->active = 0;
+  edit->modified = 0;
+  edit->selected_element = SKILLS_LIST;
+  edit->lists_index = 0;
+  edit->p = NULL;
+  edit->positions = init_list();
+  edit->positionsArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
+  return edit;
+}
+
+void freePlayerEdit(player_edit* edit) {
+  if (!edit) return;
+  free_list_area(edit->positionsArea);
+  freePositions(edit->positions);
+  free(edit);
+}
+
 void freeAllPlayers(dlist* allPlayers) {
   if (allPlayers) {
-    for (int i = 0; i < (int)allPlayers->n; i++) {
-      freePlayer(allPlayers->items[i]);
+    for (size_t i = 0; i < allPlayers->n; i++) {
+      freePlayer(get_elem(allPlayers, i));
     }
     free_list(allPlayers);
   }
@@ -48,8 +63,8 @@ void freeAllPlayers(dlist* allPlayers) {
 
 void freeAllTeams(dlist* allTeams) {
   if (allTeams) {
-    for (int i = 0; i < (int)allTeams->n; i++) {
-      freeTeam(allTeams->items[i]);
+    for (size_t i = 0; i < allTeams->n; i++) {
+      freeTeam(get_elem(allTeams, i));
     }
     free_list(allTeams);
   }
@@ -67,6 +82,10 @@ void setAllTeams(tuidb* tui, dlist* teams) {
   update_list_len(tui->allTeamsArea, tui->allTeams->n);
 }
 
+void setAllPositions(tuidb* tui, dlist* positions) {
+  tui->allPositions = positions;
+}
+
 void freeTuiDB(tuidb* tui) {
   if (!tui) return;
   freeAllPlayers(tui->allPlayers);
@@ -74,7 +93,8 @@ void freeTuiDB(tuidb* tui) {
   free_renderer(tui->render);
   free_list_area(tui->allPlayersArea);
   free_list_area(tui->allTeamsArea);
-  free(tui->p_edit);
+  freePlayerEdit(tui->p_edit);
+  tui->allPositions = NULL;
   free(tui->term);
   free(tui);
 }
@@ -93,15 +113,38 @@ void updateTeamSize(tuidb* tui, int team_n, int team_size) {
 }
 
 player* selectedPlayer(tuidb *tui) {
-  if (tui->allPlayers->n == 0 || tui->allPlayersArea->selected < 0)
-    return NULL;
-  return tui->allPlayers->items[tui->allPlayersArea->selected];
+  if (tui->allPlayersArea->selected < 0) return NULL;
+  return get_elem(tui->allPlayers, tui->allPlayersArea->selected);
 }
 
 team* selectedTeam(tuidb *tui) {
-  if (tui->allTeams->n == 0 || tui->allTeamsArea->selected < 0)
-    return NULL;
-  return tui->allTeams->items[tui->allTeamsArea->selected];
+  if (tui->allTeamsArea->selected < 0) return NULL;
+  return get_elem(tui->allTeams, tui->allTeamsArea->selected);
+}
+
+position* selectedPosition(tuidb *tui) {
+  if (tui->p_edit->positionsArea->selected < 0) return NULL;
+  return get_elem(tui->p_edit->positions, tui->p_edit->positionsArea->selected);
+}
+
+void pedit_reset_positions(tuidb* tui) {
+  for (int i = tui->p_edit->positions->n - 1; i >= 0; i--) {
+    freePosition(pop_elem(tui->p_edit->positions, i));
+  }
+}
+
+void pedit_filtered_positions(tuidb* tui) {
+  if (!tui->p_edit->active || !tui->p_edit->p) return;
+  pedit_reset_positions(tui);
+  player* p = tui->p_edit->p;
+  for (size_t i = 0; i < tui->allPositions->n; i++) {
+    position* pos = get_elem(tui->allPositions, i);
+    int ind = findPosition(p->positions, pos);
+    if (ind < 0) {
+      list_add(tui->p_edit->positions, copy_position(pos));
+    }
+  }
+  update_list_len(tui->p_edit->positionsArea, tui->p_edit->positions->n);
 }
 
 void unselectPlayer(tuidb* tui, int index) {
@@ -360,14 +403,14 @@ skill* pedit_selected_skill(tuidb* tui) {
   player* p = tui->p_edit->p;
   if (!p || p->skills->n == 0 || tui->p_edit->lists_index > (int)p->skills->n - 1)
     return NULL;
-  return tui->p_edit->p->skills->items[tui->p_edit->lists_index];
+  return get_elem(tui->p_edit->p->skills, tui->p_edit->lists_index);
 }
 
 position* pedit_selected_position(tuidb* tui) {
   player* p = tui->p_edit->p;
   if (!p || p->positions->n == 0 || tui->p_edit->lists_index > (int)p->positions->n - 1)
     return NULL;
-  return tui->p_edit->p->positions->items[tui->p_edit->lists_index];
+  return get_elem(tui->p_edit->p->positions, tui->p_edit->lists_index);
 }
 
 void pedit_handle_inc(tuidb* tui) {
@@ -424,11 +467,40 @@ void pedit_handle_dec(tuidb* tui) {
   }
 }
 
+void pedit_add(tuidb* tui) {
+  switch (tui->p_edit->selected_element) {
+    case SKILLS_LIST:
+      break;
+    case POSITIONS_LIST: {
+      pedit_filtered_positions(tui);
+      tui->active_area = POSITIONS_LIST_EDIT;
+      break;
+    }
+    default:
+      break;
+  }
+}
+
 void handle_esc(tuidb* tui) {
   if (tui->active_area == PLAYER_EDIT) {
     exit_edit_player(tui);
+  } else if (tui->active_area == POSITIONS_LIST_EDIT) {
+    pedit_reset_positions(tui);
+    tui->active_area = PLAYER_EDIT;
   } else {
     tui->show_player_info = 0;
+  }
+}
+
+void handleAdd(tuidb* tui) {
+  switch (tui->tab) {
+    case PLAYERS_TAB:
+      if (tui->active_area == PLAYER_EDIT) {
+        pedit_add(tui);
+      }
+      break;
+    case TEAMS_TAB:
+      break;
   }
 }
 
@@ -468,11 +540,16 @@ void handleKeyPress(tuidb* tui, int c) {
 #endif
       tuidb_list_down(tui);
       break;
-    case 'h': case 'a': case '-': case 4: // Ctrl + D
+    case 'h': case '-': case 4: // Ctrl + D
       pedit_handle_dec(tui);
       break;
-    case 'l': case 'd': case '+': case 21: // Ctrl + U
+    case 'l': case '+': case 21: // Ctrl + U
       pedit_handle_inc(tui);
+      break;
+    case 'a':
+      handleAdd(tui);
+      break;
+    case 'd':
       break;
     case 'I': case 'i': // Player info
       if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST)
