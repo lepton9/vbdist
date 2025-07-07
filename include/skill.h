@@ -19,6 +19,8 @@ float skillValue(skill* skill);
 void setWeight(skill* skill, float value);
 void incWeight(skill* skill);
 void decWeight(skill* skill);
+void incValue(skill* skill);
+void decValue(skill* skill);
 
 skill* copySkillVal(skill* s, float value);
 skill* copySkill(skill* s);

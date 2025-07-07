@@ -33,6 +33,20 @@ void incWeight(skill* skill) {
 void decWeight(skill* skill) {
   if (skill->weight > WEIGHT_INCREMENT) {
     skill->weight -= WEIGHT_INCREMENT;
+  } else {
+    skill->weight = 0;
+  }
+}
+
+void incValue(skill* skill) {
+  skill->value += WEIGHT_INCREMENT;
+}
+
+void decValue(skill* skill) {
+  if (skill->value > WEIGHT_INCREMENT) {
+    skill->value -= WEIGHT_INCREMENT;
+  } else {
+    skill->value = 0;
   }
 }
 
