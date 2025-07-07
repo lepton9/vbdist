@@ -25,6 +25,7 @@ tuidb* initTuiDB(int teams, int team_size) {
 
   tui->p_edit = malloc(sizeof(player_edit));
   tui->p_edit->active = 0;
+  tui->p_edit->modified = 0;
   tui->p_edit->selected_element = SKILLS_LIST;
   tui->p_edit->lists_index = 0;
   tui->p_edit->p = NULL;
@@ -333,10 +334,6 @@ void deleteSelectedListElem(tuidb* tui) {
 }
 
 void toggle_edit_player(tuidb* tui) {
-  if (tui->active_area == PLAYER_EDIT) {
-    tui->active_area = PLAYERS_LIST;
-    return;
-  }
   player* selected = selectedPlayer(tui);
   if (selected) {
     tui->p_edit->active = 1;
@@ -348,11 +345,20 @@ void toggle_edit_player(tuidb* tui) {
   }
 }
 
+void exit_edit_player(tuidb* tui) {
+  if (!tui->p_edit->active || !tui->p_edit->p) return;
+  if (tui->p_edit->modified) {
+    updatePlayer(tui->db, tui->p_edit->p);
+    tui->p_edit->modified = 0;
+  }
+  tui->p_edit->active = 0;
+  tui->p_edit->p = NULL;
+  tui->active_area = PLAYERS_LIST;
+}
+
 void handle_esc(tuidb* tui) {
   if (tui->active_area == PLAYER_EDIT) {
-    tui->p_edit->active = 0;
-    tui->p_edit->p = NULL;
-    tui->active_area = PLAYERS_LIST;
+    exit_edit_player(tui);
   } else {
     tui->show_player_info = 0;
   }

@@ -533,6 +533,8 @@ dlist* fetchPlayersInTeam(sqldb* db, team* team) {
 }
 
 int updatePlayer(sqldb* db, player* player) {
+  updatePlayerSkills(db, player);
+  updatePlayerPositions(db, player);
   return 1;
 }
 
@@ -558,7 +560,24 @@ int updatePlayerSkills(sqldb* db, player* player) {
 }
 
 int updatePlayerPositions(sqldb* db, player* player) {
-  return 1;
+  const char *sql =
+      "UPDATE PlayerPosition SET priority_value = ? WHERE player_id = ? AND position_id = ?;";
+  sqlite3_stmt* stmt;
+  int r = 1;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  for (size_t i = 0; i < player->positions->n; i++) {
+    position* pos = player->positions->items[i];
+    sqlite3_bind_double(stmt, 1, pos->priority);
+    sqlite3_bind_int(stmt, 2, player->id);
+    sqlite3_bind_int(stmt, 3, pos->id);
+    r = r && stmtStepDone(db->sqlite, stmt);
+    sqlite3_reset(stmt);
+  }
+  sqlite3_finalize(stmt);
+  if (r) {
+    log_sql("Updated Positions for Player (%d)", player->id);
+  }
+  return r;
 }
 
 int renamePlayer(sqldb* db, player* player, const char* name) {

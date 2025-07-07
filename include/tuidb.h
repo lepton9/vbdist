@@ -28,6 +28,7 @@ typedef enum {
 
 typedef struct {
   char active;
+  char modified;
   p_edit_element selected_element;
   int lists_index;
   player* p;
@@ -76,6 +77,8 @@ void deleteSelectedListElem(tuidb* tui);
 void tuidb_list_up(tuidb* tui);
 void tuidb_list_down(tuidb* tui);
 
+void toggle_edit_player(tuidb* tui);
+void exit_edit_player(tuidb* tui);
 void pedit_list_up(tuidb* tui);
 void pedit_list_down(tuidb* tui);
 
