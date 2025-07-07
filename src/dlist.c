@@ -52,11 +52,12 @@ void* pop_elem(dlist* list, size_t index) {
   return e;
 }
 
-void swap_elems(dlist* list, const int a, const int b) {
-  if (a >= (int)list->n || b >= (int)list->n) return;
+char swap_elems(dlist* list, const size_t a, const size_t b) {
+  if (a >= list->n || b >= list->n || a == b) return 0;
   void* t = list->items[a];
   list->items[a] = list->items[b];
   list->items[b] = t;
+  return 1;
 }
 
 dlist *list_from(void **items, int item_size, int n) {
