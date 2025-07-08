@@ -82,6 +82,6 @@ void* get_elem(dlist* list, const size_t index) {
 }
 
 void* get_last(dlist* list) {
-  return get_elem(list, list->n);
+  return get_elem(list, list->n - 1);
 }
 

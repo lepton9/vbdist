@@ -16,11 +16,14 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->allPlayersArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
   tui->allTeamsArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
   set_area_pos(tui->allPlayersArea->area, 1, 0);
-  set_padding(tui->allPlayersArea->area, 3, 1, 2, 0);
+  set_padding(tui->allPlayersArea->area, 2, 1, 2, 0);
   set_area_pos(tui->allTeamsArea->area, 1, 0);
-  set_padding(tui->allTeamsArea->area, 3, 1, 2, 0);
+  set_padding(tui->allTeamsArea->area, 2, 1, 2, 0);
 
   tui->p_edit = initPlayerEdit();
+  set_area_pos(tui->p_edit->positionsArea->area, 1,
+               tui->allPlayersArea->area->width * 2);
+  set_padding(tui->p_edit->positionsArea->area, 1, 1, 2, 0);
 
   tui->tab = PLAYERS_TAB;
   tui->active_area = PLAYERS_LIST;
@@ -573,8 +576,6 @@ void runTuiDB(tuidb* tui) {
   refresh_screen(tui->render);
   int c = 0;
   while (c != 'q') {
-    check_selected(tui->allPlayersArea);
-    check_selected(tui->allTeamsArea);
     updateArea(tui);
     renderTuidb(tui);
     c = keyPress();
@@ -589,6 +590,9 @@ void updateArea(tuidb* tui) {
 
   update_list_area(tui->allPlayersArea, width, height);
   update_list_area(tui->allTeamsArea, width, height);
+  update_list_area_fit(tui->p_edit->positionsArea, width, height);
+  set_area_pos(tui->p_edit->positionsArea->area, 1,
+               tui->allPlayersArea->area->width * 2 + 1);
 }
 
 void renderTab(tuidb* tui) {
@@ -730,6 +734,26 @@ void renderPlayerRelations(tuidb* tui, player* p, int startCol, int startLine) {
   free_list(player_ids);
 }
 
+void renderPlayerEditPos(tuidb *tui) {
+  int col = start_print_col(tui->p_edit->positionsArea->area);
+  int line = start_print_line(tui->p_edit->positionsArea->area);
+  int len = getListAreaLen(tui->p_edit->positionsArea, tui->term->rows);
+  list_area* area = tui->p_edit->positionsArea;
+
+  draw_area_borders(tui->render, area->area, BLUE_FG);
+  put_text(tui->render, area->area->start_row, col, "Add positions");
+
+  for (int i = area->first_ind; i < area->first_ind + len; i++) {
+    position* pos = get_elem(tui->p_edit->positions, i);
+    if (area->selected == i) {
+      area->selected_term_row = line + 1;
+      put_text(tui->render, line++, col, "\033[7m%-20s\033[27m", pos->name);
+    } else {
+      put_text(tui->render, line++, col, "%-20s", pos->name);
+    }
+  }
+}
+
 void renderPlayerInfo(tuidb* tui) {
   player* p = selectedPlayer(tui);
   if (!p) return;
@@ -789,6 +813,8 @@ void renderPlayerInfo(tuidb* tui) {
 
   if (!tui->p_edit->active) {
     renderPlayerRelations(tui, p, startCol + borderWidth + 2, 1);
+  } else if (tui->active_area == POSITIONS_LIST_EDIT) {
+    renderPlayerEditPos(tui);
   }
 }
 

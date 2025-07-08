@@ -110,8 +110,12 @@ void update_list_area(list_area* la, size_t w, size_t h) {
 }
 
 void update_list_area_fit(list_area* la, size_t w, size_t h) {
-  int height = min_int(h, la->len + la->area->pad->top + la->area->pad->bottom + 1);
+  int height = min_int(h, area_height_fit(la));
   update_list_area(la, w, height);
+}
+
+int area_height_fit(list_area* la) {
+  return la->len + la->area->pad->top + la->area->pad->bottom + 2;
 }
 
 void update_list_len(list_area* la, size_t n) {

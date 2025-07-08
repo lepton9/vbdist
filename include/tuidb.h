@@ -101,6 +101,8 @@ void renderTuidb(tuidb* tui);
 void renderAllPlayersList(tuidb* tui);
 void renderSelectedList(tuidb* tui);
 void renderPlayerInfo(tuidb* tui);
+void renderPlayerEditPos(tuidb* tui);
+void renderPlayerRelations(tuidb* tui, player* p, int startCol, int startLine);
 void renderAllTeamsList(tuidb* tui);
 void renderSelectedTeam(tuidb* tui);
 
