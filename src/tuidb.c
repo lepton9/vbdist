@@ -32,6 +32,7 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->term = malloc(sizeof(term_size));
   getTermSize(tui->term);
   tui->render = init_renderer(stdout);
+  tui->exit = 0;
 
   return tui;
 }
@@ -559,8 +560,16 @@ void handleRemove(tuidb* tui) {
   }
 }
 
+void handleExit(tuidb* tui) {
+  exit_edit_player(tui);
+  tui->exit = 1;
+}
+
 void handleKeyPress(tuidb* tui, int c) {
   switch (c) {
+    case 'q': case 'Q':
+      handleExit(tui);
+      break;
     case 13: case '\n': case ' ':
 #ifdef __linux__
     case KEY_ENTER:
@@ -630,12 +639,13 @@ void runTuiDB(tuidb* tui) {
   curHide();
   refresh_screen(tui->render);
   int c = 0;
-  while (c != 'q') {
+  while (!tui->exit) {
     updateArea(tui);
     renderTuidb(tui);
     c = keyPress();
     handleKeyPress(tui, c);
   }
+  tui->exit = 0;
 }
 
 void updateArea(tuidb* tui) {

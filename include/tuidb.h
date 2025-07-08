@@ -53,6 +53,7 @@ typedef struct {
   layout_area active_area;
   char show_player_info;
   player_edit* p_edit;
+  char exit;
 } tuidb;
 
 
@@ -110,6 +111,8 @@ void renderSelectedTeam(tuidb* tui);
 
 void handle_esc(tuidb* tui);
 void handleAdd(tuidb* tui);
+void handleRemove(tuidb* tui);
+void handleExit(tuidb* tui);
 void handleKeyPress(tuidb* tui, int c);
 
 #endif
