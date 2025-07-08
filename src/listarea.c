@@ -64,6 +64,8 @@ list_area* init_list_area(size_t w, size_t h) {
   area->first_ind = 0;
   area->selected = -1;
   area->max_shown = h;
+  area->len = 0;
+  area->selected_term_row = 0;
   return area;
 }
 
