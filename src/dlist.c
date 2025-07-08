@@ -42,10 +42,11 @@ int shrink_list(dlist* list) {
 }
 
 void* pop_elem(dlist* list, size_t index) {
-  if (!list || list->n == 0 || index >= list->n) return NULL;
+  if (!list || index >= list->n) return NULL;
   void* e = list->items[index];
-  for (size_t i = index; i < list->n - 1; i++) {
-    list->items[i] = list->items[i + 1];
+  if (index < list->n - 1) {
+    memmove(&list->items[index], &list->items[index + 1],
+            (list->n - index - 1) * list->item_size);
   }
   list->n--;
   shrink_list(list);
