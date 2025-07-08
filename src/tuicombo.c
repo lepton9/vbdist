@@ -129,7 +129,7 @@ void deleteCurCombo(tui_combos* tui) {
   combo* combo = tui->combos->items[ind];
   int res = deleteCombo(tui->db, combo);
   if (res) {
-    free(pop_elem(tui->combos, ind));
+    freeCombo(pop_elem(tui->combos, ind));
     update_list_len(tui->combos_area, tui->combos->n);
   }
 }
@@ -141,8 +141,6 @@ void runTuiCombo(sqldb* db, dlist* players) {
   refresh_screen(tui->render);
   int c = 0;
   while (!tui->exit) {
-    check_selected(tui->combos_area);
-    check_selected(tui->players_area);
     updateTuiComboAreas(tui);
     renderComboTui(tui);
     c = keyPress();
