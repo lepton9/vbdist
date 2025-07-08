@@ -48,6 +48,7 @@ int list_down(list_area* tui);
 
 void check_selected(list_area* la);
 void update_list_area(list_area* la, size_t w, size_t h);
+void update_list_area_fit(list_area* la, size_t w, size_t h);
 void update_list_len(list_area* la, size_t n);
 
 void fit_screen(list_area* la);

@@ -47,7 +47,7 @@ void update_area(tui_area* area, size_t w, size_t h) {
 }
 
 int start_print_line(tui_area* area) {
-  return area->start_row + area->pad->top;
+  return area->start_row + area->pad->top + 1;
 }
 
 int start_print_col(tui_area* area) {
@@ -107,6 +107,11 @@ void update_list_area(list_area* la, size_t w, size_t h) {
   la->max_shown = max_int(0, h - start_print_line(la->area) - la->area->pad->bottom);
   check_selected(la);
   fit_screen(la);
+}
+
+void update_list_area_fit(list_area* la, size_t w, size_t h) {
+  int height = min_int(h, la->len + la->area->pad->top + la->area->pad->bottom + 1);
+  update_list_area(la, w, height);
 }
 
 void update_list_len(list_area* la, size_t n) {
