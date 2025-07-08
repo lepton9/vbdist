@@ -125,11 +125,6 @@ team* selectedTeam(tuidb *tui) {
   return get_elem(tui->allTeams, tui->allTeamsArea->selected);
 }
 
-position* selectedPosition(tuidb *tui) {
-  if (tui->p_edit->positionsArea->selected < 0) return NULL;
-  return get_elem(tui->p_edit->positions, tui->p_edit->positionsArea->selected);
-}
-
 void pedit_reset_positions(tuidb* tui) {
   for (int i = tui->p_edit->positions->n - 1; i >= 0; i--) {
     freePosition(pop_elem(tui->p_edit->positions, i));
@@ -148,6 +143,34 @@ void pedit_filtered_positions(tuidb* tui) {
     }
   }
   update_list_len(tui->p_edit->positionsArea, tui->p_edit->positions->n);
+}
+
+void pedit_add_position(tuidb* tui) {
+  if (!tui->p_edit->active || !tui->p_edit->p) return;
+  int ind = tui->p_edit->positionsArea->selected;
+  if (ind < 0 || ind >= (int)tui->p_edit->positions->n) return;
+  position* pos = pop_elem(tui->p_edit->positions, ind);
+  addPositionLast(tui->p_edit->p, pos);
+  update_list_len(tui->p_edit->positionsArea, tui->p_edit->positions->n);
+  tui->p_edit->modified = 1;
+}
+
+void pedit_remove_position(tuidb* tui) {
+  if (!tui->p_edit->active || !tui->p_edit->p ||
+      tui->p_edit->selected_element != POSITIONS_LIST)
+    return;
+  int ind = tui->p_edit->lists_index;
+  player* p = tui->p_edit->p;
+  if (ind < 0 || ind >= (int)p->positions->n) return;
+  position* pos = popPosition(tui->p_edit->p, ind);
+  if (pos) {
+    list_add(tui->p_edit->positions, pos);
+    update_list_len(tui->p_edit->positionsArea, tui->p_edit->positions->n);
+    if (ind >= (int)p->positions->n) {
+      tui->p_edit->lists_index = p->positions->n - 1;
+    }
+  }
+  tui->p_edit->modified = 1;
 }
 
 void unselectPlayer(tuidb* tui, int index) {
@@ -184,6 +207,8 @@ void tuidb_list_up(tuidb* tui) {
       if (tui->active_area == PLAYERS_LIST) list_up(tui->allPlayersArea);
       else if (tui->active_area == PLAYER_EDIT && tui->p_edit->active) {
         pedit_list_up(tui);
+      } else if (tui->active_area == POSITIONS_LIST_EDIT && tui->p_edit->active) {
+        list_up(tui->p_edit->positionsArea);
       }
       break;
     }
@@ -200,6 +225,8 @@ void tuidb_list_down(tuidb* tui) {
       if (tui->active_area == PLAYERS_LIST) list_down(tui->allPlayersArea);
       else if (tui->active_area == PLAYER_EDIT && tui->p_edit->active) {
         pedit_list_down(tui);
+      } else if (tui->active_area == POSITIONS_LIST_EDIT && tui->p_edit->active) {
+        list_down(tui->p_edit->positionsArea);
       }
       break;
     }
@@ -484,6 +511,19 @@ void pedit_add(tuidb* tui) {
   }
 }
 
+void pedit_remove(tuidb* tui) {
+  switch (tui->p_edit->selected_element) {
+    case SKILLS_LIST:
+      break;
+    case POSITIONS_LIST: {
+      pedit_remove_position(tui);
+      break;
+    }
+    default:
+      break;
+  }
+}
+
 void handle_esc(tuidb* tui) {
   if (tui->active_area == PLAYER_EDIT) {
     exit_edit_player(tui);
@@ -507,6 +547,18 @@ void handleAdd(tuidb* tui) {
   }
 }
 
+void handleRemove(tuidb* tui) {
+  switch (tui->tab) {
+    case PLAYERS_TAB:
+      if (tui->active_area == PLAYER_EDIT) {
+        pedit_remove(tui);
+      }
+      break;
+    case TEAMS_TAB:
+      break;
+  }
+}
+
 void handleKeyPress(tuidb* tui, int c) {
   switch (c) {
     case 13: case '\n': case ' ':
@@ -515,6 +567,8 @@ void handleKeyPress(tuidb* tui, int c) {
 #endif
     if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST) {
       selectCurPlayer(tui);
+    } else if (tui->tab == PLAYERS_TAB && tui->active_area == POSITIONS_LIST_EDIT) {
+      pedit_add_position(tui);
     }
     break;
     case 27: // Esc
@@ -552,7 +606,8 @@ void handleKeyPress(tuidb* tui, int c) {
     case 'a':
       handleAdd(tui);
       break;
-    case 'd':
+    case 'd': case 'D':
+      handleRemove(tui);
       break;
     case 'I': case 'i': // Player info
       if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST)

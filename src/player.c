@@ -229,10 +229,21 @@ void resetPosition(player* p) {
   p->assigned_pos = -1;
 }
 
-void addPositionCopy(player* p, const position* pos) {
-  position* pos_copy = copy_position(pos);
+void addPositionLast(player* p, position* pos) {
   position* pos_last = get_last(p->positions);
-  setPriority(pos_copy, (pos_last) ? pos_last->priority : 1);
+  setPriority(pos, (pos_last) ? pos_last->priority + 1 : 1);
+  list_add(p->positions, pos);
+}
+
+position* popPosition(player* p, const int index) {
+  position* pos = pop_elem(p->positions, index);
+  for (size_t i = 0; i < p->positions->n; i++) {
+    position* pp = p->positions->items[i];
+    if (pp->priority >= pos->priority) {
+      setPriority(pp, pp->priority - 1);
+    }
+  }
+  return pos;
 }
 
 color_fg getMarkColor(const int key) {

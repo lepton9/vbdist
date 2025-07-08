@@ -53,7 +53,8 @@ position* assignedPosition(player* p);
 int setPlayerPosition(player* p, position* pos);
 void assignPosition(player* p, int index);
 void resetPosition(player* p);
-void addPositionCopy(player* p, const position* pos);
+void addPositionLast(player* p, position* pos);
+position* popPosition(player* p, const int index);
 
 color_fg getMarkColor(const int key);
 

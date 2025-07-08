@@ -78,7 +78,6 @@ void setAllPositions(tuidb* tui, dlist* positions);
 
 player* selectedPlayer(tuidb* tui);
 team* selectedTeam(tuidb* tui);
-position* selectedPosition(tuidb *tui);
 
 void renameSelectedListElem(tuidb* tui);
 void deleteSelectedListElem(tuidb* tui);
@@ -94,7 +93,10 @@ skill* pedit_selected_skill(tuidb* tui);
 position* pedit_selected_position(tuidb* tui);
 void pedit_reset_positions(tuidb* tui);
 void pedit_filtered_positions(tuidb* tui);
+void pedit_add_position(tuidb* tui);
+void pedit_remove_position(tuidb* tui);
 void pedit_add(tuidb* tui);
+void pedit_remove(tuidb* tui);
 
 void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);
