@@ -50,8 +50,10 @@ void updateTeamSize(tuidb* tui, int team_n, int team_size);
 void runTuiDB(tuidb* tui);
 
 void selectCurPlayer(tuidb* tui);
+void selectPlayer(tuidb* tui, int index);
 void unselectCurPlayer(tuidb* tui);
 void unselectPlayer(tuidb* tui, int index);
+void select_all(tuidb* tui);
 void unselect_all(tuidb* tui);
 
 void setAllPlayers(tuidb* tui, dlist* players);

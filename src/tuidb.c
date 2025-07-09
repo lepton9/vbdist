@@ -107,6 +107,14 @@ team* selectedTeam(tuidb *tui) {
   return get_elem(tui->allTeams, tui->allTeamsArea->selected);
 }
 
+void selectPlayer(tuidb* tui, int index) {
+  if (index < 0) return;
+  player* p = get_elem(tui->allPlayers, index);
+  if (playerInList(tui->players, p->id) < 0) {
+    list_add(tui->players, copyPlayer(p));
+  }
+}
+
 void unselectPlayer(tuidb* tui, int index) {
   if (index < 0) return;
   player* p = pop_elem(tui->players, index);
@@ -116,6 +124,12 @@ void unselectPlayer(tuidb* tui, int index) {
 void unselect_all(tuidb* tui) {
   for (int i = (int)tui->players->n; i >= 0; i--) {
     unselectPlayer(tui, i);
+  }
+}
+
+void select_all(tuidb* tui) {
+  for (size_t i = 0; i < tui->allPlayers->n; i++) {
+    selectPlayer(tui, i);
   }
 }
 
@@ -532,6 +546,9 @@ void handleKeyPress(tuidb* tui, int c) {
       break;
     case 'u': case 'U':
       unselect_all(tui);
+      break;
+    case 1: // Ctrl + A
+      select_all(tui);
       break;
     default: {
       break;
