@@ -14,6 +14,9 @@
 #define log_error(fmt, ...) \
     log_with_custom_prefix("ERROR", fmt, __VA_ARGS__)
 
+#define log_debug(fmt, ...) \
+    log_with_custom_prefix("DEBUG", fmt, __VA_ARGS__)
+
 #define log_sql(fmt, ...) \
     log_with_custom_prefix("SQL", fmt, __VA_ARGS__)
 
