@@ -99,12 +99,14 @@ int list_down(list_area* la) {
 void fit_screen(list_area* la) {
   if (la->first_ind < 0) {
     la->first_ind = 0;
-  }
-  if (la->selected < la->first_ind) {
+  } else if (la->selected < la->first_ind) {
     la->first_ind = la->selected;
-  }
-  else if (la->selected > la->first_ind + (int)la->max_shown - 1) {
+  } else if (la->selected > la->first_ind + (int)la->max_shown - 1) {
     la->first_ind = la->selected - la->max_shown + 1;
+  }
+  int wasted_space = la->max_shown - (la->len - la->first_ind);
+  if (wasted_space > 0 && la->first_ind > 0) {
+    la->first_ind -= min_int(wasted_space, la->selected);
   }
 }
 
