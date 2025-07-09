@@ -3,9 +3,8 @@
 
 #include "render.h"
 #include "sql.h"
-#include "player.h"
 #include "tui.h"
-#include "listarea.h"
+#include "playeredit.h"
 
 #define BASE_LIST_LEN 50
 #define BASE_SECTION_WIDTH 40
@@ -21,22 +20,6 @@ typedef enum {
   PLAYER_EDIT,
   POSITIONS_LIST_EDIT
 } layout_area;
-
-typedef enum {
-  SKILLS_LIST,
-  POSITIONS_LIST,
-  NO_ELEMENT
-} p_edit_element;
-
-typedef struct {
-  char active;
-  char modified;
-  p_edit_element selected_element;
-  int lists_index;
-  player* p;
-  dlist* positions;
-  list_area* positionsArea;
-} player_edit;
 
 typedef struct {
   sqldb* db;
@@ -60,9 +43,6 @@ typedef struct {
 
 tuidb* initTuiDB(int teams, int team_size);
 void freeTuiDB(tuidb* tui);
-
-player_edit* initPlayerEdit();
-void freePlayerEdit(player_edit* edit);
 
 void updateAllTeams(tuidb* tui);
 void updateTeamSize(tuidb* tui, int team_n, int team_size);
@@ -89,14 +69,7 @@ void tuidb_list_down(tuidb* tui);
 
 void toggle_edit_player(tuidb* tui);
 void exit_edit_player(tuidb* tui);
-void pedit_list_up(tuidb* tui);
-void pedit_list_down(tuidb* tui);
-skill* pedit_selected_skill(tuidb* tui);
-position* pedit_selected_position(tuidb* tui);
-void pedit_reset_positions(tuidb* tui);
-void pedit_filtered_positions(tuidb* tui);
-void pedit_add_position(tuidb* tui);
-void pedit_remove_position(tuidb* tui);
+
 void pedit_add(tuidb* tui);
 void pedit_remove(tuidb* tui);
 int playerInfoBoxHeight(tuidb* tui, player* p);
