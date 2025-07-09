@@ -543,6 +543,36 @@ int updatePlayer(sqldb* db, player* player) {
   return 1;
 }
 
+int insertPlayersSkills(sqldb* db, dlist* players, dlist* skills) {
+  if (!players || !skills) return 0;
+  const char *sql =
+      "INSERT OR IGNORE INTO PlayerSkill (player_id, skill_id, value) VALUES (?, ?, ?);";
+  int hydrated_players = 0;
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  for (size_t p_i = 0; p_i < players->n; p_i++) {
+    player* player = players->items[p_i];
+    int added_skills = 0;
+    for (size_t i = 0; i < skills->n; i++) {
+      skill* s = skills->items[i];
+      int i = findSkill(s, player->skills);
+      double value = (i >= 0) ? ((skill*)get_elem(player->skills, i))->value : 0.0;
+      sqlite3_bind_int(stmt, 1, player->id);
+      sqlite3_bind_int(stmt, 2, s->id);
+      sqlite3_bind_double(stmt, 3, value);
+      if (stmtStepDone(db->sqlite, stmt) && i < 0) {
+        list_add(player->skills, copySkillVal(s, 0.0));
+        added_skills++;
+      }
+      sqlite3_reset(stmt);
+    }
+    if (added_skills > 0) hydrated_players++;
+  }
+  sqlite3_finalize(stmt);
+  log_sql("Hydrated %d players with %d skills", hydrated_players, skills->n);
+  return hydrated_players;
+}
+
 int updatePlayerSkills(sqldb* db, player* player) {
   const char *sql =
       "UPDATE PlayerSkill SET value = ? WHERE player_id = ? AND skill_id = ?;";

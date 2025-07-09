@@ -71,6 +71,8 @@ int updatePlayer(sqldb* db, player* player);
 int updatePlayerSkills(sqldb* db, player* player);
 int updatePlayerPositions(sqldb* db, player* player);
 
+int insertPlayersSkills(sqldb* db, dlist* players, dlist* skills);
+
 int renamePlayer(sqldb* db, player* player, const char* name);
 int renameTeam(sqldb* db, team* team, const char* name);
 int deletePlayerPositions(sqldb* db, player* player);
