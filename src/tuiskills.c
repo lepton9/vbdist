@@ -141,8 +141,11 @@ void rename_selected_skill(tui_skills* tui) {
         break;
       }
       if (renameSkill(tui->db, selected, new)) {
-        if (selected->name) free(selected->name);
-        selected->name = strdup(new);
+        updateSkillName(selected, strdup(new));
+        int i = findSkill(selected, tui->selected_skills);
+        if (i >= 0) {
+          updateSkillName(get_elem(tui->selected_skills, i), strdup(new));
+        }
         break;
       }
     } else if (len > 0 && isBackspace(c)) {

@@ -15,6 +15,7 @@ typedef struct {
 skill* initSkill(const int id, const char* name, const float value);
 void freeSkill(skill* skill);
 
+void updateSkillName(skill* skill, char* name);
 float skillValue(skill* skill);
 void setWeight(skill* skill, float value);
 void incWeight(skill* skill);

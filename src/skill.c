@@ -17,6 +17,12 @@ void freeSkill(skill* s) {
   free(s);
 }
 
+void updateSkillName(skill* skill, char* name) {
+  if (!skill) return;
+  if (skill->name) free(skill->name);
+  skill->name = name;
+}
+
 float skillValue(skill* skill) {
   return skill->value * skill->weight;
 }
