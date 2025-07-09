@@ -560,16 +560,17 @@ int updatePlayerSkills(sqldb* db, player* player) {
 }
 
 int updatePlayerPositions(sqldb* db, player* player) {
-  const char *sql =
-      "UPDATE PlayerPosition SET priority_value = ? WHERE player_id = ? AND position_id = ?;";
+  deletePlayerPositions(db, player);
+  const char *sql = "INSERT INTO PlayerPosition (player_id, position_id, "
+                    "priority_value) VALUES (?, ?, ?);";
   sqlite3_stmt* stmt;
   int r = 1;
   if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
   for (size_t i = 0; i < player->positions->n; i++) {
     position* pos = player->positions->items[i];
-    sqlite3_bind_double(stmt, 1, pos->priority);
-    sqlite3_bind_int(stmt, 2, player->id);
-    sqlite3_bind_int(stmt, 3, pos->id);
+    sqlite3_bind_int(stmt, 1, player->id);
+    sqlite3_bind_int(stmt, 2, pos->id);
+    sqlite3_bind_double(stmt, 3, pos->priority);
     r = r && stmtStepDone(db->sqlite, stmt);
     sqlite3_reset(stmt);
   }
@@ -604,6 +605,14 @@ int renameTeam(sqldb* db, team* team, const char* name) {
     log_sql("Renamed Team (%d) '%s' -> '%s'", team->id, team->name, name);
   }
   return r;
+}
+
+int deletePlayerPositions(sqldb* db, player* player) {
+  const char* sql = "DELETE FROM PlayerPosition WHERE player_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, player->id);
+  return stmtExec(db->sqlite, stmt);
 }
 
 int deletePlayer(sqldb* db, player* player) {
