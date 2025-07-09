@@ -14,8 +14,7 @@ tui_skills* init_tui_skills(sqldb* db, dlist* skills, dlist* selectedSkills) {
   tui->skills = skills;
   tui->selected_skills = selectedSkills;
   update_list_len(tui->skills_area, tui->skills->n);
-  tui->modified = 0;
-
+  tui->modified_skill_ids = init_list();
   return tui;
 }
 
@@ -23,6 +22,10 @@ void free_tui_skills(tui_skills* tui) {
   free(tui->term);
   free_renderer(tui->render);
   free_list_area(tui->skills_area);
+  for (size_t i = 0; i < tui->modified_skill_ids->n; i++) {
+    free(tui->modified_skill_ids->items[i]);
+  }
+  free_list(tui->modified_skill_ids);
   free(tui);
 }
 
@@ -71,6 +74,28 @@ void handleSkillsInput(tui_skills *tui, int c) {
       break;
     }
   }
+}
+
+int skill_modified(dlist* modified_ids, skill* s) {
+  for (size_t i = 0; i < modified_ids->n; i++) {
+    int* id = modified_ids->items[i];
+    if (*id == s->id) return i;
+  }
+  return -1;
+}
+
+void add_modified(dlist* modified_ids, skill* s) {
+  int mod = skill_modified(modified_ids, s);
+  if (mod < 0) {
+    int* id = malloc(sizeof(int));
+    *id = s->id;
+    list_add(modified_ids, id);
+  }
+}
+
+void remove_modified(dlist* modified_ids, skill* s) {
+  int ind_mod = skill_modified(modified_ids, s);
+  if (ind_mod >= 0) free(pop_elem(modified_ids, ind_mod));
 }
 
 skill* get_selected_skill(tui_skills* tui) {
@@ -137,20 +162,21 @@ void decrement_selected_skill(tui_skills* tui) {
   skill* selected = get_selected_skill(tui);
   if (!selected) return;
   decWeight(selected);
-  tui->modified = 1;
+  add_modified(tui->modified_skill_ids, selected);
 }
 
 void increment_selected_skill(tui_skills* tui) {
   skill* selected = get_selected_skill(tui);
   if (!selected) return;
   incWeight(selected);
-  tui->modified = 1;
+  add_modified(tui->modified_skill_ids, selected);
 }
 
 int delete_skill(tui_skills* tui, int index) {
   if (index < 0) return 0;
   if (deleteSkill(tui->db, tui->skills->items[index])) {
     skill* s = pop_elem(tui->skills, tui->skills_area->selected);
+    remove_modified(tui->modified_skill_ids, s);
     freeSkill(s);
     return 1;
   }
@@ -258,14 +284,18 @@ void renderSkillsTui(tui_skills* tui) {
   render(tui->render);
 }
 
-void updateWeights(sqldb* db, dlist* allSkills, dlist* selectedSkills) {
-  updateSkillWeights(db, allSkills);
-  for (size_t i = 0; i < selectedSkills->n; i++) {
-    skill* selSkill = selectedSkills->items[i];
-    int i = findSkill(selSkill, allSkills);
-    if (i >= 0) {
-      skill* s = allSkills->items[i];
-      selSkill->weight = s->weight;
+void updateWeights(sqldb* db, dlist* allSkills, dlist* selectedSkills, dlist* modified_ids) {
+  for (size_t i = 0; i < allSkills->n; i++) {
+    skill* s = allSkills->items[i];
+    int mod_ind = skill_modified(modified_ids, s);
+    if (mod_ind >= 0) {
+      updateSkillWeight(db, s);
+      free(pop_elem(modified_ids, mod_ind));
+      int i = findSkill(s, selectedSkills);
+      if (i >= 0) {
+        skill* sel_skill = get_elem(selectedSkills, i);
+        setWeight(sel_skill, s->weight);
+      }
     }
   }
 }
@@ -282,8 +312,8 @@ void runTuiSkills(sqldb* db, dlist* allSkills, dlist* selectedSkills) {
     c = keyPress();
     handleSkillsInput(tui, c);
   }
-  if (tui->modified) {
-    updateWeights(db, allSkills, selectedSkills);
+  if (tui->modified_skill_ids->n > 0) {
+    updateWeights(db, allSkills, selectedSkills, tui->modified_skill_ids);
   }
   free_tui_skills(tui);
 }
