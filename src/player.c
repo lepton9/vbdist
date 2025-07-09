@@ -246,6 +246,11 @@ position* popPosition(player* p, const int index) {
   return pos;
 }
 
+void updatePlayerName(player* p, char* name) {
+  if (p->firstName) free(p->firstName);
+  p->firstName = name;
+}
+
 color_fg getMarkColor(const int key) {
   switch (key) {
     case 1: return GREEN_FG;

@@ -95,7 +95,7 @@ double colFloat(char** columns, char** data, int count, char* colName) {
 
 char* colStr(char** columns, char** data, int count, char* colName) {
   char* d = findCol(columns, data, count, colName);
-  return d ? strdup(d) : NULL;
+  return d ? strdup(d) : strdup("");
 }
 
 int cb_teams(void* tList, int count, char **data, char **columns) {
@@ -119,9 +119,7 @@ int cb_players(void* list, int count, char **data, char **columns) {
 int cb_player(void* p, int argc, char **argv, char **columns) {
   assert(argc == 1);
   player* player = p;
-  if (!player->firstName) {
-    player->firstName = colStr(columns, argv, argc, "name");
-  }
+  updatePlayerName(player, colStr(columns, argv, argc, "name"));
   player->found = 1;
   return 0;
 }
@@ -394,6 +392,9 @@ dlist* fetchPositions(sqldb* db) {
 }
 
 int fetchPlayerPositions(sqldb* db, player* player) {
+  for (int i = player->positions->n - 1; i >= 0; i--) {
+    freePosition(pop_elem(player->positions, i));
+  }
   char sql[200];
   sprintf(sql,
           "SELECT p.position_id, p.name, pp.priority_value FROM PlayerPosition pp INNER JOIN "
@@ -404,6 +405,9 @@ int fetchPlayerPositions(sqldb* db, player* player) {
 }
 
 int fetchPlayerSkills(sqldb* db, player* player) {
+  for (int i = player->skills->n - 1; i >= 0; i--) {
+    freeSkill(pop_elem(player->skills, i));
+  }
   char sql[200];
   sprintf(sql,
           "SELECT ps.skill_id, ps.value, s.name, s.weight FROM PlayerSkill ps INNER JOIN "
@@ -482,6 +486,7 @@ int updateSkillWeights(sqldb* db, dlist* skills) {
 }
 
 int fetchPlayer(sqldb* db, player* player) {
+  if (!player) return 0;
   char sql[100];
   sprintf(sql, "SELECT name FROM Player WHERE player_id = %d;", player->id);
   execQuery(db->sqlite, sql, cb_player, player);

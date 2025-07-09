@@ -321,8 +321,7 @@ void renameSelectedListElem(tuidb* tui) {
           player* p = selectedPlayer(tui);
           int r = renamePlayer(tui->db, p, new);
           if (r) {
-            if (p->firstName) free(p->firstName);
-            p->firstName = strdup(new);
+            updatePlayerName(p, strdup(new));
             player* pSel = getPlayerInList(tui->players, p->id);
             if (pSel) {
               if (pSel->firstName) free(pSel->firstName);
@@ -423,6 +422,10 @@ void exit_edit_player(tuidb* tui) {
   if (!tui->p_edit->active || !tui->p_edit->p) return;
   if (tui->p_edit->modified) {
     updatePlayer(tui->db, tui->p_edit->p);
+    int ind = playerInList(tui->players, tui->p_edit->p->id);
+    if (ind >= 0) {
+      fetchPlayer(tui->db, get_elem(tui->players, ind));
+    }
     tui->p_edit->modified = 0;
   }
   tui->p_edit->active = 0;

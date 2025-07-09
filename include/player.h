@@ -56,6 +56,8 @@ void resetPosition(player* p);
 void addPositionLast(player* p, position* pos);
 position* popPosition(player* p, const int index);
 
+void updatePlayerName(player* p, char* name);
+
 color_fg getMarkColor(const int key);
 
 #endif
