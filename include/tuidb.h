@@ -8,7 +8,8 @@
 #include "listarea.h"
 
 #define BASE_LIST_LEN 50
-#define BASE_SECTION_WIDTH 50
+#define BASE_SECTION_WIDTH 40
+#define AREA_SPACING 3
 
 typedef enum {
   PLAYERS_TAB,
@@ -98,6 +99,7 @@ void pedit_add_position(tuidb* tui);
 void pedit_remove_position(tuidb* tui);
 void pedit_add(tuidb* tui);
 void pedit_remove(tuidb* tui);
+int playerInfoBoxHeight(tuidb* tui, player* p);
 
 void updateArea(tuidb* tui);
 void renderTuidb(tuidb* tui);
