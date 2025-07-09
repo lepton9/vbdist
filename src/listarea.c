@@ -74,6 +74,10 @@ void free_list_area(list_area* la) {
   free(la);
 }
 
+void set_selected_row(list_area* la, const int render_row) {
+  la->selected_term_row = render_row + 1;
+}
+
 int list_up(list_area* la) {
   if (la->selected > 0) {
     la->selected -= 1;
@@ -113,7 +117,10 @@ void update_list_area(list_area* la, size_t w, size_t h) {
 
 void update_list_area_fit(list_area* la, size_t w, size_t h) {
   int height = min_int(h, area_height_fit(la));
-  update_list_area(la, w, height);
+  update_area(la->area, w, height);
+  la->max_shown = max_int(0, h - start_print_line(la->area) - la->area->pad->bottom);
+  check_selected(la);
+  fit_screen(la);
 }
 
 int area_height_fit(list_area* la) {

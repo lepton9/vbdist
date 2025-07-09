@@ -43,6 +43,8 @@ int area_last_line(tui_area* area);
 list_area* init_list_area(size_t w, size_t h);
 void free_list_area(list_area* la);
 
+void set_selected_row(list_area* la, const int render_row);
+
 int list_up(list_area* tui);
 int list_down(list_area* tui);
 
