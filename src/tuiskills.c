@@ -42,16 +42,16 @@ void handleSkillsInput(tui_skills *tui, int c) {
     case 'R': case 'r':
       rename_selected_skill(tui);
       break;
-    case 'h': case '-': case 4: // Ctrl + D
+    case 'H':case 'h': case '-': case 4: // Ctrl + D
       decrement_selected_skill(tui);
       break;
-    case 'l': case '+': case 21: // Ctrl + U
+    case 'L': case 'l': case '+': case 21: // Ctrl + U
       increment_selected_skill(tui);
       break;
     case 'A': case 'a':
       add_skill(tui);
       break;
-    case 'X': case 'x':
+    case 'D': case 'd':
       delete_selected_skill(tui);
       break;
     case 'K': case 'W':

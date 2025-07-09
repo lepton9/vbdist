@@ -63,21 +63,23 @@ void handle_positions_input(tui_pos *tui, int c) {
     }
     case 9: // Tab
       break;
-    case 'e':
+    case 'E': case 'e':
       enable_positions(tui);
       break;
-    case 'l': case '+':
+    case 'L': case 'l': case '+':
       add_position(tui);
       break;
-    case 'h': case '-':
+    case 'H': case 'h': case '-':
       remove_position(tui);
       break;
+    case 'K': case 'W':
     case 'k': case 'w':
 #ifdef __linux__
     case KEY_UP:
 #endif
       list_up(tui->positions_area);
       break;
+    case 'J': case 'S':
     case 'j': case 's':
 #ifdef __linux__
     case KEY_DOWN:

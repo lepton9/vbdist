@@ -210,13 +210,13 @@ void handleComboTuiInput(tui_combos* tui, int c) {
       changeComboTuiMode(tui);
       break;
 
-    case 'b': // TODO: new keymaps?
+    case 'B': case 'b':
       start_combo(tui, BAN);
       break;
-    case 'p': // TODO: new keymaps?
+    case 'P': case 'p':
       start_combo(tui, PAIR);
       break;
-    case 'e': {
+    case 'E': case 'e': {
       if (tui->recording_combo) {
         end_combo(tui);
       } else if (tui->mode == CTUI_COMBO_LIST) {
@@ -229,7 +229,7 @@ void handleComboTuiInput(tui_combos* tui, int c) {
       break;
     case 'A': case 'a':
       break;
-    case 'X': case 'x':
+    case 'D': case 'd':
       if (tui->mode == CTUI_COMBO_LIST) {
         deleteCurCombo(tui);
       }

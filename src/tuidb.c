@@ -435,9 +435,12 @@ void handleRemove(tuidb* tui) {
     case PLAYERS_TAB:
       if (tui->active_area == PLAYER_EDIT) {
         pedit_remove(tui);
+      } else {
+        deleteSelectedListElem(tui);
       }
       break;
     case TEAMS_TAB:
+      deleteSelectedListElem(tui);
       break;
   }
 }
@@ -472,7 +475,6 @@ void handleKeyPress(tuidb* tui, int c) {
       renameSelectedListElem(tui);
       break;
     case 'X': case 'x':
-      deleteSelectedListElem(tui);
       break;
     case 'K': case 'W':
     case 'k': case 'w':
@@ -488,13 +490,33 @@ void handleKeyPress(tuidb* tui, int c) {
 #endif
       tuidb_list_down(tui);
       break;
-    case 'h': case '-': case 4: // Ctrl + D
+#ifdef __linux__
+    case KEY_RIGHT:
+#endif
+    case 'l': case 'L':
+      if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYER_EDIT &&
+          tui->p_edit->selected_element == SKILLS_LIST) {
+        tui->p_edit->selected_element = POSITIONS_LIST;
+        tui->p_edit->lists_index = 0;
+      }
+      break;
+#ifdef __linux__
+    case KEY_LEFT:
+#endif
+    case 'h': case 'H':
+      if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYER_EDIT &&
+          tui->p_edit->selected_element == POSITIONS_LIST) {
+        tui->p_edit->selected_element = SKILLS_LIST;
+        tui->p_edit->lists_index = 0;
+      }
+      break;
+    case '-': case 4: // Ctrl + D
       pedit_handle_dec(tui);
       break;
-    case 'l': case '+': case 21: // Ctrl + U
+    case '+': case 21: // Ctrl + U
       pedit_handle_inc(tui);
       break;
-    case 'a':
+    case 'a': case 'A':
       handleAdd(tui);
       break;
     case 'd': case 'D':
