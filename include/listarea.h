@@ -36,6 +36,8 @@ void free_padding(padding* pad);
 
 void set_area_pos(tui_area* area, size_t row, size_t col);
 void set_padding(tui_area* area, int top, int bottom, int left, int right);
+int area_height_empty(tui_area* la);
+int area_width_empty(tui_area* area);
 int start_print_line(tui_area* area);
 int start_print_col(tui_area* area);
 int area_last_line(tui_area* area);

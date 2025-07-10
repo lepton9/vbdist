@@ -46,6 +46,14 @@ void update_area(tui_area* area, size_t w, size_t h) {
   area->height = h;
 }
 
+int area_height_empty(tui_area* area) {
+  return area->pad->top + area->pad->bottom + 2;
+}
+
+int area_width_empty(tui_area* area) {
+  return area->pad->left + area->pad->right + 2;
+}
+
 int start_print_line(tui_area* area) {
   return area->start_row + area->pad->top + 1;
 }
@@ -118,15 +126,14 @@ void update_list_area(list_area* la, size_t w, size_t h) {
 }
 
 void update_list_area_fit(list_area* la, size_t w, size_t h) {
-  int height = min_int(h, area_height_fit(la));
-  update_area(la->area, w, height);
-  la->max_shown = max_int(0, h - start_print_line(la->area) - la->area->pad->bottom);
+  la->max_shown = max_int(0, h - la->area->start_row - area_height_empty(la->area));
+  update_area(la->area, w, min_int(h, area_height_fit(la)));
   check_selected(la);
   fit_screen(la);
 }
 
 int area_height_fit(list_area* la) {
-  return la->len + la->area->pad->top + la->area->pad->bottom + 2;
+  return area_height_empty(la->area) + getListAreaLen(la, la->area->height);
 }
 
 void update_list_len(list_area* la, size_t n) {
