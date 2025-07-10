@@ -180,6 +180,10 @@ int delete_skill(tui_skills* tui, int index) {
   if (deleteSkill(tui->db, tui->skills->items[index])) {
     skill* s = pop_elem(tui->skills, tui->skills_area->selected);
     remove_modified(tui->modified_skill_ids, s);
+    int sel_ind = findSkill(s, tui->selected_skills);
+    if (sel_ind >= 0) {
+      freeSkill(pop_elem(tui->selected_skills, sel_ind));
+    }
     freeSkill(s);
     return 1;
   }
