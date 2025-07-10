@@ -25,10 +25,8 @@ double avgRating(team* t) {
   int ratings_n = 0;
   for (size_t pI = 0; pI < t->size; pI++) {
     double r = rating(t->players[pI]);
-    if (fabs(r) > 1e-6f) {
-      sum += r;
-      ratings_n++;
-    }
+    sum += r;
+    ratings_n++;
   }
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
@@ -39,24 +37,22 @@ double team_rating_filter(team* t, dlist* skill_ids) {
   int ratings_n = 0;
   for (size_t pI = 0; pI < t->size; pI++) {
     double r = rating_filter(t->players[pI], skill_ids);
-    if (fabs(r) > 1e-6f) {
-      sum += r;
-      ratings_n++;
-    }
+    sum += r;
+    ratings_n++;
   }
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
-double team_average_skill(team* t, skill* skill) {
+double team_average_skill(team* t, skill* s) {
   double sum = 0;
   int n = 0;
   for (size_t p_i = 0; p_i < t->size; p_i++) {
     player* p = t->players[p_i];
-    double val = get_skill_value(p, skill);
-    if (fabs(val) > 1e-6f) {
-      sum += val;
-      n++;
-    }
+    skill* p_s = getSkill(p, s);
+    if (!p_s) continue;
+    double val = p_s->value * s->weight;
+    sum += val;
+    n++;
   }
   return (n > 0) ? sum / n : sum;
 }

@@ -1,5 +1,4 @@
 #include "../include/player.h"
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -82,11 +81,8 @@ double rating(player* p) {
   int ratings_n = 0;
   for (size_t i = 0; i < p->skills->n; i++) {
     skill* s = p->skills->items[i];
-    float r = s->value;
-    if (fabsf(r) > 1e-6f) {
-      sum += r;
-      ratings_n++;
-    }
+    sum += s->value;
+    ratings_n++;
   }
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
@@ -98,13 +94,9 @@ double rating_filter(player* p, dlist* skills) {
   for (size_t i = 0; i < p->skills->n; i++) {
     skill* s = p->skills->items[i];
     int s_i = findSkill(s, skills);
-    if (s_i >= 0) {
-      float r = s->value * ((skill*)skills->items[s_i])->weight;
-      if (fabsf(r) > 1e-6f) {
-        sum += r;
-        ratings_n++;
-      }
-    }
+    if (s_i < 0) continue;
+    sum += s->value * ((skill*)skills->items[s_i])->weight;
+    ratings_n++;
   }
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
@@ -197,6 +189,15 @@ position* firstPosition(player* p) {
 
 int hasPosition(player* player, position* pos) {
   return findPosition(player->positions, pos);
+}
+
+int hasSkill(player* player, skill* s) {
+  return findSkill(s, player->skills);
+}
+
+skill* getSkill(player* player, skill* s) {
+  int i = hasSkill(player, s);
+  return (i >= 0) ? get_elem(player->skills, i) : NULL;
 }
 
 position* assignedPosition(player* p) {

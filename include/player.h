@@ -49,6 +49,8 @@ player* getPlayerInList(dlist* list, int player_id);
 
 position* firstPosition(player* p);
 int hasPosition(player* player, position* pos);
+int hasSkill(player* player, skill* s);
+skill* getSkill(player* player, skill* s);
 position* assignedPosition(player* p);
 int setPlayerPosition(player* p, position* pos);
 void assignPosition(player* p, int index);
