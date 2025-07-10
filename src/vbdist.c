@@ -469,6 +469,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
             updateAllTeams(tui);
           }
           updateTeamSize(tui, TEAMS_N, TEAM_SIZE);
+          qsort(players->items, players->n, sizeof(player*), cmpPlayers);
           runTuiDB(tui);
           updatePlayerCombos(tui->db, players, ctx->banned_combos, ctx->pref_combos);
         }

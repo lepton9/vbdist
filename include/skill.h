@@ -3,7 +3,7 @@
 
 #include "../include/dlist.h"
 
-#define INCREMENT 0.02
+#define INCREMENT 0.01
 #define INCREMENT_MULTI 10
 
 typedef struct {

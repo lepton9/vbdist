@@ -550,7 +550,8 @@ void handleKeyPress(tuidb* tui, int c) {
         toggle_edit_player(tui);
       break;
     case 'u': case 'U':
-      unselect_all(tui);
+      if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST)
+        unselect_all(tui);
       break;
     case 1: // Ctrl + A
       select_all(tui);
