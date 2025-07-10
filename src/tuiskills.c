@@ -10,7 +10,9 @@ tui_skills* init_tui_skills(sqldb* db, dlist* skills, dlist* selectedSkills) {
   getTermSize(tui->term);
   tui->render = init_renderer(stdout);
 
-  tui->skills_area = init_list_area(tui->term->cols, tui->term->rows);
+  tui->skills_area = init_list_area(30, tui->term->rows);
+  set_area_pos(tui->skills_area->area, 0, 0);
+  set_padding(tui->skills_area->area, 1, 1, 2, 0);
   tui->skills = skills;
   tui->selected_skills = selectedSkills;
   update_list_len(tui->skills_area, tui->skills->n);
@@ -257,37 +259,33 @@ void add_skill(tui_skills* tui) {
 
 void update_skills_area(tui_skills* tui) {
   getTermSize(tui->term);
-  int rows = tui->term->rows - 5;
-  int cols = tui->term->cols;
-  update_list_area(tui->skills_area, cols, rows);
+  int rows = tui->term->rows - 1;
+  int cols = min_int(tui->term->cols, 30);
+  update_list_area_fit(tui->skills_area, cols, rows);
 }
 
 void renderSkillsTui(tui_skills* tui) {
-  put_text(tui->render, 1, 2, "\033[4m %s \033[24m", "Selected skills");
+  int col = start_print_col(tui->skills_area->area);
+  int line = start_print_line(tui->skills_area->area);
+  int len = getListAreaLen(tui->skills_area, tui->term->rows);
+  tui_area* area = tui->skills_area->area;
 
-  int line = 3;
-  int len = min_int(min_int(tui->term->rows - line, (int)tui->skills_area->max_shown), (int)tui->skills->n - (tui->skills_area->first_ind));
-  if (tui->skills->n == 0) len = 0;
+  make_borders_color(tui->render, area->start_col, area->start_row, area->width,
+                     area->height, BLUE_FG);
+  put_text(tui->render, area->start_col, area->start_col + 3, "Skills");
 
   for (int i = tui->skills_area->first_ind; i < tui->skills_area->first_ind + len; i++) {
-    skill* cur_skill = tui->skills->items[i];
-
-    append_line(tui->render, line, "  ");
+    skill* s = get_elem(tui->skills, i);
+    int selected = findSkill(s, tui->selected_skills) >= 0;
     if (tui->skills_area->selected == i) {
-      tui->skills_area->selected_term_row = line + 1;
-      append_line(tui->render, line, "\033[7m");
+      set_selected_row(tui->skills_area, line);
+      put_text(tui->render, line++, col, "\033[7m%s%-18s %.2f\033[27m",
+               (selected) ? "> " : "", (s->name) ? s->name : "", s->weight);
+    } else {
+      put_text(tui->render, line++, col, "%s%-18s %.2f", (selected) ? "> " : "",
+               (s->name) ? s->name : "", s->weight);
     }
-    if (findSkill(cur_skill, tui->selected_skills) >= 0) {
-      append_line(tui->render, line, ">");
-    }
-
-    append_line(tui->render, line, " %-18s %.2f", cur_skill->name, cur_skill->weight);
-    if (tui->skills_area->selected == i) {
-      append_line(tui->render, line, "\033[27m");
-    }
-    line++;
   }
-  make_borders(tui->render, 0, 0, 30, len + 5);
   render(tui->render);
 }
 
@@ -313,7 +311,6 @@ void runTuiSkills(sqldb* db, dlist* allSkills, dlist* selectedSkills) {
   refresh_screen(tui->render);
   int c = 0;
   while (c != 'q') {
-    check_selected(tui->skills_area);
     update_skills_area(tui);
     renderSkillsTui(tui);
     c = keyPress();
