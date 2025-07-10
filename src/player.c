@@ -35,7 +35,7 @@ void freePlayer(player* p) {
 player* copyPlayer(player* p) {
   player* copy = initPlayerClean();
   copy->id = p->id;
-  if (p->firstName) copy->firstName = strdup(p->firstName);
+  if (p->firstName) updatePlayerName(copy, strdup(p->firstName));
   if (p->surName) copy->surName = strdup(p->surName);
   copy->assigned_pos = p->assigned_pos;
   copy->skills = copySkills(p->skills);
@@ -139,8 +139,7 @@ int cmpPlayerPos(const void* a, const void* b) {
 int cmpPlayerName(const void* a, const void* b) {
   player* ap = *(player**)a;
   player* bp = *(player**)b;
-  return strcmp(ap->firstName ? ap->firstName : "",
-                bp->firstName ? bp->firstName : "");
+  return strcmp(playerName(ap), playerName(bp));
 }
 
 void swapPlayers(player* a, player* b) {
@@ -170,10 +169,7 @@ void unmarkPlayer(player* p) {
 }
 
 void printPlayer(FILE* out, player* p) {
-  char fullName[100] = "\0";
-  strcat(fullName, p->firstName);
-  if (p->surName) strcat(strcat(fullName, " "), p->surName);
-  fprintf(out, "%-25s ", fullName);
+  fprintf(out, "%-25s ", playerFullName(p));
   for (size_t i = 0; i < p->skills->n; i++) {
     fprintf(out, "%.1f ", ((skill*)p->skills->items[i])->value);
   }
@@ -256,10 +252,11 @@ const char* playerName(player* p) {
 }
 
 const char* playerFullName(player* p) {
-  static char player_text[100];
-  snprintf(player_text, sizeof(player_text), "%s %s", playerName(p),
+  if (!p) return "";
+  static char player_name[100];
+  snprintf(player_name, sizeof(player_name), "%s %s", playerName(p),
            (p->surName) ? p->surName : "");
-  return player_text;
+  return player_name;
 }
 
 color_fg getMarkColor(const int key) {

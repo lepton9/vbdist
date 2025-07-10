@@ -111,7 +111,7 @@ int cb_players(void* list, int count, char **data, char **columns) {
   assert(count == 2);
   player* p = initPlayer();
   p->id = colInt(columns, data, count, "player_id");
-  p->firstName = colStr(columns, data, count, "name");
+  updatePlayerName(p, colStr(columns, data, count, "name"));
   list_add(list, p);
   return 0;
 }
@@ -624,7 +624,7 @@ int renamePlayer(sqldb* db, player* player, const char* name) {
   sqlite3_bind_int(stmt, 2, player->id);
   int r = stmtExec(db->sqlite, stmt);
   if (r) {
-    log_sql("Renamed Player (%d) '%s' -> '%s'", player->id, player->firstName, name);
+    log_sql("Renamed Player (%d) '%s' -> '%s'", player->id, playerName(player), name);
   }
   return r;
 }
@@ -657,7 +657,7 @@ int deletePlayer(sqldb* db, player* player) {
   sqlite3_bind_int(stmt, 1, player->id);
   int r = stmtExec(db->sqlite, stmt);
   if (r) {
-    log_sql("Deleted Player (%d) '%s'", player->id, player->firstName);
+    log_sql("Deleted Player (%d) '%s'", player->id, playerName(player));
   }
   return r;
 }
@@ -695,7 +695,8 @@ int insertPlayerTeam(sqldb* db, player* player, team* team) {
   sqlite3_bind_int(stmt, 2, team->id);
   int r = stmtExec(db->sqlite, stmt);
   if (r) {
-    log_sql("Inserted Player (%d) '%s' to Team (%d) '%s'", player->id, player->firstName, team->id, team->name);
+    log_sql("Inserted Player (%d) '%s' to Team (%d) '%s'", player->id,
+            playerName(player), team->id, team->name);
   }
   return r;
 }

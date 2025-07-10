@@ -196,11 +196,11 @@ int renderTuiSwapTeams(tuiswap* tui) {
         player *p = tui->teams[i]->players[j];
         if (highlight(tui, i, j)) {
           put_text(tui->render, line++, col, "\033[%d;7m%-*s\033[0m",
-                      p->marker.color, width, p->firstName);
+                      p->marker.color, width, playerName(p));
         } else if (comboInTeam(tui->bannedCombos, tui->teams[i], p)) {
-          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", RED_FG, width, p->firstName);
+          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", RED_FG, width, playerName(p));
         } else {
-          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", p->marker.color, width, p->firstName);
+          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", p->marker.color, width, playerName(p));
         }
       }
       col += width + 2;

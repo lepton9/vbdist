@@ -84,10 +84,10 @@ void freeSkills(dlist* skills) {
 }
 
 int findSkill(skill* s, dlist* skills) {
-  for (size_t i = 0; i < skills->n; i++) {
-    skill* skill = skills->items[i];
-    if (s->id == skill->id) {
-      return i;
+  if (s) {
+    for (size_t i = 0; i < skills->n; i++) {
+      skill* skill = skills->items[i];
+      if (s->id == skill->id) return i;
     }
   }
   return -1;

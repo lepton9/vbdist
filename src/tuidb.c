@@ -192,7 +192,7 @@ void renameSelectedListElem(tuidb* tui) {
   if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST) {
     player* p = selectedPlayer(tui);
     if (!p) return;
-    old_name = p->firstName;
+    old_name = (char*)playerName(p);
     width = tui->allPlayersArea->area->width;
     row = tui->allPlayersArea->selected_term_row;
   } else if (tui->tab == TEAMS_TAB) {
@@ -231,8 +231,7 @@ void renameSelectedListElem(tuidb* tui) {
             updatePlayerName(p, strdup(new));
             player* pSel = getPlayerInList(tui->players, p->id);
             if (pSel) {
-              if (pSel->firstName) free(pSel->firstName);
-              pSel->firstName = strdup(new);
+              updatePlayerName(pSel, strdup(new));
             }
           }
           break;
@@ -268,7 +267,7 @@ void deleteSelectedListElem(tuidb* tui) {
   if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST) {
     player* p = selectedPlayer(tui);
     if (!p) return;
-    name = p->firstName;
+    name = (char*)playerName(p);
     width = tui->allPlayersArea->area->width;
     row = tui->allPlayersArea->selected_term_row;
   } else if (tui->tab == TEAMS_TAB) {
@@ -571,7 +570,7 @@ void runTuiDB(tuidb* tui) {
 
 void updateArea(tuidb* tui) {
   getTermSize(tui->term);
-  int height = min_int(tui->term->rows - 1, BASE_LIST_LEN);
+  int height = min_int(tui->term->rows, BASE_LIST_LEN);
   int width = min_int(tui->term->cols / 2, BASE_SECTION_WIDTH);
   update_list_area(tui->allPlayersArea, width, height);
   update_list_area(tui->allTeamsArea, width, height);
@@ -644,10 +643,10 @@ void renderAllPlayersList(tuidb* tui) {
     if (tui->allPlayersArea->selected == i) {
       set_selected_row(tui->allPlayersArea, line);
       put_text(tui->render, line++, col, "\033[7m%s %-20s %.2f\033[27m",
-               (selected) ? ">" : "", p->firstName, rating(p));
+               (selected) ? ">" : "", playerName(p), rating(p));
     } else {
       put_text(tui->render, line++, col, "%s %-20s %.2f", (selected) ? ">" : "",
-               p->firstName, rating(p));
+               playerName(p), rating(p));
     }
   }
 }
@@ -672,7 +671,7 @@ void renderSelectedList(tuidb* tui) {
 
   for (int i = 0; i < len; i++) {
     player* p = tui->players->items[i];
-    put_text(tui->render, line++, startCol, " %-20s %.2f", p->firstName, rating(p));
+    put_text(tui->render, line++, startCol, " %-20s %.2f", playerName(p), rating(p));
   }
   if ((int)tui->players->n > len) {
     put_text(tui->render, borderHeight - borderStartLine, startCol,
@@ -692,8 +691,7 @@ void renderPlayerRelations(tuidb* tui, player* p, int startCol, int startLine) {
     int ind = playerInList(tui->allPlayers, t->a);
     if (ind >= 0) {
       player* p = tui->allPlayers->items[ind];
-      put_text(tui->render, line++, startCol, "%3d %s %s", t->b, p->firstName,
-               p->surName ? p->surName : "");
+      put_text(tui->render, line++, startCol, "%3d %s", t->b, playerFullName(p));
     }
   }
 
@@ -710,8 +708,7 @@ void renderPlayerRelations(tuidb* tui, player* p, int startCol, int startLine) {
     int ind = playerInList(tui->allPlayers, t->a);
     if (ind >= 0) {
       player* p = tui->allPlayers->items[ind];
-      put_text(tui->render, line++, startCol, "%s %s", p->firstName,
-               p->surName ? p->surName : "");
+      put_text(tui->render, line++, startCol, "%s", playerFullName(p));
       printed_players++;
     }
   }
@@ -772,8 +769,7 @@ void renderPlayerInfo(tuidb* tui) {
                      borderStartLine, borderWidth, borderHeight,
                      (tui->active_area == PLAYER_EDIT) ? BLUE_FG : DEFAULT_FG);
 
-  put_text(tui->render, line++, startCol, "Name: %s %s",
-           p->firstName ? p->firstName : "", p->surName ? p->surName : "");
+  put_text(tui->render, line++, startCol, "Name: %s", playerFullName(p));
   put_text(tui->render, line++, startCol, "ID: %d", p->id);
 
   // Skills list
@@ -866,8 +862,7 @@ void renderSelectedTeam(tuidb* tui) {
     int ind = playerInList(tui->allPlayers, *id);
     if (ind >= 0) {
       player* p = tui->allPlayers->items[ind];
-      put_text(tui->render, line, startCol, "%s %s",
-               p->firstName ? p->firstName : "", p->surName ? p->surName : "");
+      put_text(tui->render, line, startCol, "%s", playerFullName(p));
     } else {
       put_text(tui->render, line, startCol, "Unidentified");
     }

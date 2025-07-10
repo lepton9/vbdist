@@ -74,6 +74,8 @@ clean:
 cleanall:
 	rm -rf $(BIN) $(OBJS) $(LIB) $(TESTS)
 
+fresh: clean $(MAIN)
+
 valgrind:
 	valgrind --leak-check=full -s $(BIN)/$(MAIN)
 

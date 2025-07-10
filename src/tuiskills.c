@@ -259,9 +259,8 @@ void add_skill(tui_skills* tui) {
 
 void update_skills_area(tui_skills* tui) {
   getTermSize(tui->term);
-  int rows = tui->term->rows - 1;
   int cols = min_int(tui->term->cols, 30);
-  update_list_area_fit(tui->skills_area, cols, rows);
+  update_list_area_fit(tui->skills_area, cols, tui->term->rows);
 }
 
 void renderSkillsTui(tui_skills* tui) {
@@ -276,13 +275,14 @@ void renderSkillsTui(tui_skills* tui) {
 
   for (int i = tui->skills_area->first_ind; i < tui->skills_area->first_ind + len; i++) {
     skill* s = get_elem(tui->skills, i);
+    if (!s) continue;
     int selected = findSkill(s, tui->selected_skills) >= 0;
     if (tui->skills_area->selected == i) {
       set_selected_row(tui->skills_area, line);
       put_text(tui->render, line++, col, "\033[7m%s%-18s %.2f\033[27m",
-               (selected) ? "> " : "", (s->name) ? s->name : "", s->weight);
+               (selected) ? "> " : " ", (s->name) ? s->name : "", s->weight);
     } else {
-      put_text(tui->render, line++, col, "%s%-18s %.2f", (selected) ? "> " : "",
+      put_text(tui->render, line++, col, "%s%-18s %.2f", (selected) ? "> " : " ",
                (s->name) ? s->name : "", s->weight);
     }
   }

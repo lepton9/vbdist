@@ -93,7 +93,7 @@ void parseCombos(char* line, dlist* players, dlist* bpcs, dlist* prefCombos) {
   for (int t = 0; t < n; t++) {
     for (size_t i = 0; i < players->n; i++) {
       if (SOURCE == TEXT_FILE) {
-        if (strcmp(((player *)players->items[i])->firstName, tokens[t]) == 0) {
+        if (strcmp(playerName(get_elem(players, i)), tokens[t]) == 0) {
           int* id = malloc(sizeof(int));
           *id = ((player *)players->items[i])->id;
           list_add(ids, id);
@@ -208,10 +208,10 @@ void printTeams(FILE *out, team **teams, const int printWidth,
         player* p = teams[i]->players[j];
         position* pos = assignedPosition(p);
         if (verbose && pos) {
-          sprintf(str, "%s%-15s (%s | %d)", (indent) ? "  " : "", p->firstName,
+          sprintf(str, "%s%-15s (%s | %d)", (indent) ? "  " : "", playerName(p),
                   (pos) ? pos->name : "", (pos) ? pos->priority : -1);
         } else {
-          sprintf(str, "%s%-15s", (indent) ? "  " : "", p->firstName);
+          sprintf(str, "%s%-15s", (indent) ? "  " : "", playerName(p));
         }
         fprintf(out, "%-*s", printWidth, str);
       }
