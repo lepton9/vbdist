@@ -651,7 +651,7 @@ void renderAllPlayersList(tuidb* tui) {
 
   for (int i = tui->allPlayersArea->first_ind; i < tui->allPlayersArea->first_ind + len; i++) {
     player* p = tui->allPlayers->items[i];
-    snprintf(player_name, name_width, "%s", playerName(p));
+    snprintf(player_name, name_width, "%s", playerFullName(p));
     char selected = playerInList(tui->players, ((player *)tui->allPlayers->items[i])->id) >= 0;
 
     if (tui->allPlayersArea->selected == i) {
@@ -674,6 +674,9 @@ void renderSelectedList(tuidb* tui) {
   int len = min_int(tui->players->n, tui->term->rows - 1 - line - borderStartLine);
   int borderHeight = len + 4 - borderStartLine;
   int borderWidth = tui->allPlayersArea->area->width - AREA_SPACING;
+  size_t name_width = 20;
+  char player_name[name_width];
+  player_name[0] = '\0';
 
   make_borders_color(tui->render,
                      tui->allPlayersArea->area->width + AREA_SPACING,
@@ -686,7 +689,10 @@ void renderSelectedList(tuidb* tui) {
 
   for (int i = 0; i < len; i++) {
     player* p = tui->players->items[i];
-    put_text(tui->render, line++, startCol, " %-20s %.2f", playerName(p), rating(p));
+    snprintf(player_name, name_width, "%s", playerFullName(p));
+    put_text(tui->render, line++, startCol, " %-*s %.2f", name_width + 5,
+             player_name, rating(p));
+    player_name[0] = '\0';
   }
   if ((int)tui->players->n > len) {
     put_text(tui->render, borderHeight - borderStartLine, startCol,
