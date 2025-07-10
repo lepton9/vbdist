@@ -476,6 +476,9 @@ void handleKeyPress(tuidb* tui, int c) {
       selectCurPlayer(tui);
     } else if (tui->tab == PLAYERS_TAB && tui->active_area == POSITIONS_LIST_EDIT) {
       pedit_add_position(tui->p_edit);
+      if (tui->p_edit->positions->n == 0) {
+        tui->active_area = PLAYER_EDIT;
+      }
     }
     break;
     case 27: // Esc
