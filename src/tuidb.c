@@ -339,13 +339,13 @@ void exit_edit_player(tuidb* tui) {
   tui->active_area = PLAYERS_LIST;
 }
 
-void pedit_handle_inc(tuidb* tui) {
+void pedit_handle_inc(tuidb* tui, char big_inc) {
   if (!tui->p_edit->active || !tui->p_edit->p) return;
   switch (tui->p_edit->selected_element) {
     case SKILLS_LIST: {
       skill* s = pedit_selected_skill(tui->p_edit);
       if (s) {
-        incValue(s);
+        incValue(s, big_inc);
         tui->p_edit->modified = 1;
       }
       break;
@@ -366,13 +366,13 @@ void pedit_handle_inc(tuidb* tui) {
   }
 }
 
-void pedit_handle_dec(tuidb* tui) {
+void pedit_handle_dec(tuidb* tui, char big_dec) {
   if (!tui->p_edit->active || !tui->p_edit->p) return;
   switch (tui->p_edit->selected_element) {
     case SKILLS_LIST: {
       skill* s = pedit_selected_skill(tui->p_edit);
       if (s) {
-        decValue(s);
+        decValue(s, big_dec);
         tui->p_edit->modified = 1;
       }
       break;
@@ -523,11 +523,17 @@ void handleKeyPress(tuidb* tui, int c) {
         tui->p_edit->lists_index = 0;
       }
       break;
-    case '-': case 4: // Ctrl + D
-      pedit_handle_dec(tui);
+    case '-':
+      pedit_handle_dec(tui, 0);
       break;
-    case '+': case 21: // Ctrl + U
-      pedit_handle_inc(tui);
+    case 4: // Ctrl + D
+      pedit_handle_dec(tui, 1);
+      break;
+    case '+':
+      pedit_handle_inc(tui, 0);
+      break;
+    case 21: // Ctrl + U
+      pedit_handle_inc(tui, 1);
       break;
     case 'a': case 'A':
       handleAdd(tui);

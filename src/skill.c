@@ -33,24 +33,25 @@ void setWeight(skill* skill, float value) {
 }
 
 void incWeight(skill* skill) {
-  skill->weight += WEIGHT_INCREMENT;
+  skill->weight += INCREMENT;
 }
 
 void decWeight(skill* skill) {
-  if (skill->weight > WEIGHT_INCREMENT) {
-    skill->weight -= WEIGHT_INCREMENT;
+  if (skill->weight > INCREMENT) {
+    skill->weight -= INCREMENT;
   } else {
     skill->weight = 0;
   }
 }
 
-void incValue(skill* skill) {
-  skill->value += WEIGHT_INCREMENT;
+void incValue(skill* skill, const char big_inc) {
+  skill->value += (big_inc) ? INCREMENT * INCREMENT_MULTI : INCREMENT;
 }
 
-void decValue(skill* skill) {
-  if (skill->value > WEIGHT_INCREMENT) {
-    skill->value -= WEIGHT_INCREMENT;
+void decValue(skill* skill, const char big_dec) {
+  double am = (big_dec) ? INCREMENT * INCREMENT_MULTI : INCREMENT;
+  if (skill->value > am) {
+    skill->value -= am;
   } else {
     skill->value = 0;
   }

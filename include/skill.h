@@ -3,7 +3,8 @@
 
 #include "../include/dlist.h"
 
-#define WEIGHT_INCREMENT 0.01
+#define INCREMENT 0.02
+#define INCREMENT_MULTI 10
 
 typedef struct {
   int id;
@@ -20,8 +21,8 @@ float skillValue(skill* skill);
 void setWeight(skill* skill, float value);
 void incWeight(skill* skill);
 void decWeight(skill* skill);
-void incValue(skill* skill);
-void decValue(skill* skill);
+void incValue(skill* skill, const char big_inc);
+void decValue(skill* skill, const char big_dec);
 
 skill* copySkillVal(skill* s, float value);
 skill* copySkill(skill* s);
