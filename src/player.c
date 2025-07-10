@@ -251,6 +251,17 @@ void updatePlayerName(player* p, char* name) {
   p->firstName = name;
 }
 
+const char* playerName(player* p) {
+  return (p && p->firstName) ? p->firstName : "";
+}
+
+const char* playerFullName(player* p) {
+  static char player_text[100];
+  snprintf(player_text, sizeof(player_text), "%s %s", playerName(p),
+           (p->surName) ? p->surName : "");
+  return player_text;
+}
+
 color_fg getMarkColor(const int key) {
   switch (key) {
     case 1: return GREEN_FG;
