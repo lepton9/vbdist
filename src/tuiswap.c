@@ -76,8 +76,8 @@ void saveOldSkills(tuiswap* tui) {
   tui->ind_team_b = tui->cur->team;
   team_average_skills(tui->teams[tui->ind_team_a], tui->old_skills_a);
   team_average_skills(tui->teams[tui->ind_team_b], tui->old_skills_b);
-  tui->avg_a = avgRating(tui->teams[tui->ind_team_a]);
-  tui->avg_b = avgRating(tui->teams[tui->ind_team_b]);
+  tui->avg_a = team_rating_filter(tui->teams[tui->ind_team_a], tui->skills);
+  tui->avg_b = team_rating_filter(tui->teams[tui->ind_team_b], tui->skills);
 }
 
 // Returns 1 if need to switch, 0 if not
@@ -146,14 +146,16 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
     col = 0;
     for (int i = t; i < t + tui->teamsInline && i < tui->team_n; i++) {
       if (i == tui->ind_team_a || i == tui->ind_team_b) {
-        double rating_new = avgRating(tui->teams[i]);
+        double rating_new = team_rating_filter(tui->teams[i], tui->skills);
         double avg_old = (i == tui->ind_team_a) ? tui->avg_a : tui->avg_b;
         int color = (rating_new > avg_old) ? GREEN_FG : RED_FG;
         put_text(tui->render, line, col,
                  "\033[4m%s | %.2f\033[24m -> \033[%dm%.2f\033[0m",
                  tui->teams[i]->name, avg_old, color, rating_new);
       } else {
-        put_text(tui->render, line, col, "\033[4m%s | %.2f\033[24m", tui->teams[i]->name, avgRating(tui->teams[i]));
+        put_text(tui->render, line, col, "\033[4m%s | %.2f\033[24m",
+                 tui->teams[i]->name,
+                 team_rating_filter(tui->teams[i], tui->skills));
       }
       col += TEAM_PRINT_WIDTH;
     }
@@ -191,7 +193,8 @@ int renderTuiSwapTeams(tuiswap* tui) {
     int col = 0;
     for (int i = t; i < t + tui->teamsInline && i < tui->team_n; i++) {
       line = 2 + (t / tui->teamsInline) * (tui->team_size + 2);
-      put_text(tui->render, line++, col, "\033[34m%-*.2f\033[0m", width, avgRating(tui->teams[i]));
+      put_text(tui->render, line++, col, "\033[34m%-*.2f\033[0m", width,
+               team_rating_filter(tui->teams[i], tui->skills));
       for(int j = 0; j < tui->team_size; j++) {
         player *p = tui->teams[i]->players[j];
         if (highlight(tui, i, j)) {
@@ -200,7 +203,8 @@ int renderTuiSwapTeams(tuiswap* tui) {
         } else if (comboInTeam(tui->bannedCombos, tui->teams[i], p)) {
           put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", RED_FG, width, playerName(p));
         } else {
-          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", p->marker.color, width, playerName(p));
+          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m",
+                   p->marker.color, width, playerName(p));
         }
       }
       col += width + 2;

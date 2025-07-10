@@ -31,12 +31,12 @@ double avgRating(team* t) {
   return (ratings_n > 0) ? sum / ratings_n : 0.0;
 }
 
-double team_rating_filter(team* t, dlist* skill_ids) {
+double team_rating_filter(team* t, dlist* skills) {
   if (t == NULL) return 0.0;
   double sum = 0;
   int ratings_n = 0;
   for (size_t pI = 0; pI < t->size; pI++) {
-    double r = rating_filter(t->players[pI], skill_ids);
+    double r = rating_filter(t->players[pI], skills);
     sum += r;
     ratings_n++;
   }
