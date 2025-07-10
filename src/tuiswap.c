@@ -189,6 +189,8 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
 int renderTuiSwapTeams(tuiswap* tui) {
   int width = 15;
   int line = 0;
+  char player_name[width];
+  player_name[0] = '\0';
   for (int t = 0; t < tui->team_n; t += tui->teamsInline) {
     int col = 0;
     for (int i = t; i < t + tui->teamsInline && i < tui->team_n; i++) {
@@ -197,15 +199,18 @@ int renderTuiSwapTeams(tuiswap* tui) {
                team_rating_filter(tui->teams[i], tui->skills));
       for(int j = 0; j < tui->team_size; j++) {
         player *p = tui->teams[i]->players[j];
+        snprintf(player_name, width, "%s", playerName(p));
         if (highlight(tui, i, j)) {
           put_text(tui->render, line++, col, "\033[%d;7m%-*s\033[0m",
-                      p->marker.color, width, playerName(p));
+                   p->marker.color, width, player_name);
         } else if (comboInTeam(tui->bannedCombos, tui->teams[i], p)) {
-          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", RED_FG, width, playerName(p));
+          put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m", RED_FG,
+                   width, player_name);
         } else {
           put_text(tui->render, line++, col, "\033[%dm%-*s\033[0m",
-                   p->marker.color, width, playerName(p));
+                   p->marker.color, width, player_name);
         }
+        player_name[0] = '\0';
       }
       col += width + 2;
     }
