@@ -370,7 +370,7 @@ dlist* fetchPlayers(sqldb* db) {
   char* sql = "SELECT player_id, name FROM Player ORDER BY name ASC;";
   dlist* list = init_list();
   execQuery(db->sqlite, sql, cb_players, list);
-  for (int i = 0; i < (int)list->n; i++) {
+  for (size_t i = 0; i < list->n; i++) {
     fetchPlayerSkills(db, list->items[i]);
     fetchPlayerPositions(db, list->items[i]);
   }

@@ -181,7 +181,7 @@ void printPlayer(FILE* out, player* p) {
 }
 
 int playerInList(dlist* list, int player_id) {
-  for (int i = 0; i < (int)list->n; i++) {
+  for (size_t i = 0; i < list->n; i++) {
     if (((player*)list->items[i])->id == player_id) return i;
   }
   return -1;

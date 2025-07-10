@@ -19,6 +19,7 @@
 #include "../include/generate.h"
 
 #define TEAMS_FILE "teams.txt"
+#define MSG_LEN 1000
 
 typedef enum {
   NO_SOURCE,
@@ -381,6 +382,21 @@ int generateTeams(sqldb *db, dlist *players, context* ctx) {
   return saved;
 }
 
+void hydratePlayers(sqldb* db, dlist* allPlayers, dlist* players, dlist* skills, char* msg) {
+  int hydrated_players = insertPlayersSkills(db, players, skills);
+  snprintf(msg, MSG_LEN, "Hydrated %d players with %zu skills", hydrated_players,
+           skills->n);
+  if (hydrated_players == 0) return;
+  // Sync allPlayers list
+  for (size_t i = 0; i < players->n; i++) {
+    player* p = get_elem(players, i);
+    int ind = playerInList(allPlayers, p->id);
+    if (ind >= 0) {
+      fetchPlayerSkills(db, get_elem(allPlayers, ind));
+    }
+  }
+}
+
 void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   if (SOURCE != DATABASE) return;
   saveToPlayerList(db, players);
@@ -390,9 +406,11 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
 
 void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dlist* allPositions, char* err) {
   int teams_added = 0;
-  char error_msg[1000];
+  char* msg = malloc(MSG_LEN);
+  char error_msg[MSG_LEN];
+  strcpy(msg, "\0");
   strcpy(error_msg, err);
-  char c = 0;
+  int c = 0;
   while (1) {
     cls(stdout);
     curSet(1, 1);
@@ -411,11 +429,14 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
     printf(" [m] Comparison method: %s | %s\n",
            (ctx->compare == SKILL_AVERAGE) ? ">\033[4mSKILLS\033[0m<" : "SKILLS",
            (ctx->compare == OV_AVERAGE) ? ">\033[4mAVERAGE\033[0m<" : "AVERAGE");
+    printf(" [h] Hydrate player skills\n");
     printf(" [q] Quit\n");
 
-    printf("\n\033[31m%s\033[0m\n", error_msg);
-    c = keyPress();
+    printf("\n\033[%dm%s\033[0m\n", BLUE_FG, msg);
+    printf("\n\033[%dm%s\033[0m\n", RED_FG, error_msg);
+    msg[0] = '\0';
     error_msg[0] = '\0';
+    c = keyPress();
     switch (c) {
       case 'G': case 'g':
         if ((int)players->n != TEAMS_N * TEAM_SIZE) {
@@ -439,6 +460,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
         break;
       case 'Q': case 'q':
         saveToDB(tui->db, players, ctx->banned_combos, ctx->pref_combos);
+        free(msg);
         cls(stdout);
         return;
       case 'D': case 'd':
@@ -463,6 +485,9 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
         break;
       case 'M': case 'm':
         changeComparison(&ctx->compare);
+        break;
+      case 'H': case 'h':
+        hydratePlayers(tui->db, tui->allPlayers, players, ctx->skills, msg);
         break;
       default: {
         break;
