@@ -53,6 +53,7 @@ void deleteCurCombo(tui_combos* tui);
 void renderComboTui(tui_combos* tui);
 void ctuiRenderPlayersArea(tui_combos* tui);
 void ctuiRenderCombosArea(tui_combos* tui);
+void formatComboNames(tui_combos* tui, combo* combo, char* combo_text, int text_len);
 
 #endif
 

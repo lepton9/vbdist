@@ -113,3 +113,7 @@ int comboRelevant(dlist* players, combo* combo) {
   return match == (int)combo->ids->n;
 }
 
+size_t comboSize(combo* combo) {
+  return (combo) ? combo->ids->n : 0;
+}
+

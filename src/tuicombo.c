@@ -1,5 +1,9 @@
 #include "../include/tuicombo.h"
 #include "../include/utils.h"
+#include <string.h>
+
+#define BASE_COMBOS_WIDTH 50
+#define BASE_PLAYERS_WIDTH 40
 
 tui_combos* init_tui_combo(sqldb* db, dlist* players) {
   tui_combos* tui = malloc(sizeof(tui_combos));
@@ -24,8 +28,13 @@ tui_combos* init_tui_combo(sqldb* db, dlist* players) {
     }
   }
 
-  tui->combos_area = init_list_area(tui->term->cols, tui->term->rows);
-  tui->players_area = init_list_area(tui->term->cols, tui->term->rows);
+  tui->combos_area = init_list_area(BASE_COMBOS_WIDTH, tui->term->rows);
+  tui->players_area = init_list_area(BASE_PLAYERS_WIDTH, tui->term->rows);
+  set_area_pos(tui->players_area->area, 0, 0);
+  set_padding(tui->players_area->area, 1, 1, 2, 2);
+  set_area_pos(tui->combos_area->area, 0, tui->players_area->area->width + 3);
+  set_padding(tui->combos_area->area, 1, 1, 2, 2);
+
   update_list_len(tui->players_area, tui->players->n);
   update_list_len(tui->combos_area, tui->combos->n);
   return tui;
@@ -151,10 +160,11 @@ void runTuiCombo(sqldb* db, dlist* players) {
 
 void updateTuiComboAreas(tui_combos* tui) {
   getTermSize(tui->term);
-  int rows = tui->term->rows - 4;
+  int rows = tui->term->rows;
   int cols = tui->term->cols / 2;
-  update_list_area(tui->combos_area, min_int(cols, 50), rows);
-  update_list_area(tui->players_area, min_int(cols, 30), rows);
+  update_list_area(tui->combos_area, min_int(cols, BASE_COMBOS_WIDTH), rows);
+  update_list_area_fit(tui->players_area, min_int(cols, BASE_PLAYERS_WIDTH), rows);
+  set_area_pos(tui->combos_area->area, 0, tui->players_area->area->width + 3);
 }
 
 void comboTuiListUp(tui_combos* tui) {
@@ -260,94 +270,110 @@ void renderComboTui(tui_combos* tui) {
 }
 
 void ctuiRenderPlayersArea(tui_combos* tui) {
-  int col = 2;
-  int line = 2;
+  int col = start_print_col(tui->players_area->area);
+  int line = start_print_line(tui->players_area->area);
   int len = getListAreaLen(tui->players_area, tui->term->rows);
+  tui_area* area = tui->players_area->area;
 
-  if (tui->mode == CTUI_PLAYER_LIST) {
-    make_borders_color(tui->render, 0, 0, tui->players_area->area->width, len + 4, BLUE_FG);
-  } else {
-    make_borders(tui->render, 0, 0, tui->players_area->area->width, len + 4);
-  }
-  put_text(tui->render, 0, 3, "%s", "Selected players");
+  make_borders_color(tui->render, area->start_col, area->start_row, area->width,
+                     area->height,
+                     (tui->mode == CTUI_PLAYER_LIST) ? BLUE_FG : DEFAULT_FG);
+
+  put_text(tui->render, area->start_row, area->start_col + 3, "%s",
+           "Selected players");
   if (tui->recording_combo) {
-    put_text(tui->render, 0, 22, "(%s)", comboTypeString(tui->cur_combo->type));
+    put_text(tui->render, area->start_row, 22, "(%s)",
+             comboTypeString(tui->cur_combo->type));
   }
 
-  char player_text[100];
+  int text_len = max_int(area->width - area_width_empty(area), 1);
+  char player_text[text_len];
   player_text[0] = '\0';
 
-  for (int i = tui->players_area->first_ind; i < tui->players_area->first_ind + len; i++) {
-    player* p = tui->players->items[i];
-    strcat(player_text, p->firstName);
+  for (int i = tui->players_area->first_ind;
+       i < tui->players_area->first_ind + len; i++) {
+    player* p = get_elem(tui->players, i);
+    snprintf(player_text, text_len, " %s", playerFullName(p));
+    char in_combo = tui->recording_combo && inCurCombo(tui->cur_combo, p->id) >= 0;
+
     if (tui->players_area->selected == i) {
-      tui->players_area->selected_term_row = line + 1;
-      put_text(tui->render, line++, col, "\033[7m %-20s\033[27m", player_text);
-    }
-    else if (tui->recording_combo && inCurCombo(tui->cur_combo, p->id) >= 0) {
-      if (tui->cur_combo->type == BAN) {
-        put_text(tui->render, line++, col-1, "*\033[31m %-20s\033[0m", player_text);
-      } else if (tui->cur_combo->type == PAIR) {
-        put_text(tui->render, line++, col-1, "*\033[32m %-20s\033[0m", player_text);
-      }
+      set_selected_row(tui->players_area, line);
+      put_text(tui->render, line++, col - 1, "%s\033[7m%-*s\033[27m",
+               (in_combo) ? "*" : " ", text_len, player_text);
+    } else if (in_combo) {
+      int color = (tui->cur_combo->type == BAN)    ? RED_FG
+                  : (tui->cur_combo->type == PAIR) ? GREEN_FG
+                                                   : DEFAULT_FG;
+      put_text(tui->render, line++, col - 1, "*\033[%dm%s\033[0m", color,
+               player_text);
     } else {
-      put_text(tui->render, line++, col, " %-20s", player_text);
+      put_text(tui->render, line++, col, player_text);
     }
     player_text[0] = '\0';
   }
 }
 
 void ctuiRenderCombosArea(tui_combos* tui) {
-  int col = tui->players_area->area->width + 5;
-  int line = 2;
+  int col = start_print_col(tui->combos_area->area);
+  int line = start_print_line(tui->combos_area->area);
   int len = getListAreaLen(tui->combos_area, tui->term->rows);
+  tui_area* area = tui->combos_area->area;
 
   int ind = tui->combos_area->selected;
-  int sel_combo_len = 0;
-  if (ind >= 0) {
-    combo* sel_combo = tui->combos->items[ind];
-    sel_combo_len = sel_combo->ids->n;
-  }
+  int sel_combo_len = (ind >= 0) ? comboSize(get_elem(tui->combos, ind)) : 0;
+  area->height = area_height_empty(tui->combos_area->area) + len + sel_combo_len;
 
-  size_t border_height = len + 4 + sel_combo_len;
-
-  char combo_text[100];
+  int text_len = max_int(area->width - area_width_empty(area), 1);
+  char combo_text[text_len];
   combo_text[0] = '\0';
 
   for (int i = tui->combos_area->first_ind; i < tui->combos_area->first_ind + len; i++) {
-    combo* combo = tui->combos->items[i];
-    const char *name1 = "";
-    const char *name2 = "";
-    if (combo->ids->n > 1) {
-      player* p1 = getPlayerInList(tui->players, *((int *)combo->ids->items[0]));
-      player* p2 = getPlayerInList(tui->players, *((int *)combo->ids->items[1]));
-      name1 = (p1 && p1->firstName) ? p1->firstName : "";
-      name2 = (p2 && p2->firstName) ? p2->firstName : "";
-    }
-
-    sprintf(combo_text, "(%s) %s - %s%s", comboTypeString(combo->type), name1,
-            name2, (combo->ids->n > 2) ? " - ..." : "");
-
+    combo* combo = get_elem(tui->combos, i);
+    formatComboNames(tui, combo, combo_text, text_len);
     if (tui->combos_area->selected == i) {
-      tui->combos_area->selected_term_row = line + 1;
-      put_text(tui->render, line++, col + 2, "\033[7m %s\033[27m", combo_text);
-      for (size_t j = 0; j < combo->ids->n; j++) {
-        player* p = getPlayerInList(tui->players, *((int*)combo->ids->items[j]));
-        put_text(tui->render, line++, col + 4, "\033[2m- %s\033[0m", (p && p->firstName) ? p->firstName : "NotFound");
+      set_selected_row(tui->combos_area, line);
+      put_text(tui->render, line++, col, "\033[7m%s\033[27m", combo_text);
+      for (size_t j = 0; j < comboSize(combo); j++) {
+        player* p = getPlayerInList(tui->players, *((int*)get_elem(combo->ids, j)));
+        put_text(tui->render, line++, col + 2, "\033[2m- %s\033[0m",
+                 (p) ? playerName(p) : "NotFound");
       }
     } else {
-      put_text(tui->render, line++, col + 2, "%s", combo_text);
+      put_text(tui->render, line++, col, "%s", combo_text);
     }
     combo_text[0] = '\0';
   }
 
-  if (tui->mode == CTUI_COMBO_LIST) {
-    make_borders_color(tui->render, col, 0, tui->combos_area->area->width, border_height, BLUE_FG);
-  } else {
-    make_borders(tui->render, col, 0, tui->combos_area->area->width, border_height);
-  }
-  put_text(tui->render, 0, col + 3, "%s", "Combos");
-
+  make_borders_color(tui->render, area->start_col, area->start_row, area->width,
+                     area->height,
+                     (tui->mode == CTUI_COMBO_LIST) ? BLUE_FG : DEFAULT_FG);
+  put_text(tui->render, 0, area->start_col + 3, "%s", "Combos");
 }
 
+void formatComboNames(tui_combos* tui, combo* combo, char* combo_text, int text_len) {
+  if (!combo) return;
+  const char* type_str = comboTypeString(combo->type);
+  const int names_len = max_int(text_len - strlen(type_str) - 4, 1);
+  char *names = malloc(names_len);
+  names[0] = '\0';
+  size_t offset = 0;
+  for (size_t j = 0; j < comboSize(combo); j++) {
+    int* id = get_elem(combo->ids, j);
+    player* p = (id) ? getPlayerInList(tui->players, *id) : NULL;
+    const char *name = (p) ? (playerName(p)) : "?";
+    size_t name_len = strlen(name);
+    if ((int)(offset + name_len + 7) > names_len) {
+      snprintf(names + offset, names_len - offset, " - ...");
+      break;
+    }
+    if (j > 0) {
+      snprintf(names + offset, names_len - offset, " - ");
+      offset += 3;
+    }
+    snprintf(names + offset, names_len - offset, "%s", name);
+    offset += name_len;
+  }
+  snprintf(combo_text, text_len, " (%s) %s", type_str, names);
+  free(names);
+}
 

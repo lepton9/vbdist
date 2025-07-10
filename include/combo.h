@@ -26,7 +26,6 @@ comboType toComboType(const char* type);
 void freeCombos(dlist* combos);
 
 void addToCombo(combo* combo, int a);
-
 void addCombo(dlist* combos, comboType type, int a, int b);
 
 int isInCombo(combo* combo, player* a);
@@ -35,5 +34,6 @@ char isCombo(dlist* combos, player* a, player* b);
 char comboInTeam(dlist* combos, team* t, player* p);
 char comboInTeamSize(dlist* combos, team* t, size_t team_size, player* p);
 int comboRelevant(dlist* players, combo* combo);
+size_t comboSize(combo* combo);
 
 #endif
