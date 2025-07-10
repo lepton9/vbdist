@@ -127,13 +127,13 @@ void update_list_area(list_area* la, size_t w, size_t h) {
 
 void update_list_area_fit(list_area* la, size_t w, size_t h) {
   la->max_shown = max_int(0, h - la->area->start_row - area_height_empty(la->area));
-  update_area(la->area, w, min_int(h, area_height_fit(la)));
+  update_area(la->area, w, min_int(h, area_height_fit(la, h)));
   check_selected(la);
   fit_screen(la);
 }
 
-int area_height_fit(list_area* la) {
-  return area_height_empty(la->area) + getListAreaLen(la, la->area->height);
+int area_height_fit(list_area* la, size_t h) {
+  return area_height_empty(la->area) + getListAreaLen(la, h);
 }
 
 void update_list_len(list_area* la, size_t n) {
