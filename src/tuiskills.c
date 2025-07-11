@@ -107,6 +107,7 @@ skill* get_selected_skill(tui_skills* tui) {
 
 void toggle_selected_skill(tui_skills* tui) {
   skill* selected = get_selected_skill(tui);
+  if (!selected) return;
   int i = findSkill(selected, tui->selected_skills);
   if (i >= 0) {
     skill* s = pop_elem(tui->selected_skills, i);
