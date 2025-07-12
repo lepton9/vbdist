@@ -638,14 +638,17 @@ void renderAllPlayersList(tuidb* tui) {
   int col = start_print_col(tui->allPlayersArea->area);
   int line = start_print_line(tui->allPlayersArea->area);
   int len = getListAreaLen(tui->allPlayersArea, tui->term->rows);
-  size_t name_width = 20;
+  size_t name_width =
+      max_int(tui->allPlayersArea->area->width -
+                  area_width_empty(tui->allPlayersArea->area) - 10,
+              1);
   char player_name[name_width];
   player_name[0] = '\0';
 
   draw_area_borders(tui->render, tui->allPlayersArea->area, (tui->active_area == PLAYERS_LIST) ? BLUE_FG : DEFAULT_FG);
 
   put_text(tui->render, tui->allTeamsArea->area->start_row + 1, 2,
-           "\033[4m %-*s %s \033[24m", name_width + 5, "Name", "Rating");
+           "\033[4m %-*s %s \033[24m", name_width, "Name", "Rating");
   put_text(tui->render, area_last_line(tui->allPlayersArea->area), 2, "%d/%d",
            tui->allPlayersArea->selected + 1, (int)tui->allPlayers->n);
 
@@ -657,10 +660,10 @@ void renderAllPlayersList(tuidb* tui) {
     if (tui->allPlayersArea->selected == i) {
       set_selected_row(tui->allPlayersArea, line);
       put_text(tui->render, line++, col, "\033[7m%s %-*s %.2f\033[27m",
-               (selected) ? ">" : "", name_width + 5, player_name, rating(p));
+               (selected) ? ">" : "", name_width, player_name, rating(p));
     } else {
       put_text(tui->render, line++, col, "%s %-*s %.2f", (selected) ? ">" : "",
-               name_width + 5, player_name, rating(p));
+               name_width, player_name, rating(p));
     }
     player_name[0] = '\0';
   }
@@ -673,8 +676,9 @@ void renderSelectedList(tuidb* tui) {
   int borderStartLine = tui->allPlayersArea->area->start_row;
   int len = min_int(tui->players->n, tui->term->rows - 1 - line - borderStartLine);
   int borderHeight = len + 4 - borderStartLine;
-  int borderWidth = tui->allPlayersArea->area->width - AREA_SPACING;
-  size_t name_width = 20;
+  int borderWidth = max_int((int)tui->allPlayersArea->area->width - AREA_SPACING, 1);
+  size_t name_width = max_int(
+      borderWidth - area_width_empty(tui->allPlayersArea->area) - 10, 1);
   char player_name[name_width];
   player_name[0] = '\0';
 
@@ -690,7 +694,7 @@ void renderSelectedList(tuidb* tui) {
   for (int i = 0; i < len; i++) {
     player* p = tui->players->items[i];
     snprintf(player_name, name_width, "%s", playerFullName(p));
-    put_text(tui->render, line++, startCol, " %-*s %.2f", name_width + 5,
+    put_text(tui->render, line++, startCol, " %-*s %.2f", name_width,
              player_name, rating(p));
     player_name[0] = '\0';
   }
