@@ -637,7 +637,7 @@ void draw_area_borders(renderer* render, tui_area* area, color_fg color) {
 void renderAllPlayersList(tuidb* tui) {
   int col = start_print_col(tui->allPlayersArea->area);
   int line = start_print_line(tui->allPlayersArea->area);
-  int len = getListAreaLen(tui->allPlayersArea, tui->term->rows);
+  int len = getListAreaLen(tui->allPlayersArea);
   size_t name_width =
       max_int(tui->allPlayersArea->area->width -
                   area_width_empty(tui->allPlayersArea->area) - 10,
@@ -756,7 +756,7 @@ void renderPlayerRelations(tuidb* tui, player* p, int startCol, int startLine) {
 void renderPlayerEditPos(tuidb *tui) {
   int col = start_print_col(tui->p_edit->positionsArea->area);
   int line = start_print_line(tui->p_edit->positionsArea->area);
-  int len = getListAreaLen(tui->p_edit->positionsArea, tui->term->rows);
+  int len = getListAreaLen(tui->p_edit->positionsArea);
   list_area* area = tui->p_edit->positionsArea;
 
   draw_area_borders(tui->render, area->area, BLUE_FG);
@@ -847,7 +847,7 @@ void renderPlayerInfo(tuidb* tui) {
 void renderAllTeamsList(tuidb* tui) {
   int col = start_print_col(tui->allTeamsArea->area);
   int line = start_print_line(tui->allTeamsArea->area);
-  int len = getListAreaLen(tui->allTeamsArea, tui->term->rows);
+  int len = getListAreaLen(tui->allTeamsArea);
 
   size_t name_width = max_int(tui->allTeamsArea->area->width -
                                   area_width_empty(tui->allTeamsArea->area),

@@ -272,7 +272,7 @@ void renderComboTui(tui_combos* tui) {
 void ctuiRenderPlayersArea(tui_combos* tui) {
   int col = start_print_col(tui->players_area->area);
   int line = start_print_line(tui->players_area->area);
-  int len = getListAreaLen(tui->players_area, tui->term->rows);
+  int len = getListAreaLen(tui->players_area);
   tui_area* area = tui->players_area->area;
 
   make_borders_color(tui->render, area->start_col, area->start_row, area->width,
@@ -316,7 +316,7 @@ void ctuiRenderPlayersArea(tui_combos* tui) {
 void ctuiRenderCombosArea(tui_combos* tui) {
   int col = start_print_col(tui->combos_area->area);
   int line = start_print_line(tui->combos_area->area);
-  int len = getListAreaLen(tui->combos_area, tui->term->rows);
+  int len = getListAreaLen(tui->combos_area);
   tui_area* area = tui->combos_area->area;
 
   int ind = tui->combos_area->selected;

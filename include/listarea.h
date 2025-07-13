@@ -54,11 +54,11 @@ void check_selected(list_area* la);
 void update_list_area(list_area* la, size_t w, size_t h);
 void update_list_area_fit(list_area* la, size_t w, size_t h);
 void update_list_len(list_area* la, size_t n);
-int area_height_fit(list_area* la, size_t h);
+int area_height_fit(list_area* la);
 
 void fit_screen(list_area* la);
 
-int getListAreaLen(list_area* area, int term_height);
+int getListAreaLen(list_area* area);
 
 #endif
 

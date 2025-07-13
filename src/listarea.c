@@ -127,13 +127,14 @@ void update_list_area(list_area* la, size_t w, size_t h) {
 
 void update_list_area_fit(list_area* la, size_t w, size_t h) {
   la->max_shown = max_int(0, h - la->area->start_row - area_height_empty(la->area));
-  update_area(la->area, w, min_int(h, area_height_fit(la, h)));
+  la->area->height = h;
+  update_area(la->area, w, min_int(h, area_height_fit(la)));
   check_selected(la);
   fit_screen(la);
 }
 
-int area_height_fit(list_area* la, size_t h) {
-  return area_height_empty(la->area) + getListAreaLen(la, h);
+int area_height_fit(list_area* la) {
+  return area_height_empty(la->area) + getListAreaLen(la);
 }
 
 void update_list_len(list_area* la, size_t n) {
@@ -149,9 +150,9 @@ void check_selected(list_area* la) {
   }
 }
 
-int getListAreaLen(list_area *area, int term_height) {
+int getListAreaLen(list_area *area) {
   if (area->len == 0) return 0;
-  return min_int(
-      min_int(term_height - start_print_line(area->area), (int)area->max_shown),
-      (int)area->len - area->first_ind);
+  return min_int(min_int(area->area->height - start_print_line(area->area),
+                         (int)area->max_shown),
+                 (int)area->len - area->first_ind);
 }

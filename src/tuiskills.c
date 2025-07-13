@@ -267,7 +267,7 @@ void update_skills_area(tui_skills* tui) {
 void renderSkillsTui(tui_skills* tui) {
   int col = start_print_col(tui->skills_area->area);
   int line = start_print_line(tui->skills_area->area);
-  int len = getListAreaLen(tui->skills_area, tui->term->rows);
+  int len = getListAreaLen(tui->skills_area);
   tui_area* area = tui->skills_area->area;
 
   make_borders_color(tui->render, area->start_col, area->start_row, area->width,
