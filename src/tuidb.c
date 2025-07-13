@@ -16,14 +16,14 @@ tuidb* initTuiDB(int teams, int team_size) {
   tui->allPlayersArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
   tui->allTeamsArea = init_list_area(BASE_SECTION_WIDTH, BASE_LIST_LEN);
   set_area_pos(tui->allPlayersArea->area, 1, 0);
-  set_padding(tui->allPlayersArea->area, 2, 1, 2, 0);
+  set_padding(tui->allPlayersArea->area, 2, 1, 2, 2);
   set_area_pos(tui->allTeamsArea->area, 1, 0);
-  set_padding(tui->allTeamsArea->area, 2, 1, 2, 0);
+  set_padding(tui->allTeamsArea->area, 2, 1, 2, 2);
 
   tui->p_edit = initPlayerEdit(BASE_SECTION_WIDTH, BASE_LIST_LEN);
   set_area_pos(tui->p_edit->positionsArea->area, 1,
                tui->allPlayersArea->area->width * 2);
-  set_padding(tui->p_edit->positionsArea->area, 0, 0, 2, 0);
+  set_padding(tui->p_edit->positionsArea->area, 0, 0, 2, 2);
 
   tui->tab = PLAYERS_TAB;
   tui->active_area = PLAYERS_LIST;
@@ -677,8 +677,8 @@ void renderSelectedList(tuidb* tui) {
   int len = min_int(tui->players->n, tui->term->rows - 1 - line - borderStartLine);
   int borderHeight = len + 4 - borderStartLine;
   int borderWidth = max_int((int)tui->allPlayersArea->area->width - AREA_SPACING, 1);
-  size_t name_width = max_int(
-      borderWidth - area_width_empty(tui->allPlayersArea->area) - 10, 1);
+  size_t name_width =
+      max_int(borderWidth - area_width_empty(tui->allPlayersArea->area) - 5, 1);
   char player_name[name_width];
   player_name[0] = '\0';
 
@@ -784,10 +784,10 @@ void renderPlayerInfo(tuidb* tui) {
   if (!p) return;
   int startCol = tui->allPlayersArea->area->width + AREA_SPACING +
                  tui->allPlayersArea->area->pad->left;
-  int line = 2;
   int borderStartLine = tui->allPlayersArea->area->start_row;
   int borderHeight = playerInfoBoxHeight(tui, p);
-  int borderWidth = tui->allPlayersArea->area->width - AREA_SPACING;
+  int borderWidth = max_int(tui->allPlayersArea->area->width - AREA_SPACING, 1);
+  int line = borderStartLine + 1;
 
   make_borders_color(tui->render,
                      tui->allPlayersArea->area->width + AREA_SPACING,
@@ -849,21 +849,30 @@ void renderAllTeamsList(tuidb* tui) {
   int line = start_print_line(tui->allTeamsArea->area);
   int len = getListAreaLen(tui->allTeamsArea, tui->term->rows);
 
+  size_t name_width = max_int(tui->allTeamsArea->area->width -
+                                  area_width_empty(tui->allTeamsArea->area),
+                              1);
+  char team_name[name_width];
+  team_name[0] = '\0';
+
   draw_area_borders(tui->render, tui->allTeamsArea->area, BLUE_FG);
 
   put_text(tui->render, tui->allTeamsArea->area->start_row + 1, 2,
-           "\033[4m %-20s\033[24m", "Name");
+           "\033[4m %-*s\033[24m", name_width, "Name");
   put_text(tui->render, area_last_line(tui->allTeamsArea->area), 2, "%d/%d",
            tui->allTeamsArea->selected + 1, (int)tui->allTeams->n);
 
   for (int i = tui->allTeamsArea->first_ind; i < tui->allTeamsArea->first_ind + len; i++) {
-    team* t = tui->allTeams->items[i];
+    team* t = get_elem(tui->allTeams, i);
+    snprintf(team_name, name_width, " %s", t->name);
     if (tui->allTeamsArea->selected == i) {
       set_selected_row(tui->allTeamsArea, line);
-      put_text(tui->render, line++, col, "\033[7m%-20s\033[27m", t->name);
+      put_text(tui->render, line++, col, "\033[7m%-*s\033[27m", name_width,
+               team_name);
     } else {
-      put_text(tui->render, line++, col, "%-20s", t->name);
+      put_text(tui->render, line++, col, "%-*s", name_width, team_name);
     }
+    team_name[0] = '\0';
   }
 }
 
@@ -871,28 +880,37 @@ void renderSelectedTeam(tuidb* tui) {
   team* t = selectedTeam(tui);
   if (!t) return;
   dlist* player_ids = fetchPlayersInTeam(tui->db, t);
-  int startCol = tui->allTeamsArea->area->width + 5;
-  int borderStartLine = 1;
+  int startCol = tui->allTeamsArea->area->width + AREA_SPACING +
+                 tui->allTeamsArea->area->pad->left;
+  int borderStartLine = tui->allTeamsArea->area->start_row;
   int borderHeight = min_int(player_ids->n + 5, tui->term->rows) -  borderStartLine;
-  int borderWidth = 35;
+  int borderWidth = max_int(tui->allTeamsArea->area->width - AREA_SPACING, 1);
   int line = borderStartLine + 2;
 
-  make_borders_color(tui->render, startCol - 2, borderStartLine, borderWidth, borderHeight, DEFAULT_FG);
+  size_t name_width =
+      max_int(borderWidth - area_width_empty(tui->allPlayersArea->area) - 5, 1);
+  char player_text[name_width];
+  player_text[0] = '\0';
+
+  make_borders_color(tui->render, tui->allTeamsArea->area->width + AREA_SPACING,
+                     borderStartLine, borderWidth, borderHeight, DEFAULT_FG);
 
   put_text(tui->render, borderStartLine, startCol, "%s", t->name);
-  put_text(tui->render, borderStartLine, startCol + 25, "%d", t->id);
+  put_text(tui->render, borderStartLine, startCol + name_width, "%d", t->id);
 
   for (size_t i = 0; i < player_ids->n; i++) {
     int* id = player_ids->items[i];
     int ind = playerInList(tui->allPlayers, *id);
     if (ind >= 0) {
       player* p = tui->allPlayers->items[ind];
-      put_text(tui->render, line, startCol, "%s", playerFullName(p));
+      snprintf(player_text, name_width, "%s", playerFullName(p));
+      put_text(tui->render, line, startCol, "%-*s", name_width, player_text);
     } else {
       put_text(tui->render, line, startCol, "Unidentified");
     }
-    put_text(tui->render, line++, startCol + 25, "%d", *id);
+    put_text(tui->render, line++, startCol + name_width, "%d", *id);
     free(id);
+    player_text[0] = '\0';
   }
   free_list(player_ids);
 }
