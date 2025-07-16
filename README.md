@@ -29,15 +29,18 @@ make
 vbdist [options]
 
   Options:
-    -f, --file <file>          Path to textfile
-    -d, --database <database>  Path to sqlite database
-    -t, --teams <int>          Set number of teams
-    -p, --players <int>        Set number of players in a team
+    -f, --file <file>          Path to textfile                 (Optional)
+    -d, --database <database>  Path to sqlite database          (Optional)
+    -t, --teams <int>          Set number of teams              (Optional)
+    -p, --players <int>        Set number of players in a team  (Optional)
     -c, --config               Print config location
     -h, --help                 Display help
 ```
-If you are using a SQLite3 database, you will need both the database and player file.
-If only the player file is passed, the format shown below will be used.
+
+#### Example
+```
+vbdist -d sql/database.db
+```
 
 ## Player file format
 
@@ -50,7 +53,7 @@ List of players IDs in the database.
 1010
 ```
 
-### Using only a text file
+### Using only a text file (deprecated)
 ```
 # Line starting with '#' is a comment
 
