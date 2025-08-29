@@ -66,6 +66,8 @@ team* selectedTeam(tuidb* tui);
 
 void fillTeamTemp(tuidb* tui, team* team);
 int validateTeamEditSelect(dlist* selectedTeams, team* cur_team);
+void selectTeamToEditGroup(tuidb* tui);
+
 void renameSelectedListElem(tuidb* tui);
 void deleteSelectedListElem(tuidb* tui);
 

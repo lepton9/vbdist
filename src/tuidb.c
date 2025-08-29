@@ -173,6 +173,25 @@ int validateTeamEditSelect(dlist* selectedTeams, team* cur_team) {
   return 1;
 }
 
+void selectTeamToEditGroup(tuidb* tui) {
+  team* sel_team = selectedTeam(tui);
+  if (!sel_team) return;
+  int ind = teamInList(tui->selectedTeams, sel_team->id);
+  if (ind >= 0) {
+    team* popped = pop_elem(tui->selectedTeams, ind);
+    memset(popped->players, 0, popped->size * sizeof(player*));
+    popped->size = 0;
+    return;
+  }
+  fillTeamTemp(tui, sel_team);
+  if (validateTeamEditSelect(tui->selectedTeams, sel_team)) {
+    list_add(tui->selectedTeams, sel_team);
+  } else {
+    memset(sel_team->players, 0, sel_team->size * sizeof(player*));
+    sel_team->size = 0;
+  }
+}
+
 void tuidb_list_up(tuidb* tui) {
   switch (tui->tab) {
     case PLAYERS_TAB: {
@@ -496,15 +515,19 @@ void handleKeyPress(tuidb* tui, int c) {
 #ifdef __linux__
     case KEY_ENTER:
 #endif
-    if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST) {
-      selectCurPlayer(tui);
-    } else if (tui->tab == PLAYERS_TAB && tui->active_area == POSITIONS_LIST_EDIT) {
-      pedit_add_position(tui->p_edit);
-      if (tui->p_edit->positions->n == 0) {
-        tui->active_area = PLAYER_EDIT;
+      if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST) {
+        if (tui->active_area == PLAYERS_LIST) {
+          selectCurPlayer(tui);
+        } else if (tui->active_area == POSITIONS_LIST_EDIT) {
+          pedit_add_position(tui->p_edit);
+          if (tui->p_edit->positions->n == 0) {
+            tui->active_area = PLAYER_EDIT;
+          }
+        }
+      } else if (tui->tab == TEAMS_TAB) {
+        selectTeamToEditGroup(tui);
       }
-    }
-    break;
+      break;
     case 27: // Esc
       handle_esc(tui);
       break;
@@ -573,8 +596,11 @@ void handleKeyPress(tuidb* tui, int c) {
         tui->show_player_info ^= 1;
       break;
     case 'e': case 'E': // Edit player
-      if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST)
+      if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST) {
         toggle_edit_player(tui);
+      } else if (tui->tab == TEAMS_TAB) {
+        // TODO: go to tuiswap
+      }
       break;
     case 'u': case 'U':
       if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST)
@@ -888,13 +914,14 @@ void renderAllTeamsList(tuidb* tui) {
 
   for (int i = tui->allTeamsArea->first_ind; i < tui->allTeamsArea->first_ind + len; i++) {
     team* t = get_elem(tui->allTeams, i);
+    char selected = teamInList(tui->selectedTeams, t->id) >= 0;
     snprintf(team_name, name_width, " %s", t->name);
     if (tui->allTeamsArea->selected == i) {
       set_selected_row(tui->allTeamsArea, line);
-      put_text(tui->render, line++, col, "\033[7m%-*s\033[27m", name_width,
-               team_name);
+      put_text(tui->render, line++, col, "%s\033[7m%-*s\033[27m",
+               (selected) ? "*" : " ", name_width, team_name);
     } else {
-      put_text(tui->render, line++, col, "%-*s", name_width, team_name);
+      put_text(tui->render, line++, col, "%s%-*s", (selected) ? "*" : " ", name_width, team_name);
     }
     team_name[0] = '\0';
   }
