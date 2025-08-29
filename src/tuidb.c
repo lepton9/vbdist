@@ -25,6 +25,8 @@ tuidb* initTuiDB(int teams, int team_size) {
                tui->allPlayersArea->area->width * 2);
   set_padding(tui->p_edit->positionsArea->area, 0, 0, 2, 2);
 
+  tui->selectedTeams = init_list();
+
   tui->tab = PLAYERS_TAB;
   tui->active_area = PLAYERS_LIST;
   tui->show_player_info = 0;
@@ -73,6 +75,7 @@ void setAllPositions(tuidb* tui, dlist* positions) {
 
 void freeTuiDB(tuidb* tui) {
   if (!tui) return;
+  free_list(tui->selectedTeams);
   freeAllPlayers(tui->allPlayers);
   freeAllTeams(tui->allTeams);
   free_renderer(tui->render);
@@ -147,6 +150,27 @@ void unselectCurPlayer(tuidb* tui) {
   player* selected = selectedPlayer(tui);
   int i = playerInList(tui->players, selected->id);
   unselectPlayer(tui, i);
+}
+
+void fillTeamTemp(tuidb* tui, team* team) {
+  dlist* player_ids = fetchPlayersInTeam(tui->db, team);
+  team->size = player_ids->n;
+  team->players = realloc(team->players, team->size * sizeof(player*));
+  for (size_t i = 0; i < player_ids->n; i++) {
+    int* id = player_ids->items[i];
+    team->players[i] = getPlayerInList(tui->allPlayers, *id);
+    free(id);
+  }
+  free_list(player_ids);
+}
+
+int validateTeamEditSelect(dlist* selectedTeams, team* cur_team) {
+  for (size_t i = 0; i < selectedTeams->n; i++) {
+    team* t = get_elem(selectedTeams, i);
+    if (cur_team->size != t->size) return 0;
+    if (checkPlayerCollisions(t, cur_team)) return 0;
+  }
+  return 1;
 }
 
 void tuidb_list_up(tuidb* tui) {

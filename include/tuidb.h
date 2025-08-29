@@ -37,6 +37,7 @@ typedef struct {
   layout_area active_area;
   char show_player_info;
   player_edit* p_edit;
+  dlist* selectedTeams;
   char exit;
 } tuidb;
 
@@ -63,6 +64,8 @@ void setAllPositions(tuidb* tui, dlist* positions);
 player* selectedPlayer(tuidb* tui);
 team* selectedTeam(tuidb* tui);
 
+void fillTeamTemp(tuidb* tui, team* team);
+int validateTeamEditSelect(dlist* selectedTeams, team* cur_team);
 void renameSelectedListElem(tuidb* tui);
 void deleteSelectedListElem(tuidb* tui);
 
