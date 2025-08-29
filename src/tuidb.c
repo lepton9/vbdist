@@ -334,20 +334,20 @@ void deleteSelectedListElem(tuidb* tui) {
       if (r) {
         player* p = pop_elem(tui->allPlayers, tui->allPlayersArea->selected);
         if (p) freePlayer(p);
-        int maxSelected = tui->allPlayers->n - 1;
-        if (tui->allPlayersArea->selected > maxSelected) {
-          tui->allPlayersArea->selected = maxSelected;
-        }
+        update_list_len(tui->allPlayersArea, tui->allPlayers->n);
+        check_selected(tui->allPlayersArea);
       }
     } else if (tui->tab == TEAMS_TAB) {
       int r = deleteTeam(tui->db, selectedTeam(tui));
       if (r) {
         team* t = pop_elem(tui->allTeams, tui->allTeamsArea->selected);
-        if (t) freeTeam(t);
-        int maxSelected = tui->allTeams->n - 1;
-        if (tui->allTeamsArea->selected > maxSelected) {
-          tui->allTeamsArea->selected = maxSelected;
+        int i = teamInList(tui->selectedTeams, t->id);
+        if (i >= 0) {
+          pop_elem(tui->selectedTeams, i);
         }
+        if (t) freeTeam(t);
+        update_list_len(tui->allTeamsArea, tui->allTeams->n);
+        check_selected(tui->allTeamsArea);
       }
     }
   }
