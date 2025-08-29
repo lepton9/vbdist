@@ -1,5 +1,4 @@
 #include "../include/team.h"
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -63,5 +62,24 @@ void team_average_skills(team* t, dlist* skills) {
     skill* s = skills->items[s_i];
     s->value = team_average_skill(t, s);
   }
+}
+
+int teamInList(dlist* list, int team_id) {
+  for (size_t i = 0; i < list->n; i++) {
+    if (((team*)list->items[i])->id == team_id) return i;
+  }
+  return -1;
+}
+
+int checkPlayerCollisions(team* a, team* b) {
+  if (!a || !b) return 0;
+  for (size_t i = 0; i < a->size; i++) {
+    player* p_a = a->players[i];
+    for (size_t j = 0; j < b->size; j++) {
+      player* p_b = b->players[j];
+      if (p_a->id == p_b->id) return 1;
+    }
+  }
+  return 0;
 }
 
