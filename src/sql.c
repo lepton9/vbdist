@@ -662,6 +662,21 @@ int deletePlayer(sqldb* db, player* player) {
   return r;
 }
 
+int updateTeam(sqldb* db, team* team) {
+  if (!deleteTeamPlayers(db, team)) return 0;
+  if (!insertTeamPlayers(db, team)) return 0;
+  log_sql("Updated Team (%d) with %d players", team->id, team->size);
+  return 1;
+}
+
+int deleteTeamPlayers(sqldb* db, team* team) {
+  const char* sql = "DELETE FROM PlayerTeam WHERE team_id = ?;";
+  sqlite3_stmt* stmt;
+  if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
+  sqlite3_bind_int(stmt, 1, team->id);
+  return stmtExec(db->sqlite, stmt);
+}
+
 int deleteTeam(sqldb* db, team* team) {
   const char* sql = "DELETE FROM Team WHERE team_id = ?;";
   sqlite3_stmt* stmt;
