@@ -160,6 +160,7 @@ void renderTuiSwapSkills(tuiswap* tui, int begLine) {
       col += TEAM_PRINT_WIDTH;
     }
     line++;
+    if (!tui->skills) continue;
     for(size_t j = 0; j < tui->skills->n; j++) {
       col = 0;
       for(int i = t; i < tui->team_n && i - t < tui->teamsInline; i++) {

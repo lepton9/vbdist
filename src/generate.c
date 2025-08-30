@@ -50,10 +50,9 @@ dlist* averageSkillRatings(team** teams, dimensions* dim, dlist* sel_skills) {
       for (size_t s_i = 0; s_i < avg_skills->n; s_i++) {
         skill* s = avg_skills->items[s_i];
         double val = get_skill_value(p, s);
-        if (fabs(val) > 1e-6f) {
-          s->value += val;
-          psw_skills[s_i]++;
-        }
+        if (fabs(val) <= 1e-6f) continue;
+        s->value += val;
+        psw_skills[s_i]++;
       }
     }
   }
@@ -116,11 +115,11 @@ int validateSwapSkills(dlist* a, dlist* b, dlist* aNew, dlist* bNew, dlist* avg)
 }
 
 int maxTeamFromPrefCombos(dlist* prefCombos) {
-  int biggest_size = 0;
+  size_t biggest_size = 0;
   for (size_t i = 0; i < prefCombos->n; i++) {
     combo* c = prefCombos->items[i];
-    if ((int)c->ids->n > biggest_size) {
-      biggest_size = (int)c->ids->n;
+    if (c->ids->n > biggest_size) {
+      biggest_size = c->ids->n;
     }
   }
   return biggest_size;
@@ -182,10 +181,10 @@ int getPlayerOfPosAsgn(player** players, size_t n, position* pos) {
   for (; a <= b; a++, b--) {
     position* pos_a = assignedPosition(players[a]);
     position* pos_b = assignedPosition(players[b]);
-    if ((pos && pos_a && pos_a->id == pos->id) || (!pos && !pos_a)) {
+    if (pos ? (pos_a && pos_a->id == pos->id) : !pos_a) {
       return a;
     }
-    if ((pos && pos_b && pos_b->id == pos->id) || (!pos && !pos_b)) {
+    if (pos ? (pos_b && pos_b->id == pos->id) : !pos_b) {
       return b;
     }
   }
@@ -218,13 +217,13 @@ int getPlayerOfPosition(player** players, size_t n, position* pos) {
           player_ind = b;
         }
       }
-    } else {
-      if (p_a->positions->n == 0) {
-        return a;
-      }
-      if (p_b->positions->n == 0) {
-        return b;
-      }
+      continue;
+    }
+    if (p_a->positions->n == 0) {
+      return a;
+    }
+    if (p_b->positions->n == 0) {
+      return b;
     }
   }
   return player_ind;
@@ -476,8 +475,8 @@ team** initTeams(const size_t n, const size_t size) {
 void putPrefComboToTeam(team* t, size_t n, combo* c, dlist* players) {
   if (t->size - n < c->ids->n) return;
   for (size_t i = 0; i < c->ids->n; i++) {
-    int id = *((int*)c->ids->items[i]);
-    int ind = playerInList(players, id);
+    int* id = c->ids->items[i];
+    int ind = playerInList(players, *id);
     if (ind >= 0) {
       t->players[n++] = pop_elem(players, ind);
     }
@@ -522,8 +521,8 @@ void initBpcsToTeams(team** teams, size_t* team_sizes, context* ctx, dlist* play
     combo* combo = ctx->banned_combos->items[c];
     if (combo->ids->n < 2) continue;
     for (size_t i = 0; i < combo->ids->n; i++) {
-      int id = *((int*)combo->ids->items[i]);
-      int ind = playerInList(players, id);
+      int* id = combo->ids->items[i];
+      int ind = playerInList(players, *id);
       player* p = get_elem(players, ind);
       if (ind >= 0 && p) {
         int misses = 0;

@@ -444,7 +444,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
           sprintf(error_msg, "Amount of positions should equal team size (%d/%d)", (int)ctx->positions->n, TEAM_SIZE);
         } else {
           ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
-          teams_added = teams_added || generateTeams((tui) ? tui->db : NULL, players, ctx);
+          teams_added = generateTeams((tui) ? tui->db : NULL, players, ctx) || teams_added;
         }
         break;
       case 'T': case 't':

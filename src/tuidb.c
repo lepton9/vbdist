@@ -350,24 +350,20 @@ void deleteSelectedListElem(tuidb* tui) {
   char c = keyPress();
   if (c == 'y') {
     if (tui->tab == PLAYERS_TAB) {
-      int r = deletePlayer(tui->db, selectedPlayer(tui));
-      if (r) {
+      if (deletePlayer(tui->db, selectedPlayer(tui))) {
         player* p = pop_elem(tui->allPlayers, tui->allPlayersArea->selected);
-        if (p) freePlayer(p);
+        int i = playerInList(tui->players, p->id);
+        if (i >= 0) freePlayer(pop_elem(tui->players, i));
+        freePlayer(p);
         update_list_len(tui->allPlayersArea, tui->allPlayers->n);
-        check_selected(tui->allPlayersArea);
       }
     } else if (tui->tab == TEAMS_TAB) {
-      int r = deleteTeam(tui->db, selectedTeam(tui));
-      if (r) {
+      if (deleteTeam(tui->db, selectedTeam(tui))) {
         team* t = pop_elem(tui->allTeams, tui->allTeamsArea->selected);
         int i = teamInList(tui->selectedTeams, t->id);
-        if (i >= 0) {
-          pop_elem(tui->selectedTeams, i);
-        }
-        if (t) freeTeam(t);
+        if (i >= 0) pop_elem(tui->selectedTeams, i);
+        freeTeam(t);
         update_list_len(tui->allTeamsArea, tui->allTeams->n);
-        check_selected(tui->allTeamsArea);
       }
     }
   }

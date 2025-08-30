@@ -19,7 +19,7 @@ void freeTeam(team* t) {
 }
 
 double avgRating(team* t) {
-  if (t == NULL) return 0.0;
+  if (!t) return 0.0;
   double sum = 0;
   int ratings_n = 0;
   for (size_t pI = 0; pI < t->size; pI++) {
@@ -31,7 +31,7 @@ double avgRating(team* t) {
 }
 
 double team_rating_filter(team* t, dlist* skills) {
-  if (t == NULL) return 0.0;
+  if (!t || !skills) return 0.0;
   double sum = 0;
   int ratings_n = 0;
   for (size_t pI = 0; pI < t->size; pI++) {
@@ -57,7 +57,7 @@ double team_average_skill(team* t, skill* s) {
 }
 
 void team_average_skills(team* t, dlist* skills) {
-  if (t == NULL) return;
+  if (!t || !skills) return;
   for (size_t s_i = 0; s_i < skills->n; s_i++) {
     skill* s = skills->items[s_i];
     s->value = team_average_skill(t, s);
@@ -74,10 +74,8 @@ int teamInList(dlist* list, int team_id) {
 int checkPlayerCollisions(team* a, team* b) {
   if (!a || !b) return 0;
   for (size_t i = 0; i < a->size; i++) {
-    player* p_a = a->players[i];
     for (size_t j = 0; j < b->size; j++) {
-      player* p_b = b->players[j];
-      if (p_a->id == p_b->id) return 1;
+      if (a->players[i]->id == b->players[j]->id) return 1;
     }
   }
   return 0;
