@@ -404,6 +404,23 @@ void saveToDB(sqldb* db, dlist* players, dlist* bpcs, dlist* prefCombos) {
   insertCombos(db, prefCombos);
 }
 
+int checkTeamDimensions(context* ctx, dlist* players, char* msg) {
+  if (TEAM_SIZE < MINIMUM_SIZE || TEAMS_N < MINIMUM_SIZE) {
+    sprintf(msg, "Team size (%d) and amount (%d) minimum is %d", TEAM_SIZE,
+            TEAMS_N, MINIMUM_SIZE);
+    return 0;
+  } else if ((int)players->n != TEAMS_N * TEAM_SIZE) {
+    sprintf(msg, "Selected %zu players, but %d was expected", players->n,
+            TEAMS_N * TEAM_SIZE);
+    return 0;
+  } else if (ctx->use_positions && (int)ctx->positions->n != TEAM_SIZE) {
+    sprintf(msg, "Amount of positions should equal team size (%d/%d)",
+            (int)ctx->positions->n, TEAM_SIZE);
+    return 0;
+  }
+  return 1;
+}
+
 void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dlist* allPositions, char* err) {
   int teams_added = 0;
   char* msg = malloc(MSG_LEN);
@@ -439,17 +456,7 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
     c = keyPress();
     switch (c) {
       case 'G': case 'g':
-        if (TEAM_SIZE < MINIMUM_SIZE || TEAMS_N < MINIMUM_SIZE) {
-          sprintf(error_msg, "Team size (%d) and amount (%d) minimum is %d",
-                  TEAM_SIZE, TEAMS_N, MINIMUM_SIZE);
-        } else if ((int)players->n != TEAMS_N * TEAM_SIZE) {
-          sprintf(error_msg, "Selected %zu players, but %d was expected",
-                  players->n, TEAMS_N * TEAM_SIZE);
-        } else if (ctx->use_positions && (int)ctx->positions->n != TEAM_SIZE) {
-          sprintf(error_msg,
-                  "Amount of positions should equal team size (%d/%d)",
-                  (int)ctx->positions->n, TEAM_SIZE);
-        } else {
+        if (checkTeamDimensions(ctx, players, error_msg)) {
           ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
           teams_added = generateTeams((tui) ? tui->db : NULL, players, ctx) || teams_added;
         }
