@@ -171,14 +171,23 @@ int validateTeamEditSelect(dlist* selectedTeams, size_t team_size, team* cur_tea
   return 1;
 }
 
+void unselectAllTeams(tuidb* tui) {
+  while (tui->selectedTeams->n > 0) {
+    team* removed_team = pop_elem(tui->selectedTeams, tui->selectedTeams->n - 1);
+    if (!removed_team) continue;
+    memset(removed_team->players, 0, removed_team->size * sizeof(player*));
+    removed_team->size = 0;
+  }
+}
+
 void selectTeamToEditGroup(tuidb* tui) {
   team* sel_team = selectedTeam(tui);
   if (!sel_team) return;
   int ind = teamInList(tui->selectedTeams, sel_team->id);
   if (ind >= 0) {
-    team* popped = pop_elem(tui->selectedTeams, ind);
-    memset(popped->players, 0, popped->size * sizeof(player*));
-    popped->size = 0;
+    team* removed_team = pop_elem(tui->selectedTeams, ind);
+    memset(removed_team->players, 0, removed_team->size * sizeof(player*));
+    removed_team->size = 0;
     return;
   }
   fillTeamTemp(tui, sel_team);
@@ -513,6 +522,7 @@ void handleRemove(tuidb* tui) {
 }
 
 void handleExit(tuidb* tui) {
+  unselectAllTeams(tui);
   exit_edit_player(tui);
   tui->exit = 1;
 }

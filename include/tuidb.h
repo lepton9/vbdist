@@ -65,6 +65,7 @@ void setAllPositions(tuidb* tui, dlist* positions);
 player* selectedPlayer(tuidb* tui);
 team* selectedTeam(tuidb* tui);
 
+void unselectAllTeams(tuidb* tui);
 void fillTeamTemp(tuidb* tui, team* team);
 int validateTeamEditSelect(dlist* selectedTeams, size_t team_size, team* cur_team);
 void selectTeamToEditGroup(tuidb* tui);
