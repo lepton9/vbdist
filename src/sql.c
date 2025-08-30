@@ -211,7 +211,7 @@ int saveToPlayerList(sqldb* db, dlist* players) {
   for (size_t i = 0; i < players->n; i++) {
     player* p = players->items[i];
     sqlite3_bind_int(stmt, 1, p->id);
-    r += sqlite3_step(stmt) == SQLITE_DONE;
+    r += stmtStepDone(db->sqlite, stmt);
     sqlite3_reset(stmt);
   }
   sqlite3_finalize(stmt);
@@ -236,7 +236,7 @@ int insertInCombo(sqldb* db, int combo_id, dlist* ids) {
     int* id = ids->items[i];
     sqlite3_bind_int(stmt, 1, combo_id);
     sqlite3_bind_int(stmt, 2, *id);
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
+    if (!stmtStepDone(db->sqlite, stmt)) {
       log_sql_error("Failed to insert player (%d) to combo (%d): %s", id, combo_id, sqlite3_errmsg(db->sqlite));
       sqlite3_finalize(stmt);
       return 0;
@@ -687,18 +687,19 @@ int insertTeam(sqldb* db, team* team) {
   return r;
 }
 
-int insertPlayerTeam(sqldb* db, player* player, team* team) {
+int insertTeamPlayers(sqldb* db, team* team) {
   const char* sql = "INSERT INTO PlayerTeam (player_id, team_id) VALUES (?, ?);";
   sqlite3_stmt* stmt;
   if (!sqlPrepare(db->sqlite, &stmt, sql)) return 0;
-  sqlite3_bind_int(stmt, 1, player->id);
-  sqlite3_bind_int(stmt, 2, team->id);
-  int r = stmtExec(db->sqlite, stmt);
-  if (r) {
-    log_sql("Inserted Player (%d) '%s' to Team (%d) '%s'", player->id,
-            playerName(player), team->id, team->name);
+  for (size_t i = 0; i < team->size; i++) {
+    player* p = team->players[i];
+    sqlite3_bind_int(stmt, 1, p->id);
+    sqlite3_bind_int(stmt, 2, team->id);
+    stmtStepDone(db->sqlite, stmt);
+    sqlite3_reset(stmt);
   }
-  return r;
+  sqlite3_finalize(stmt);
+  return 1;
 }
 
 int createDB(sqldb* db) {

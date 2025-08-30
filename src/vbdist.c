@@ -276,9 +276,8 @@ int askSaveToDB(sqldb* db, team** teams) {
   if (ans == 'y' || ans == 'Y') {
     printf("\033[2K\r");
     for (int i = 0; i < TEAMS_N; i++) {
-      insertTeam(db, teams[i]);
-      for (int j = 0; j < TEAM_SIZE; j++) {
-        insertPlayerTeam(db, teams[i]->players[j], teams[i]);
+      if (insertTeam(db, teams[i])) {
+        insertTeamPlayers(db, teams[i]);
       }
     }
     printf("Saved to %s\n", db->path);

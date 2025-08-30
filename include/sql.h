@@ -80,6 +80,6 @@ int deletePlayer(sqldb* db, player* player);
 int deleteTeam(sqldb* db, team* team);
 
 int insertTeam(sqldb* db, team* team);
-int insertPlayerTeam(sqldb* db, player* player, team* team);
+int insertTeamPlayers(sqldb* db, team* team);
 
 #endif
