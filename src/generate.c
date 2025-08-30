@@ -524,12 +524,13 @@ void initBpcsToTeams(team** teams, size_t* team_sizes, context* ctx, dlist* play
     for (size_t i = 0; i < combo->ids->n; i++) {
       int id = *((int*)combo->ids->items[i]);
       int ind = playerInList(players, id);
-      player* p = players->items[ind];
+      player* p = get_elem(players, ind);
       if (ind >= 0 && p) {
         int misses = 0;
-        while (misses < (int)ctx->teams_dim->teams_n && (team_sizes[last_team] >= ctx->teams_dim->team_size ||
-               comboInTeamSize(ctx->banned_combos, teams[last_team],
-                               team_sizes[last_team], p))) {
+        while (misses < (int)ctx->teams_dim->teams_n &&
+               (team_sizes[last_team] >= ctx->teams_dim->team_size ||
+                comboInTeamSize(ctx->banned_combos, teams[last_team],
+                                team_sizes[last_team], p))) {
           last_team = (last_team + 1) % ctx->teams_dim->teams_n;
           misses++;
         }
