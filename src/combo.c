@@ -89,6 +89,7 @@ char isCombo(dlist* combos, player* a, player* b) {
 }
 
 char comboInTeam(dlist* combos, team* t, player* p) {
+  if (!combos) return 0;
   for (size_t i = 0; i < t->size; i++) {
     if (isCombo(combos, p, t->players[i])) return 1;
   }

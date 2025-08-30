@@ -1,5 +1,6 @@
 #include "../include/tuidb.h"
 #include "../include/utils.h"
+#include "../include/tuiswap.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -186,6 +187,19 @@ void selectTeamToEditGroup(tuidb* tui) {
     memset(sel_team->players, 0, sel_team->size * sizeof(player*));
     sel_team->size = 0;
   }
+}
+
+void editTeamGroup(tuidb* tui) {
+  if (tui->selectedTeams->n < 2) return;
+  dlist* teams = tui->selectedTeams;
+  size_t team_size = ((team*)teams->items[0])->size;
+  dlist* skills = fetchSkills(tui->db);
+  runTuiSwap((team**)teams->items, teams->n, team_size, skills, NULL);
+  freeSkills(skills);
+  for (size_t i = 0; i < teams->n; i++) {
+    updateTeam(tui->db, get_elem(teams, i));
+  }
+  refresh_screen(tui->render);
 }
 
 void tuidb_list_up(tuidb* tui) {
@@ -595,7 +609,7 @@ void handleKeyPress(tuidb* tui, int c) {
       if (tui->tab == PLAYERS_TAB && tui->active_area == PLAYERS_LIST) {
         toggle_edit_player(tui);
       } else if (tui->tab == TEAMS_TAB) {
-        // TODO: go to tuiswap
+        editTeamGroup(tui);
       }
       break;
     case 'u': case 'U':
