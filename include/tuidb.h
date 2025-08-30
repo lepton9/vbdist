@@ -38,6 +38,7 @@ typedef struct {
   char show_player_info;
   player_edit* p_edit;
   dlist* selectedTeams;
+  size_t selectedTeamSize;
   char exit;
 } tuidb;
 
@@ -65,7 +66,7 @@ player* selectedPlayer(tuidb* tui);
 team* selectedTeam(tuidb* tui);
 
 void fillTeamTemp(tuidb* tui, team* team);
-int validateTeamEditSelect(dlist* selectedTeams, team* cur_team);
+int validateTeamEditSelect(dlist* selectedTeams, size_t team_size, team* cur_team);
 void selectTeamToEditGroup(tuidb* tui);
 void editTeamGroup(tuidb* tui);
 

@@ -27,6 +27,7 @@ tuidb* initTuiDB(int teams, int team_size) {
   set_padding(tui->p_edit->positionsArea->area, 0, 0, 2, 2);
 
   tui->selectedTeams = init_list();
+  tui->selectedTeamSize = 0;
 
   tui->tab = PLAYERS_TAB;
   tui->active_area = PLAYERS_LIST;
@@ -161,10 +162,10 @@ void fillTeamTemp(tuidb* tui, team* team) {
   free_list(player_ids);
 }
 
-int validateTeamEditSelect(dlist* selectedTeams, team* cur_team) {
+int validateTeamEditSelect(dlist* selectedTeams, size_t team_size, team* cur_team) {
   for (size_t i = 0; i < selectedTeams->n; i++) {
     team* t = get_elem(selectedTeams, i);
-    if (cur_team->size != t->size) return 0;
+    if (selectedTeams->n > 0 && cur_team->size != team_size) return 0;
     if (checkPlayerCollisions(t, cur_team)) return 0;
   }
   return 1;
@@ -181,7 +182,8 @@ void selectTeamToEditGroup(tuidb* tui) {
     return;
   }
   fillTeamTemp(tui, sel_team);
-  if (validateTeamEditSelect(tui->selectedTeams, sel_team)) {
+  if (validateTeamEditSelect(tui->selectedTeams, tui->selectedTeamSize, sel_team)) {
+    if (tui->selectedTeams->n == 0) tui->selectedTeamSize = sel_team->size;
     list_add(tui->selectedTeams, sel_team);
   } else {
     memset(sel_team->players, 0, sel_team->size * sizeof(player*));
@@ -192,9 +194,8 @@ void selectTeamToEditGroup(tuidb* tui) {
 void editTeamGroup(tuidb* tui) {
   if (tui->selectedTeams->n < 2) return;
   dlist* teams = tui->selectedTeams;
-  size_t team_size = ((team*)teams->items[0])->size;
   dlist* skills = fetchSkills(tui->db);
-  runTuiSwap((team**)teams->items, teams->n, team_size, skills, NULL);
+  runTuiSwap((team**)teams->items, teams->n, tui->selectedTeamSize, skills, NULL);
   freeSkills(skills);
   for (size_t i = 0; i < teams->n; i++) {
     updateTeam(tui->db, get_elem(teams, i));
