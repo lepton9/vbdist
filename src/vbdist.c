@@ -27,6 +27,7 @@ typedef enum {
   DATABASE
 } dataSource;
 
+#define MINIMUM_SIZE 2
 int TEAMS_N = 0;
 int TEAM_SIZE = 0;
 dataSource SOURCE = NO_SOURCE;
@@ -438,10 +439,16 @@ void runBeginTui(tuidb* tui, dlist* players, context* ctx, dlist* allSkills, dli
     c = keyPress();
     switch (c) {
       case 'G': case 'g':
-        if ((int)players->n != TEAMS_N * TEAM_SIZE) {
-          sprintf(error_msg, "Selected %zu players, but %d was expected", players->n, TEAMS_N * TEAM_SIZE);
+        if (TEAM_SIZE < MINIMUM_SIZE || TEAMS_N < MINIMUM_SIZE) {
+          sprintf(error_msg, "Team size (%d) and amount (%d) minimum is %d",
+                  TEAM_SIZE, TEAMS_N, MINIMUM_SIZE);
+        } else if ((int)players->n != TEAMS_N * TEAM_SIZE) {
+          sprintf(error_msg, "Selected %zu players, but %d was expected",
+                  players->n, TEAMS_N * TEAM_SIZE);
         } else if (ctx->use_positions && (int)ctx->positions->n != TEAM_SIZE) {
-          sprintf(error_msg, "Amount of positions should equal team size (%d/%d)", (int)ctx->positions->n, TEAM_SIZE);
+          sprintf(error_msg,
+                  "Amount of positions should equal team size (%d/%d)",
+                  (int)ctx->positions->n, TEAM_SIZE);
         } else {
           ctxUpdateDimensions(ctx, TEAMS_N, TEAM_SIZE);
           teams_added = generateTeams((tui) ? tui->db : NULL, players, ctx) || teams_added;
