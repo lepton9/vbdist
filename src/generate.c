@@ -527,8 +527,8 @@ void initBpcsToTeams(team** teams, size_t* team_sizes, context* ctx, dlist* play
       player* p = get_elem(players, ind);
       if (ind >= 0 && p) {
         int misses = 0;
-        while (misses < (int)ctx->teams_dim->teams_n &&
-               (team_sizes[last_team] >= ctx->teams_dim->team_size ||
+        while (team_sizes[last_team] >= ctx->teams_dim->team_size ||
+               (misses < (int)ctx->teams_dim->teams_n &&
                 comboInTeamSize(ctx->banned_combos, teams[last_team],
                                 team_sizes[last_team], p))) {
           last_team = (last_team + 1) % ctx->teams_dim->teams_n;
