@@ -1,30 +1,19 @@
-#include "../include/config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <limits.h>
+#include "../include/config.h"
+#include "../include/file.h"
 
 #ifdef __linux__
 #define CONFIG_LOCATIONS 3
 #define CONFIG_DEFAULT 2
-#define PATH_SEPARATOR '/'
 const char* config_paths[CONFIG_LOCATIONS] = {"./", "~/", "~/.config/vbdist/"};
 #elif _WIN32
-#include <windows.h>
-#include <direct.h>
-#define mkdir(dir, mode) _mkdir(dir)
-#define realpath(N, R) _fullpath((R), (N), PATH_MAX)
 #define CONFIG_LOCATIONS 2
 #define CONFIG_DEFAULT 1
-#define PATH_SEPARATOR '\\'
 const char* config_paths[CONFIG_LOCATIONS] = {".\\", "C:\\Users\\Public\\vbdist\\"};
 #endif
-
-char* absolute_path(const char* path) {
-  char* abs_path = (char*)malloc(PATH_MAX);
-  realpath(path, abs_path);
-  return abs_path;
-}
 
 void set_db_path(config* cfg, const char* path) {
   char* abs_path = absolute_path(path);
@@ -38,16 +27,6 @@ char db_is_set(config* cfg) {
 
 void cfg_full_path(char* full, const char* base_path) {
   sprintf(full, "%s%s", base_path, CONFIG_NAME);
-}
-
-int file_exists(const char* path) {
-  struct stat buffer;
-  return (stat(path, &buffer) == 0);
-}
-
-int dir_exists(const char* path) {
-  struct stat info;
-  return (stat(path, &info) == 0 && (info.st_mode & S_IFDIR));
 }
 
 int find_config(char* path) {
@@ -115,37 +94,6 @@ config* create_config(const char* base_path) {
   make_dir(path);
   write_config(cfg);
   return cfg;
-}
-
-void expand_path(char* path) {
-#ifdef __linux__
-  char temp[512];
-  if (path[0] == '~') {
-    const char* home = getenv("HOME");
-    if (!home) {
-      return;
-    }
-    snprintf(temp, sizeof(temp), "%s%s", home, path + 1);
-    strcpy(path, temp);
-  }
-#endif
-}
-
-void make_dir(const char* path) {
-  char temp[512];
-  char* p = NULL;
-  size_t len;
-  strcpy(temp, path);
-  len = strlen(temp);
-  if (temp[len - 1] == PATH_SEPARATOR) temp[len - 1] = '\0';
-  for (p = temp + 1; *p; p++) {
-    if (*p == PATH_SEPARATOR) {
-      *p = '\0';
-      if (!dir_exists(temp)) mkdir(temp, 0755);
-      *p = PATH_SEPARATOR;
-    }
-  }
-  if (!dir_exists(temp)) mkdir(temp, 0755);
 }
 
 void write_config(config* cfg) {
