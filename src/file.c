@@ -5,6 +5,9 @@
 #include <limits.h>
 #include "../include/file.h"
 
+void full_path(char* path, const char* base_path, const char* filename) {
+  sprintf(path, "%s%s", base_path, filename);
+}
 
 char* absolute_path(const char* path) {
   char* abs_path = (char*)malloc(PATH_MAX);

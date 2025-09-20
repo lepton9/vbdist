@@ -26,7 +26,7 @@ char db_is_set(config* cfg) {
 }
 
 void cfg_full_path(char* full, const char* base_path) {
-  sprintf(full, "%s%s", base_path, CONFIG_NAME);
+  full_path(full, base_path, CONFIG_NAME);
 }
 
 int find_config(char* path) {
