@@ -668,7 +668,7 @@ int main(int argc, char** argv) {
   cfg->team_size = TEAM_SIZE;
   cfg->teams_n = TEAMS_N;
   write_config(cfg);
-  free(cfg);
+  free_config(cfg);
 
   freeSkills(skills_all);
   freePositions(positions_all);

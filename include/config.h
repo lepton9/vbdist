@@ -8,12 +8,14 @@
 typedef struct {
   int teams_n;
   int team_size;
-  char db_path[512];
-  char config_path[512];
+  char* db_path;
+  char* config_path;
+  char* log_path;
   int created;
 } config;
 
 config* read_config();
+void free_config(config* cfg);
 void write_config(config* cfg);
 void printCfgLocation(FILE* out);
 
