@@ -5,12 +5,14 @@
 
 static FILE* log_file = NULL;
 
-void init_log(char* log_path) {
+char init_log(char* log_path) {
   log_file = fopen(log_path, "a+");
   if (!log_file) {
     log_file = stderr;
     log_error("Failed to open log file: '%s'\n", log_path);
+    return 0;
   }
+  return 1;
 }
 
 void close_log() {

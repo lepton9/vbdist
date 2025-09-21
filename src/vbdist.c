@@ -587,7 +587,10 @@ int main(int argc, char** argv) {
   // Set up log file
   if (args->logPath) set_log_path(cfg, args->logPath);
   char* log_path = get_log_path(cfg->log_path);
-  init_log(log_path);
+  if (!init_log(log_path)) {
+    if (cfg->log_path) free(cfg->log_path);
+    cfg->log_path = NULL;
+  }
   free(log_path);
 
   int ret = handleAction(a, args);

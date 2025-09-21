@@ -36,7 +36,7 @@ void log_msg(const char* msg);
 struct tm* get_timeinfo();
 char* timef(struct tm* timeinfo);
 
-void init_log(char* log_path);
+char init_log(char* log_path);
 void close_log();
 char* get_log_path(char* log_path);
 void print_logs(FILE* out, size_t n);
