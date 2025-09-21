@@ -6,6 +6,7 @@ typedef enum {
   ACTION_GENERATE,
   ACTION_HELP,
   ACTION_CONFIG,
+  ACTION_VIEWLOG,
   ACTION_ERROR
 } action;
 
@@ -16,6 +17,7 @@ typedef struct {
   char *err_msg;
   int teams;
   int players;
+  size_t viewLogN;
 } args;
 
 void printUsage(FILE *out);

@@ -12,6 +12,7 @@ void printUsage(FILE *out) {
                "    -p, --players   <int>   Set number of players in a team\n"
                "    -c, --config            Print config location\n"
                "    -l, --log       <path>  Set custom log file path\n"
+               "    -v, --viewlog   <?int>  Print the last rows in log (default: 10)\n"
                "    -h, --help              Print this help\n");
 }
 
@@ -29,11 +30,17 @@ action parseArgs(args* params, int argc, char **argv) {
   int optind;
   for (optind = 1; optind < argc; optind++) {
     char* arg = argv[optind];
-    if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
+    if (checkForOption(arg, "-h", "--help")) {
       return ACTION_HELP;
     }
-    if (strcmp(arg, "-c") == 0 || strcmp(arg, "--config") == 0) {
+    if (checkForOption(arg, "-c", "--config")) {
       return ACTION_CONFIG;
+    }
+    if (checkForOption(arg, "-v", "--viewlog")) {
+      if (optind < argc - 1 && argv[optind + 1][0] != '-') {
+        params->viewLogN = atoi(argv[++optind]);
+      }
+      return ACTION_VIEWLOG;
     }
     if (checkForOption(arg, "-f", "--file")) {
       if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
@@ -52,7 +59,7 @@ action parseArgs(args* params, int argc, char **argv) {
       params->players = atoi(argv[++optind]);
     } else {
       char msg[100];
-      snprintf(msg, sizeof(msg), "Invalid option `%s`\nSee `vbdist --help` for more.\n\n", arg);
+      snprintf(msg, sizeof(msg), "Invalid option '%s'\n", arg);
       argsError(params, msg);
       return ACTION_ERROR;
     }
@@ -68,6 +75,7 @@ void argsError(args* args, char* msg) {
 args* initArgs() {
   args *params = malloc(sizeof(args));
   memset(params, 0, sizeof(args));
+  params->viewLogN = 10;
   return params;
 }
 
