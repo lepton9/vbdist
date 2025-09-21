@@ -4,16 +4,15 @@
 #include <string.h>
 
 void printUsage(FILE *out) {
-  fprintf(out, "Usage: vbdist [options]\n"
+  fprintf(out, "Usage: vbdist [options]\n\n"
                "  Options:\n"
-               "    -f, --file <file>          Path to textfile\n"
-               "    -d, --database <database>  Path to sqlite database\n"
-               "    -t, --teams <int>          Set number of teams\n"
-               "    -p, --players <int>        Set number of players in a team\n"
-               "    -c, --config               Print config location\n"
-               "    -h, --help                 Display help\n"
-               "\nUses a file or database to store and retrieve data based on "
-               "which option is set.\n");
+               "    -d, --database  <path>  Path to sqlite database\n"
+               "    -f, --file      <path>  Path to textfile\n"
+               "    -t, --teams     <int>   Set number of teams\n"
+               "    -p, --players   <int>   Set number of players in a team\n"
+               "    -c, --config            Print config location\n"
+               "    -l, --log       <path>  Set custom log file path\n"
+               "    -h, --help              Print this help\n");
 }
 
 void printArgsError(args* args, FILE* out) {

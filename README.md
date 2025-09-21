@@ -29,12 +29,13 @@ make
 vbdist [options]
 
   Options:
-    -f, --file <file>          Path to textfile                 (Optional)
-    -d, --database <database>  Path to sqlite database          (Optional)
-    -t, --teams <int>          Set number of teams              (Optional)
-    -p, --players <int>        Set number of players in a team  (Optional)
-    -c, --config               Print config location
-    -h, --help                 Display help
+    -d, --database  <path>  Path to sqlite database
+    -f, --file      <path>  Path to textfile
+    -t, --teams     <int>   Set number of teams
+    -p, --players   <int>   Set number of players in a team
+    -c, --config            Print config location
+    -l, --log       <path>  Set custom log file path
+    -h, --help              Print this help
 ```
 
 #### Example
