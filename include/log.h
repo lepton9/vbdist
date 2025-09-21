@@ -3,7 +3,13 @@
 
 #include <time.h>
 
-#define LOG_FILE "log_vbdist.txt"
+#ifdef __linux__
+#define DEFAULT_LOG_PATH "~/.local/share/vbdist/logs/"
+#elif _WIN32
+#define DEFAULT_LOG_PATH "C:\\Users\\Public\\vbdist\\logs\\"
+#endif
+
+#define LOG_FILE "vbdist.log"
 
 #define log_with_custom_prefix(prefix, fmt, ...) \
     log_with_prefix(prefix, fmt, __VA_ARGS__)
@@ -28,5 +34,9 @@ void log_msg(const char* msg);
 
 struct tm* get_timeinfo();
 char* timef(struct tm* timeinfo);
+
+void init_log(char* log_path);
+void close_log();
+char* get_log_path(char* log_path);
 
 #endif

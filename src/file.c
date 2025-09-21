@@ -1,12 +1,11 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <limits.h>
 #include "../include/file.h"
 
-void full_path(char* path, const char* base_path, const char* filename) {
-  sprintf(path, "%s%s", base_path, filename);
+void full_path(char* path, size_t size, const char* base_path, const char* filename) {
+  snprintf(path, size, "%s%s", base_path, filename);
 }
 
 char* absolute_path(const char* path) {
@@ -27,7 +26,7 @@ int dir_exists(const char* path) {
 
 void expand_path(char* path) {
 #ifdef __linux__
-  char temp[512];
+  char temp[PATH_SIZE];
   if (path[0] == '~') {
     const char* home = getenv("HOME");
     if (!home) {
@@ -40,7 +39,7 @@ void expand_path(char* path) {
 }
 
 void make_dir(const char* path) {
-  char temp[512];
+  char temp[PATH_SIZE];
   char* p = NULL;
   size_t len;
   strcpy(temp, path);

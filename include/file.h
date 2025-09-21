@@ -1,3 +1,4 @@
+#include <stdlib.h>
 
 #ifdef __linux__
 #define PATH_SEPARATOR '/'
@@ -9,7 +10,9 @@
 #define PATH_SEPARATOR '\\'
 #endif
 
-void full_path(char* path, const char* base_path, const char* filename);
+#define PATH_SIZE 512
+
+void full_path(char* path, size_t size, const char* base_path, const char* filename);
 char* absolute_path(const char* path);
 int file_exists(const char* path);
 int dir_exists(const char* path);
