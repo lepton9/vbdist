@@ -45,7 +45,7 @@ void log_with_prefix(const char *prefix, const char *fmt, ...) {
     va_end(args);
 
     char full_msg[300];
-    snprintf(full_msg, sizeof(full_msg), "%s: %s", prefix, msg);
+    snprintf(full_msg, sizeof(full_msg), "[%s] %s", prefix, msg);
     log_msg(full_msg);
 }
 
@@ -65,7 +65,7 @@ char *timef(struct tm *tm) {
 void log_msg(const char* msg) {
   struct tm* timeinfo = get_timeinfo();
   char* tf = timef(timeinfo);
-  fprintf(log_file, "%s | %s\n", tf, msg);
+  fprintf(log_file, "[%s] %s\n", tf, msg);
   free(tf);
 }
 
