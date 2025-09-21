@@ -73,23 +73,23 @@ config* read_config() {
     return cfg;
   }
 
-  char line[256];
+  char line[1024];
   while (fgets(line, sizeof(line), file)) {
-    char key[128], value[256];
+    char key[128], value[512];
 
     if (sscanf(line, "%127[^=]=%127[^\n]", key, value) == 2) {
-      strcpy(value, trimWS(value));
-      if (strlen(value) == 0) continue;
+      char* val = trimWS(value);
+      if (strlen(val) == 0) continue;
       if (strcmp(key, "teams_n") == 0) {
-        cfg->teams_n = atoi(value);
+        cfg->teams_n = atoi(val);
       } else if (strcmp(key, "team_size") == 0) {
-        cfg->team_size = atoi(value);
+        cfg->team_size = atoi(val);
       } else if (strcmp(key, "db_path") == 0) {
         if (cfg->db_path) free(cfg->db_path);
-        cfg->db_path = strdup(value);
+        cfg->db_path = strdup(val);
       } else if (strcmp(key, "log_path") == 0) {
         if (cfg->log_path) free(cfg->log_path);
-        cfg->log_path = strdup(value);
+        cfg->log_path = strdup(val);
       }
     }
   }

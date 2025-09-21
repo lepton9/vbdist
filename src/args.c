@@ -42,6 +42,9 @@ action parseArgs(args* params, int argc, char **argv) {
     } else if (checkForOption(arg, "-d", "--database")) {
       if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
       params->dbPath = strdup(argv[++optind]);
+    } else if (checkForOption(arg, "-l", "--log")) {
+      if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
+      params->logPath = strdup(argv[++optind]);
     } else if (checkForOption(arg, "-t", "--teams")) {
       if (optind == argc - 1 || argv[optind + 1][0] == '-') continue;
       params->teams = atoi(argv[++optind]);
@@ -72,6 +75,7 @@ args* initArgs() {
 void freeArgs(args* args) {
   if (!args) return;
   if (args->dbPath) free(args->dbPath);
+  if (args->logPath) free(args->logPath);
   if (args->filePath) free(args->filePath);
   if (args->err_msg) free(args->err_msg);
   free(args);

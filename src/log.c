@@ -10,7 +10,7 @@ void init_log(char* log_path) {
   log_file = fopen(log_path, "a");
   if (!log_file) {
     log_file = stderr;
-    fprintf(log_file, "Failed to open log file: '%s'\n", log_path);
+    log_error("Failed to open log file: '%s'\n", log_path);
   }
 }
 

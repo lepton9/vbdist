@@ -600,8 +600,11 @@ int main(int argc, char** argv) {
     set_db_path(cfg, args->dbPath);
   }
 
+  if (args->logPath) set_log_path(cfg, args->logPath);
+
   char* log_path = get_log_path(cfg->log_path);
   init_log(log_path);
+  free(log_path);
 
   context* ctx = makeContext();
   ctx->banned_combos = init_list();
@@ -684,8 +687,6 @@ int main(int argc, char** argv) {
   closeSqlDB(db);
   freeTuiDB(tui);
   freeContext(ctx);
-
-  free(log_path);
   close_log();
 
   return 0;

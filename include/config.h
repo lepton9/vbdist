@@ -19,6 +19,7 @@ void free_config(config* cfg);
 void write_config(config* cfg);
 void printCfgLocation(FILE* out);
 
+void set_log_path(config* cfg, const char* path);
 void set_db_path(config* cfg, const char* path);
 char db_is_set(config* cfg);
 

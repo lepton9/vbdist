@@ -9,9 +9,7 @@ void full_path(char* path, size_t size, const char* base_path, const char* filen
 }
 
 char* absolute_path(const char* path) {
-  char* abs_path = (char*)malloc(PATH_MAX);
-  realpath(path, abs_path);
-  return abs_path;
+  return realpath(path, NULL);
 }
 
 int file_exists(const char* path) {

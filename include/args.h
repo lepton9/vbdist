@@ -12,6 +12,7 @@ typedef enum {
 typedef struct {
   char *filePath;
   char *dbPath;
+  char *logPath;
   char *err_msg;
   int teams;
   int players;
