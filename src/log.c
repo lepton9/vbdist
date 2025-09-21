@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include "../include/log.h"
@@ -7,7 +6,7 @@
 static FILE* log_file = NULL;
 
 void init_log(char* log_path) {
-  log_file = fopen(log_path, "a");
+  log_file = fopen(log_path, "a+");
   if (!log_file) {
     log_file = stderr;
     log_error("Failed to open log file: '%s'\n", log_path);
@@ -20,12 +19,12 @@ void close_log() {
   }
 }
 
-char* get_log_path(char* log_path) {
+char* get_log_path(char* cfg_log_path) {
   char* path = malloc(PATH_SIZE);
-  if (log_path) {
-    expand_path(log_path);
-    make_dir(log_path);
-    snprintf(path, PATH_SIZE, "%s", log_path);
+  if (cfg_log_path) {
+    expand_path(cfg_log_path);
+    make_dir(cfg_log_path);
+    snprintf(path, PATH_SIZE, "%s", cfg_log_path);
   } else {
     char base_path[PATH_SIZE + 1];
     strncpy(base_path, DEFAULT_LOG_PATH, PATH_SIZE);
@@ -34,6 +33,30 @@ char* get_log_path(char* log_path) {
     full_path(path, PATH_SIZE, base_path, LOG_FILE);
   }
   return path;
+}
+
+void print_logs(FILE* out, size_t n) {
+  if (!log_file) return;
+
+  fseek(log_file, 0, SEEK_END);
+  long file_size = ftell(log_file);
+  long pos = file_size - 1;
+  size_t line_count = 0;
+
+  while (pos > 0 && line_count < n) {
+    fseek(log_file, --pos, SEEK_SET);
+    if (fgetc(log_file) == '\n') {
+      line_count++;
+    }
+  }
+
+  pos = (pos > 0) ? pos + 1 : 0;
+  fseek(log_file, pos, SEEK_SET);
+
+  char buffer[512];
+  while (fgets(buffer, sizeof(buffer), log_file)) {
+    fprintf(out, "%s", buffer);
+  }
 }
 
 void log_with_prefix(const char *prefix, const char *fmt, ...) {

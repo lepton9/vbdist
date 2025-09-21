@@ -559,8 +559,11 @@ int handleAction(action a, args* args) {
     case ACTION_CONFIG:
       printCfgLocation(stdout);
       return 0;
+    case ACTION_VIEWLOG:
+      print_logs(stdout, args->viewLogN);
+      return 0;
     case ACTION_ERROR:
-      printArgsError(args, stdout);
+      printArgsError(args, stderr);
       return 1;
   }
   return -1;
@@ -570,17 +573,6 @@ int main(int argc, char** argv) {
   char* err_msg = malloc(1);
   err_msg[0] = '\0';
 
-  args* args = initArgs();
-  int ret = handleAction(parseArgs(args, argc, argv), args);
-  if (ret >= 0) {
-    freeArgs(args);
-    exit(ret);
-  }
-
-  SOURCE = (args->dbPath)     ? DATABASE
-           : (args->filePath) ? TEXT_FILE
-                                : NO_SOURCE;
-
   config* cfg = read_config();
   if (cfg && cfg->created) {
     char msg[600];
@@ -588,6 +580,23 @@ int main(int argc, char** argv) {
     err_msg = realloc(err_msg, strlen(err_msg) + strlen(msg) + 1);
     strcat(err_msg, msg);
   }
+
+  args* args = initArgs();
+  action a = parseArgs(args, argc, argv);
+
+  // Set up log file
+  if (args->logPath) set_log_path(cfg, args->logPath);
+  char* log_path = get_log_path(cfg->log_path);
+  init_log(log_path);
+  free(log_path);
+
+  int ret = handleAction(a, args);
+  if (ret >= 0) {
+    freeArgs(args);
+    exit(ret);
+  }
+
+  SOURCE = (args->dbPath) ? DATABASE : (args->filePath) ? TEXT_FILE : NO_SOURCE;
 
   if (SOURCE == NO_SOURCE) {
     if (db_is_set(cfg)) {
@@ -599,12 +608,6 @@ int main(int argc, char** argv) {
   } else if (SOURCE == DATABASE) {
     set_db_path(cfg, args->dbPath);
   }
-
-  if (args->logPath) set_log_path(cfg, args->logPath);
-
-  char* log_path = get_log_path(cfg->log_path);
-  init_log(log_path);
-  free(log_path);
 
   context* ctx = makeContext();
   ctx->banned_combos = init_list();
