@@ -36,7 +36,7 @@ typedef struct {
 #define OPTIONS_N 8
 
 static const option options[OPTIONS_N] = {
-    {OPT_DB, "d", "database", {"path", 1}, "Path to sqlite database", 0},
+    {OPT_DB, "d", "database", {"path", 1}, "Path to SQLite database", 0},
     {OPT_FILE, "f", "file", {"path", 1}, "Path to textfile", 0},
     {OPT_TEAMS, "t", "teams", {"int", 1}, "Set number of teams", 0},
     {OPT_PLAYERS, "p", "players", {"int", 1}, "Set number of players in a team", 0},
@@ -55,12 +55,16 @@ typedef struct {
   size_t viewLogN;
 } args;
 
-void printUsage(FILE *out);
-void printArgsError(args* args, FILE* out);
-int checkForOption(const char *arg, const char *shortOpt, const char *longOpt);
-action parseArgs(args* params, int argc, char **argv);
-action argsError(args* args, char* msg);
 args* initArgs();
 void freeArgs(args *args);
+
+void printUsage(FILE *out);
+void printArgsError(args* args, FILE* out);
+action argsError(args* args, char* msg);
+
+char isOption(const char* arg);
+int findOptInd(const char* opt_name, char is_long);
+const option* findValidOption(const char* flag);
+action parseArgs(args* params, int argc, char **argv);
 
 #endif
