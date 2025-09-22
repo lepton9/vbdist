@@ -17,7 +17,8 @@ sudo pacman -S ncurses sqlite3
 sudo apt-get install libncurses5-dev libncursesw5-dev libsqlite3-dev
 ```
 
-### Clone and compile
+### Build from source
+Output binary in `bin/`
 ```
 git clone https://github.com/lepton9/vbdist.git && cd vbdist
 make dep
@@ -29,12 +30,13 @@ make
 vbdist [options]
 
   Options:
-    -d, --database  <path>  Path to sqlite database
+    -d, --database  <path>  Path to SQLite database
     -f, --file      <path>  Path to textfile
     -t, --teams     <int>   Set number of teams
     -p, --players   <int>   Set number of players in a team
     -c, --config            Print config location
     -l, --log       <path>  Set custom log file path
+    -v, --viewlog   <?int>  Print the latest lines in the log (default: 10)
     -h, --help              Print this help
 ```
 

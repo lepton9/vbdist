@@ -42,7 +42,7 @@ static const option options[OPTIONS_N] = {
     {OPT_PLAYERS, "p", "players", {"int", 1}, "Set number of players in a team", 0},
     {OPT_CONFIG, "c", "config", {NULL}, "Print config location", 0},
     {OPT_LOG, "l", "log", {"path", 1}, "Set custom log file path", 0},
-    {OPT_VIEWLOG, "v", "viewlog", {"int", 0}, "Print the last rows in log (default: 10)", 0},
+    {OPT_VIEWLOG, "v", "viewlog", {"int", 0}, "Print the latest lines in the log (default: 10)", 0},
     {OPT_HELP, "h", "help", {NULL}, "Print this help", 0}};
 
 typedef struct {
