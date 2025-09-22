@@ -77,7 +77,7 @@ cleanall:
 fresh: clean $(MAIN)
 
 valgrind:
-	valgrind --leak-check=full -s $(BIN)/$(MAIN)
+	valgrind --leak-check=full -s $(BIN)/$(MAIN) $(ARGS)
 
 run:
-	$(BIN)/$(MAIN)
+	$(BIN)/$(MAIN) $(ARGS)
