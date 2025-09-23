@@ -28,11 +28,16 @@ jobs:
           make dep
           make build
 
+      - name: Compress
+        run: |
+          cd bin/build
+          tar -czvf vbdist-linux.tar.gz vbdist
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: vbdist-linux
-          path: bin/build/vbdist
+          path: bin/build/vbdist-linux.tar.gz
 
   build-windows:
     runs-on: windows-latest
@@ -47,11 +52,16 @@ jobs:
           make dep
           make build
 
+      - name: Compress
+        run: |
+          cd bin/build
+          7z a vbdist-windows.zip vbdist.exe
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vbdist-win
-          path: bin/build/vbdist.exe
+          name: vbdist-windows
+          path: bin/build/vbdist-windows.zip
 
   release:
     needs: [build-linux, build-windows]
@@ -62,16 +72,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download build artifact
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           path: release/
-
-      - name: Compress
-        run: |
-          cd release
-          zip -r vbdist-linux.zip vbdist-linux
-          zip -r vbdist-win.zip vbdist-win
 
       - name: List
         run: ls -l release
@@ -82,7 +86,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            release/vbdist-linux.zip
-            release/vbdist-win.zip
+            release/vbdist-linux/vbdist-linux.tar.gz
+            release/vbdist-windows/vbdist-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
