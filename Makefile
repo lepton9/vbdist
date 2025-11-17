@@ -22,7 +22,7 @@ TEST_TARGETS :=
 OBJ := player team tui tuiswap tuidb tuiskills combo args sql dlist log file utils render skill listarea tuicombo config position generate tuipositions playeredit
 OBJECT_FILES := $(addprefix $(OBJS)/,$(addsuffix .o,$(OBJ)))
 
-$(MAIN): $(OBJECT_FILES) $(LIB)/sqlite3.o | $(BIN)
+$(MAIN): $(LIB)/sqlite3.o $(OBJECT_FILES) | $(BIN)
 	$(CC) $(FLAGS) $(INC) $^ $(SRC)/$@.c -o $(BIN)/$@ $(LINK)
 
 $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
@@ -40,22 +40,38 @@ $(BIN):
 $(BUILD): $(BIN)
 	mkdir $(BUILD)
 
-build: $(OBJECT_FILES) $(LIB)/sqlite3.o $(OBJS)/$(MAIN).o | $(BUILD)
+build: $(LIB)/sqlite3.o $(OBJECT_FILES) $(OBJS)/$(MAIN).o | $(BUILD)
 	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
 
 debug: $(LIB)/sqlite3.o | $(BIN)
 	$(CC) $(INC) $^ $(SRC)/*.c -g -o $(BIN)/$@ $(LINK)
 	gdb -tui $(BIN)/debug
 
-SQLITE_VER := 3470200
-dep:
-	curl -O https://www.sqlite.org/2024/sqlite-amalgamation-$(SQLITE_VER).zip
-	unzip -j sqlite-amalgamation-$(SQLITE_VER).zip -d lib
-	rm -f sqlite-amalgamation-$(SQLITE_VER).zip
-	cd lib && \
-	gcc -o sqlite3.o -c -fPIC sqlite3.c && \
-	gcc -shared -o libsqlite3.so sqlite3.o -lm
 
+SQLITE_REGEX := [0-9]+/sqlite-amalgamation-[0-9]+\.zip
+SQLITE_BASE_URL := https://sqlite.org
+SQLITE_SHARED = libsqlite3.so
+SQLITE_DOWNLOAD_PATH = $(shell curl -fsSL $(SQLITE_BASE_URL)/download.html \
+					 | grep -Eo '$(SQLITE_REGEX)' \
+					 | head -n 1)
+
+ifeq ($(OS),Windows_NT)
+	SQLITE_SHARED = sqlite3.dll
+else
+	SQLITE_SHARED = libsqlite3.so
+endif
+
+SQLITE_URL = $(SQLITE_BASE_URL)/$(SQLITE_DOWNLOAD_PATH)
+SQLITE_ZIP = $(notdir $(SQLITE_DOWNLOAD_PATH))
+
+dep:
+	@echo "Fetching URL:" $(SQLITE_URL)
+	curl -fLo $(SQLITE_ZIP) "$(SQLITE_URL)"
+	unzip -j $(SQLITE_ZIP) -d $(LIB)
+	rm -f $(SQLITE_ZIP)
+	cd $(LIB) && \
+	$(CC) -o sqlite3.o -c -fPIC sqlite3.c $(FLAGS) && \
+	$(CC) -shared -o $(SQLITE_SHARED) sqlite3.o $(LINK)
 
 #Testing
 test: all_tests
