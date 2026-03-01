@@ -5,7 +5,19 @@ INCLUDE := ./include
 BUILD := $(BIN)/build
 OBJS := ./objs
 INC := -I$(INCLUDE) -I$(LIB)
-FLAGS := -O3 -Wextra -Wall
+
+# Build config: `make CONFIG=debug` or `make CONFIG=release`
+CONFIG ?= release
+
+OPTIMIZE_RELEASE := -O3
+OPTIMIZE_DEBUG := -Og
+
+DEBUG_FLAGS := -g3 -fno-omit-frame-pointer
+RELEASE_FLAGS := -DNDEBUG
+
+OPTIMIZE = $(if $(filter debug,$(CONFIG)),$(OPTIMIZE_DEBUG),$(OPTIMIZE_RELEASE))
+CFG_FLAGS = $(if $(filter debug,$(CONFIG)),$(DEBUG_FLAGS),$(RELEASE_FLAGS))
+FLAGS = $(OPTIMIZE) $(CFG_FLAGS) -Wextra -Wall
 LINK := -L$(LIB) -lm
 
 PLATFORM := $(shell uname)
@@ -31,21 +43,25 @@ $(OBJS)/%.o: $(SRC)/%.c | $(OBJS)
 $(LIB)/sqlite3.o: $(LIB)/sqlite3.c
 	$(CC) $(FLAGS) -c $(INC) $< -o $@
 
+build: CONFIG := release
+build: $(LIB)/sqlite3.o $(OBJECT_FILES) $(OBJS)/$(MAIN).o | $(BUILD)
+	$(CC) $(FLAGS) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
+
+debug: CONFIG := debug
+debug: $(LIB)/sqlite3.o | $(BIN)
+	$(CC) $(FLAGS) $(INC) $^ $(SRC)/*.c -o $(BIN)/$@ $(LINK)
+	gdb -tui $(BIN)/debug
+
+MKDIR_P := mkdir -p
+
 $(OBJS):
-	mkdir $(OBJS)
+	$(MKDIR_P) $(OBJS)
 
 $(BIN):
-	mkdir $(BIN)
+	$(MKDIR_P) $(BIN)
 
 $(BUILD): $(BIN)
-	mkdir $(BUILD)
-
-build: $(LIB)/sqlite3.o $(OBJECT_FILES) $(OBJS)/$(MAIN).o | $(BUILD)
-	$(CC) -static $^ -o $(BUILD)/$(MAIN) $(LINK)
-
-debug: $(LIB)/sqlite3.o | $(BIN)
-	$(CC) $(INC) $^ $(SRC)/*.c -g -o $(BIN)/$@ $(LINK)
-	gdb -tui $(BIN)/debug
+	$(MKDIR_P) $(BUILD)
 
 
 SQLITE_REGEX := [0-9]+/sqlite-amalgamation-[0-9]+\.zip
@@ -64,6 +80,7 @@ endif
 SQLITE_URL = $(SQLITE_BASE_URL)/$(SQLITE_DOWNLOAD_PATH)
 SQLITE_ZIP = $(notdir $(SQLITE_DOWNLOAD_PATH))
 
+dep: CONFIG := release
 dep:
 	@echo "Fetching URL:" $(SQLITE_URL)
 	curl -fLo $(SQLITE_ZIP) "$(SQLITE_URL)"
